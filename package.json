@@ -1,0 +1,21 @@
+{
+  "name": "krishi-sathi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Krishi Sathi — Your Farming Companion | AI Farming Assistant for Indian Farmers",
+  "workspaces": [
+    "server",
+    "client"
+  ],
+  "scripts": {
+    "setup": "npm install && npm --workspace=server run prisma:generate && npm --workspace=server run prisma:push && npm --workspace=server run prisma:seed",
+    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"green,blue\" \"npm --workspace=server run dev\" \"npm --workspace=client run dev\"",
+    "dev:server": "npm --workspace=server run dev",
+    "dev:client": "npm --workspace=client run dev",
+    "build": "npm --workspace=server run build && npm --workspace=client run build",
+    "prisma:seed": "npm --workspace=server run prisma:seed"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

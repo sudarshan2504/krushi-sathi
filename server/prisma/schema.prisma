@@ -1,0 +1,218 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id                  String               @id @default(uuid())
+  name                String
+  phone               String               @unique
+  language            String               @default("en") // en, kn, ta, te
+  state               String               @default("Karnataka")
+  district            String               @default("Mandya")
+  village             String?
+  farmSize            Float?               @default(2.5)
+  farmUnit            String               @default("Acres") // Acres, Guntha, Bigha, Hectare
+  avatar              String?
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+
+  soilAssessments     SoilAssessment[]
+  cropRecommendations CropRecommendation[]
+  cropPlans           CropPlan[]
+  chatConversations   ChatConversation[]
+  reminders           Reminder[]
+}
+
+model SoilAssessment {
+  id                  String               @id @default(uuid())
+  userId              String
+  user                User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  state               String
+  district            String
+  village             String?
+  farmSize            Float
+  farmUnit            String               @default("Acres")
+  soilType            String               // red, black, sandy, clay, loamy, unknown
+  ph                  Float?
+  nitrogen            Float?
+  phosphorus          Float?
+  potassium           Float?
+  waterSource         String               // rainfed, borewell, canal, tank, other
+  irrigationType      String?              // drip, sprinkler, flood, furrow, none
+  season              String               // Kharif, Rabi, Zaid, Year-round
+  sowingMonth         String?
+  previousCrop        String?
+  budget              String?              // low, medium, high
+  drainage            String?              // good, moderate, poor, waterlogged
+  soilIssues          String?              // salinity, acidity, erosion, hardpan, none
+  createdAt           DateTime             @default(now())
+
+  cropRecommendations CropRecommendation[]
+}
+
+model Crop {
+  id                  String     @id @default(uuid())
+  name                String
+  scientificName      String?
+  nameKannada         String
+  nameTamil           String
+  nameTelugu          String
+  category            String     // cereal, millet, pulse, commercial, vegetable, oilseed
+  idealSoilTypes      String     // JSON array of strings e.g. ["clay", "loamy", "black"]
+  minPh               Float      @default(5.5)
+  maxPh               Float      @default(7.5)
+  waterRequirement    String     // Low, Moderate, High
+  waterMm             String?    // e.g. "450-650 mm"
+  durationDays        String     // e.g. "100-120 days"
+  durationMin         Int        @default(100)
+  durationMax         Int        @default(120)
+  seasons             String     // JSON array e.g. ["Kharif", "Rabi"]
+  minTemp             Float      @default(20.0)
+  maxTemp             Float      @default(35.0)
+  rainfallMm          String?
+  estimatedCostPerAcre String    // e.g. "₹18,000 - ₹25,000"
+  potentialYieldPerAcre String   // e.g. "20-25 Quintals"
+  marketDemand        String     // High, Moderate, Very High
+  description         String
+  descriptionKn       String?
+  descriptionTa       String?
+  descriptionTe       String?
+  imageUrl            String?
+  risks               String     // JSON array of strings
+  benefits            String     // JSON array of strings
+  createdAt           DateTime   @default(now())
+
+  cropPlans           CropPlan[]
+}
+
+model CropRecommendation {
+  id                  String          @id @default(uuid())
+  userId              String
+  user                User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  soilAssessmentId    String?
+  soilAssessment      SoilAssessment? @relation(fields: [soilAssessmentId], references: [id], onDelete: SetNull)
+  results             String          // JSON stored recommendation payload
+  createdAt           DateTime        @default(now())
+}
+
+model CropPlan {
+  id                  String     @id @default(uuid())
+  userId              String
+  user                User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cropId              String
+  crop                Crop       @relation(fields: [cropId], references: [id], onDelete: Cascade)
+  cropName            String
+  startDate           DateTime   @default(now())
+  status              String     @default("active") // active, completed, abandoned
+  fieldName           String?    @default("Main Field")
+  areaAcre            Float?     @default(1.0)
+  currentStageIndex   Int        @default(0)
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+
+  tasks               CropTask[]
+}
+
+model CropTask {
+  id                  String    @id @default(uuid())
+  cropPlanId          String
+  cropPlan            CropPlan  @relation(fields: [cropPlanId], references: [id], onDelete: Cascade)
+  stage               String    // Land Preparation, Sowing, Germination, Vegetative Growth, Flowering, Grain Development, Harvesting, Storage
+  stageOrder          Int
+  title               String
+  titleKn             String?
+  titleTa             String?
+  titleTe             String?
+  description         String
+  descriptionKn       String?
+  descriptionTa       String?
+  descriptionTe       String?
+  dayOffset           Int       @default(1)
+  dayRange            String    // e.g. "Day 1 - 7"
+  isCompleted         Boolean   @default(false)
+  completedAt         DateTime?
+  category            String    // preparation, sowing, irrigation, nutrient, weed, pest, harvest
+  materialsNeeded     String?   // JSON array e.g. ["Tractor / Plough", "Labour"]
+  importantTip        String?
+  importantTipKn      String?
+  importantTipTa      String?
+  importantTipTe      String?
+}
+
+model DiseaseKnowledge {
+  id                  String   @id @default(uuid())
+  name                String
+  nameKannada         String
+  nameTamil           String
+  nameTelugu          String
+  affectedCrops       String   // JSON array e.g. ["Paddy (Rice)", "Wheat"]
+  symptoms            String
+  symptomsKn          String?
+  symptomsTa          String?
+  symptomsTe          String?
+  conditions          String
+  prevention          String
+  preventionKn        String?
+  preventionTa        String?
+  preventionTe        String?
+  ipmSteps            String   // JSON array of strings
+  ipmStepsKn          String?
+  ipmStepsTa          String?
+  ipmStepsTe          String?
+  expertAdvice        String
+  severity            String   // low, medium, high, critical
+  imageUrl            String?
+}
+
+model ChatConversation {
+  id                  String        @id @default(uuid())
+  userId              String
+  user                User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title               String        @default("Farming Query")
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  messages            ChatMessage[]
+}
+
+model ChatMessage {
+  id                  String           @id @default(uuid())
+  conversationId      String
+  conversation        ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  role                String           // user, assistant, system
+  content             String
+  language            String           @default("en")
+  mode                String           @default("local") // local or gemini
+  createdAt           DateTime         @default(now())
+}
+
+model Reminder {
+  id                  String    @id @default(uuid())
+  userId              String
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title               String
+  message             String
+  dueDate             DateTime
+  isRead              Boolean   @default(false)
+  createdAt           DateTime  @default(now())
+}
+
+model WeatherAlert {
+  id                  String    @id @default(uuid())
+  district            String
+  title               String
+  titleKn             String?
+  titleTa             String?
+  titleTe             String?
+  severity            String    // info, warning, severe
+  message             String
+  messageKn           String?
+  messageTa           String?
+  messageTe           String?
+  validUntil          DateTime
+}
