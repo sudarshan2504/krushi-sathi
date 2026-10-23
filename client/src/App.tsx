@@ -1,10 +1,13 @@
 import React, { Suspense, lazy } from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
 import { LanguageProvider } from './context/LanguageContext';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { Layout } from './components/layout/Layout';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { ErrorBoundary } from './components/ui/ErrorBoundary';
+import { PageTransition } from './components/ui/PageTransition';
 
 // Code-split pages for high performance and reduced initial bundle footprint
 const SplashPage = lazy(() => import('./pages/SplashPage').then(m => ({ default: m.SplashPage })));
@@ -21,12 +24,87 @@ const DiseasePreventionPage = lazy(() => import('./pages/DiseasePreventionPage')
 const ChatPage = lazy(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 
+// Realistic layout skeleton fallback replacing full-page spinner
 const PageFallback: React.FC = () => (
-  <div className="flex flex-col items-center justify-center min-h-[60vh] p-8 text-center" role="status">
-    <div className="w-12 h-12 rounded-full border-4 border-mint border-t-forest animate-spin mb-4" />
-    <p className="text-dark-muted font-medium text-sm">Loading page...</p>
+  <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-4" role="status" aria-busy="true">
+    <div className="rounded-3xl bg-white p-5 border border-forest/15 shadow-sm flex items-center justify-between">
+      <div className="space-y-2">
+        <div className="h-6 w-44 rounded-xl skeleton-shimmer" />
+        <div className="h-3.5 w-28 rounded-md skeleton-shimmer" />
+      </div>
+      <div className="h-8 w-20 rounded-full skeleton-shimmer" />
+    </div>
+    <div className="rounded-3xl bg-white border border-forest/10 p-5 shadow-card space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-14 h-14 rounded-2xl skeleton-shimmer shrink-0" />
+          <div className="space-y-2">
+            <div className="h-6 w-24 rounded-lg skeleton-shimmer" />
+            <div className="h-3 w-32 rounded-md skeleton-shimmer" />
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-3 gap-2">
+        <div className="h-10 rounded-xl skeleton-shimmer" />
+        <div className="h-10 rounded-xl skeleton-shimmer" />
+        <div className="h-10 rounded-xl skeleton-shimmer" />
+      </div>
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+      {[1, 2, 3, 4].map((i) => (
+        <div key={i} className="p-4 rounded-3xl bg-white border border-gray-100 shadow-sm flex flex-col items-center gap-2.5">
+          <div className="w-12 h-12 rounded-2xl skeleton-shimmer" />
+          <div className="h-3 w-16 rounded-md skeleton-shimmer" />
+        </div>
+      ))}
+    </div>
   </div>
 );
+
+const AppRoutes: React.FC = () => {
+  const location = useLocation();
+
+  return (
+    <AnimatePresence mode="wait" initial={false}>
+      <Routes location={location} key={location.pathname}>
+        {/* Standalone onboarding / auth pages */}
+        <Route path="/" element={<PageTransition><SplashPage /></PageTransition>} />
+        <Route path="/language" element={<PageTransition><LanguageSelectPage /></PageTransition>} />
+        <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
+        <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
+
+        {/* Main Application Routes inside Layout (Protected by Firebase Auth) */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/home" element={<PageTransition><HomePage /></PageTransition>} />
+          <Route path="/soil" element={<PageTransition><SoilAssessmentPage /></PageTransition>} />
+          
+          {/* Crop Recommendation & Lifecycle Routes */}
+          <Route path="/crops" element={<PageTransition><CropRecommendationsPage /></PageTransition>} />
+          <Route path="/crops/recommend" element={<PageTransition><CropRecommendationsPage /></PageTransition>} />
+          <Route path="/crops/lifecycle" element={<PageTransition><CropLifecyclePage /></PageTransition>} />
+          <Route path="/crops/lifecycle/:planId" element={<PageTransition><CropLifecyclePage /></PageTransition>} />
+          <Route path="/crops/:cropId/lifecycle" element={<PageTransition><CropLifecyclePage /></PageTransition>} />
+          <Route path="/crops/stage/:planId/:stageName" element={<PageTransition><StageDetailPage /></PageTransition>} />
+          <Route path="/crops/:cropId/stages/:stageId" element={<PageTransition><StageDetailPage /></PageTransition>} />
+          <Route path="/crops/:cropId" element={<PageTransition><CropDetailsPage /></PageTransition>} />
+
+          <Route path="/diseases" element={<PageTransition><DiseasePreventionPage /></PageTransition>} />
+          <Route path="/chat" element={<PageTransition><ChatPage /></PageTransition>} />
+          <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
+        </Route>
+
+        {/* Fallback redirect */}
+        <Route path="*" element={<Navigate to="/home" replace />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 export const App: React.FC = () => {
   return (
@@ -34,44 +112,11 @@ export const App: React.FC = () => {
       <BrowserRouter>
         <LanguageProvider>
           <AuthProvider>
-            <Suspense fallback={<PageFallback />}>
-              <Routes>
-                {/* Standalone onboarding / auth pages */}
-                <Route path="/" element={<SplashPage />} />
-                <Route path="/language" element={<LanguageSelectPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
-
-                {/* Main Application Routes inside Layout (Protected by Firebase Auth) */}
-                <Route
-                  element={
-                    <ProtectedRoute>
-                      <Layout />
-                    </ProtectedRoute>
-                  }
-                >
-                  <Route path="/home" element={<HomePage />} />
-                  <Route path="/soil" element={<SoilAssessmentPage />} />
-                  
-                  {/* Crop Recommendation & Lifecycle Routes (Specific static segments MUST precede wildcard :cropId) */}
-                  <Route path="/crops" element={<CropRecommendationsPage />} />
-                  <Route path="/crops/recommend" element={<CropRecommendationsPage />} />
-                  <Route path="/crops/lifecycle" element={<CropLifecyclePage />} />
-                  <Route path="/crops/lifecycle/:planId" element={<CropLifecyclePage />} />
-                  <Route path="/crops/:cropId/lifecycle" element={<CropLifecyclePage />} />
-                  <Route path="/crops/stage/:planId/:stageName" element={<StageDetailPage />} />
-                  <Route path="/crops/:cropId/stages/:stageId" element={<StageDetailPage />} />
-                  <Route path="/crops/:cropId" element={<CropDetailsPage />} />
-
-                  <Route path="/diseases" element={<DiseasePreventionPage />} />
-                  <Route path="/chat" element={<ChatPage />} />
-                  <Route path="/profile" element={<ProfilePage />} />
-                </Route>
-
-                {/* Fallback redirect */}
-                <Route path="*" element={<Navigate to="/home" replace />} />
-              </Routes>
-            </Suspense>
+            <ToastProvider>
+              <Suspense fallback={<PageFallback />}>
+                <AppRoutes />
+              </Suspense>
+            </ToastProvider>
           </AuthProvider>
         </LanguageProvider>
       </BrowserRouter>

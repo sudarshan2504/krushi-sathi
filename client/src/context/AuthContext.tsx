@@ -14,7 +14,7 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (phone: string, otp: string) => Promise<{ isNewUser: boolean }>;
-  setFirebaseSession: (fbUser: FirebaseUser) => void;
+  setFirebaseSession: (fbUser: FirebaseUser, backendUser?: User) => void;
   register: (formData: any) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (data: Partial<User>) => void;
@@ -66,9 +66,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     let unsubscribe = () => {};
 
+    // Safety fallback: ensure initial loading state resolves quickly (max 1.5s)
+    const timeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 1500);
+
     if (isFirebaseConfigured()) {
       try {
         unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
+          clearTimeout(timeoutId);
           if (fbUser) {
             setFirebaseUser(fbUser);
             // Check if backend session exists or fallback to synthesized user
@@ -92,19 +98,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       } catch (err) {
         console.warn('[AuthContext] Firebase auth listener error:', err);
+        clearTimeout(timeoutId);
         refreshUser().finally(() => setIsLoading(false));
       }
     } else {
       // Firebase not configured yet, use local storage session
-      refreshUser().finally(() => setIsLoading(false));
+      refreshUser().finally(() => {
+        clearTimeout(timeoutId);
+        setIsLoading(false);
+      });
     }
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(timeoutId);
+      unsubscribe();
+    };
   }, []);
 
-  const setFirebaseSession = (fbUser: FirebaseUser) => {
+  const setFirebaseSession = (fbUser: FirebaseUser, backendUser?: User) => {
     setFirebaseUser(fbUser);
-    setUser(buildUserFromFirebase(fbUser, user));
+    setUser(backendUser || buildUserFromFirebase(fbUser, user));
   };
 
   const login = async (phone: string, otp: string) => {

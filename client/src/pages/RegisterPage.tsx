@@ -78,14 +78,18 @@ export const RegisterPage: React.FC = () => {
         className="space-y-3.5 my-auto py-4"
       >
         {error && (
-          <div className="p-3 rounded-2xl bg-red-50 border border-red-200 text-xs text-red-700 font-medium">
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="p-3.5 rounded-2xl bg-red-50 border border-red-200 text-sm text-red-700 font-medium"
+          >
             {error}
           </div>
         )}
 
         {/* Full Name */}
         <div>
-          <label className="block text-xs font-bold text-dark-text mb-1">
+          <label className="block text-sm font-bold text-dark-text mb-1">
             {t('fullName')} *
           </label>
           <div className="relative flex items-center">
@@ -96,18 +100,18 @@ export const RegisterPage: React.FC = () => {
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder={t('namePlaceholder')}
-              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-semibold"
+              className="w-full pl-10 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-semibold"
             />
           </div>
         </div>
 
         {/* Mobile Number */}
         <div>
-          <label className="block text-xs font-bold text-dark-text mb-1">
+          <label className="block text-sm font-bold text-dark-text mb-1">
             {t('phoneNumber')} *
           </label>
           <div className="relative flex items-center">
-            <div className="absolute left-3 flex items-center gap-1 text-xs font-bold text-dark-muted border-r border-gray-200 pr-2">
+            <div className="absolute left-3 flex items-center gap-1 text-sm font-bold text-dark-muted border-r border-gray-200 pr-2">
               <Phone className="w-3.5 h-3.5 text-forest" />
               <span>+91</span>
             </div>
@@ -118,14 +122,14 @@ export const RegisterPage: React.FC = () => {
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })}
               placeholder="98765 43210"
-              className="w-full pl-20 pr-4 py-3 rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-bold tracking-wide"
+              className="w-full pl-20 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-bold tracking-wide"
             />
           </div>
         </div>
 
         {/* Preferred Language */}
         <div>
-          <label className="block text-xs font-bold text-dark-text mb-1">
+          <label className="block text-sm font-bold text-dark-text mb-1">
             {t('chooseLanguage')}
           </label>
           <div className="relative flex items-center">
@@ -133,7 +137,7 @@ export const RegisterPage: React.FC = () => {
             <select
               value={formData.language}
               onChange={(e) => setFormData({ ...formData, language: e.target.value as LanguageCode })}
-              className="w-full pl-10 pr-4 py-3 rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-semibold appearance-none"
+              className="w-full pl-10 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-semibold appearance-none"
             >
               {languages.map((l) => (
                 <option key={l.code} value={l.code}>
@@ -147,7 +151,7 @@ export const RegisterPage: React.FC = () => {
         {/* State & District Grid */}
         <div className="grid grid-cols-2 gap-3">
           <div>
-            <label className="block text-xs font-bold text-dark-text mb-1">
+            <label className="block text-sm font-bold text-dark-text mb-1">
               {t('state')}
             </label>
             <input
@@ -155,11 +159,11 @@ export const RegisterPage: React.FC = () => {
               required
               value={formData.state}
               onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-xs font-semibold"
+              className="w-full px-3.5 py-2.5 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-semibold"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-dark-text mb-1">
+            <label className="block text-sm font-bold text-dark-text mb-1">
               {t('district')}
             </label>
             <input
@@ -167,24 +171,24 @@ export const RegisterPage: React.FC = () => {
               required
               value={formData.district}
               onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-xs font-semibold"
+              className="w-full px-3.5 py-2.5 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-semibold"
             />
           </div>
         </div>
 
         {/* Village / Town (Optional) */}
         <div>
-          <label className="block text-xs font-bold text-dark-text mb-1">
+          <label className="block text-sm font-bold text-dark-text mb-1">
             {t('village')} <span className="text-dark-muted font-normal">(Optional)</span>
           </label>
           <div className="relative flex items-center">
-            <MapPin className="absolute left-3 w-3.5 h-3.5 text-forest" />
+            <MapPin className="absolute left-3 w-4 h-4 text-forest" />
             <input
               type="text"
               value={formData.village}
               onChange={(e) => setFormData({ ...formData, village: e.target.value })}
               placeholder="e.g. Koppa (Hobli)"
-              className="w-full pl-8 pr-3 py-2.5 rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-xs font-semibold"
+              className="w-full pl-9 pr-3 py-2.5 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-semibold"
             />
           </div>
         </div>
@@ -200,11 +204,13 @@ export const RegisterPage: React.FC = () => {
         </Button>
       </motion.form>
 
-
       {/* Footer Navigation to Login */}
-      <div className="text-center pb-4 text-xs">
+      <div className="text-center pb-4 text-sm">
         <span className="text-dark-muted">{t('alreadyHaveAccount')} </span>
-        <Link to="/login" className="text-forest font-bold underline ml-1">
+        <Link
+          to="/login"
+          className="text-forest font-bold underline ml-1 min-h-[48px] inline-flex items-center px-1"
+        >
           {t('welcomeBack')}
         </Link>
       </div>

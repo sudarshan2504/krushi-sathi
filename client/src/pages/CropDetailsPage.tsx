@@ -168,15 +168,15 @@ export const CropDetailsPage: React.FC = () => {
       <div className="flex items-center justify-between mb-2">
         <button
           onClick={() => navigate('/crops')}
-          className="p-2 rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 transition"
+          className="min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-forest transition"
           aria-label="Back to crops"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
         <span className="text-xs font-extrabold text-forest uppercase tracking-wider">
           Agronomy Guide
         </span>
-        <div className="w-8" />
+        <div className="w-12" />
       </div>
 
       {/* Hero Crop Banner */}
@@ -264,7 +264,7 @@ export const CropDetailsPage: React.FC = () => {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 py-3 text-xs font-bold transition-all relative ${
+              className={`flex-1 min-h-[48px] py-3 text-xs font-bold transition-all relative flex items-center justify-center focus-visible:ring-2 focus-visible:ring-forest ${
                 activeTab === tab.id ? 'text-forest' : 'text-dark-muted hover:text-dark-text'
               }`}
             >

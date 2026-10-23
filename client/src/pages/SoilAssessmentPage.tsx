@@ -19,6 +19,7 @@ import {
 import { Button } from '../components/ui/Button';
 import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 import { api } from '../services/api';
 import {
   LAND_UNIT_OPTIONS,
@@ -42,6 +43,7 @@ export const SoilAssessmentPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { t, language } = useTranslation();
+  const { showToast } = useToast();
 
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -256,6 +258,7 @@ export const SoilAssessmentPage: React.FC = () => {
       };
 
       const res = await api.soil.submitAssessment(payload);
+      showToast(t('toastSuccess'), 'success');
 
       // Navigate to /crops with the generated recommendations in state
       navigate('/crops', {
@@ -279,10 +282,10 @@ export const SoilAssessmentPage: React.FC = () => {
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={handleBack}
-          className="p-2 rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 transition"
+          className="min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-forest transition"
           aria-label="Back"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
 
         <div className="text-center">
@@ -296,7 +299,7 @@ export const SoilAssessmentPage: React.FC = () => {
 
         <button
           onClick={() => navigate('/home')}
-          className="p-1.5 text-xs text-dark-muted hover:text-dark-text font-bold"
+          className="min-h-[48px] px-3 flex items-center justify-center text-xs text-dark-muted hover:text-dark-text font-bold focus-visible:ring-2 focus-visible:ring-forest rounded-xl"
         >
           Cancel
         </button>
@@ -939,9 +942,9 @@ export const SoilAssessmentPage: React.FC = () => {
             <button
               type="button"
               onClick={handleBack}
-              className="py-3 px-4 rounded-2xl border border-gray-200 text-dark-text text-xs font-bold hover:bg-gray-50 transition"
+              className="min-h-[48px] py-3 px-5 rounded-2xl border border-gray-200 text-dark-text text-sm font-bold hover:bg-gray-50 transition cursor-pointer"
             >
-              Back
+              {t('navBack')}
             </button>
           )}
           <Button

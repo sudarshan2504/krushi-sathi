@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { Check, ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useTranslation } from '../context/LanguageContext';
@@ -9,6 +9,7 @@ import { LanguageCode } from '../i18n';
 export const LanguageSelectPage: React.FC = () => {
   const navigate = useNavigate();
   const { language, setLanguage, languages, t } = useTranslation();
+  const shouldReduceMotion = useReducedMotion();
 
   const handleContinue = () => {
     navigate('/login');
@@ -18,7 +19,7 @@ export const LanguageSelectPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-b from-cream via-white to-mint-light flex flex-col justify-between p-6 max-w-md mx-auto">
       {/* Header */}
       <motion.div
-        initial={{ opacity: 0, y: -15 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         className="pt-6 text-center"
       >
@@ -33,9 +34,9 @@ export const LanguageSelectPage: React.FC = () => {
 
       {/* 2x2 Language Cards Grid (Matching Screen 2) */}
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.1, duration: 0.5 }}
+        transition={{ delay: shouldReduceMotion ? 0 : 0.05, duration: 0.3 }}
         className="grid grid-cols-2 gap-4 my-auto py-6"
       >
         {languages.map((lang, index) => {
@@ -45,11 +46,11 @@ export const LanguageSelectPage: React.FC = () => {
             <motion.button
               key={lang.code}
               whileTap={{ scale: 0.96 }}
-              initial={{ opacity: 0, y: 20 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 * index }}
+              transition={{ delay: shouldReduceMotion ? 0 : 0.04 * index }}
               onClick={() => setLanguage(lang.code as LanguageCode)}
-              className={`relative flex flex-col items-center justify-center p-6 rounded-3xl border-2 transition-all duration-200 select-none ${
+              className={`relative flex flex-col items-center justify-center p-6 min-h-[140px] rounded-3xl border-2 transition-all duration-200 select-none focus-visible:ring-2 focus-visible:ring-forest ${
                 isSelected
                   ? 'border-forest bg-mint/50 shadow-xl shadow-forest/15 ring-2 ring-forest/20'
                   : 'border-gray-100 bg-white hover:border-forest/30 shadow-card'

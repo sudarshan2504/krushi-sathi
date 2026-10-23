@@ -5,12 +5,15 @@ import { ArrowLeft, CheckCircle2, Circle, ArrowRight, Sprout, Calendar, Check } 
 import { api } from '../services/api';
 import { CropPlan } from '../types';
 import { useTranslation } from '../context/LanguageContext';
+import { useToast } from '../context/ToastContext';
 import { LoadingState } from '../components/ui/LoadingState';
+import { AnimatedCounter } from '../components/ui/AnimatedCounter';
 
 export const CropLifecyclePage: React.FC = () => {
   const navigate = useNavigate();
   const { planId, cropId } = useParams<{ planId?: string; cropId?: string }>();
   const { t, language } = useTranslation();
+  const { showToast } = useToast();
 
   const [plan, setPlan] = useState<CropPlan | null>(null);
   const [allPlans, setAllPlans] = useState<CropPlan[]>([]);
@@ -47,9 +50,11 @@ export const CropLifecyclePage: React.FC = () => {
       const res = await api.lifecycle.toggleTask(taskId, !currentStatus);
       if (res && res.plan) {
         setPlan(res.plan);
+        showToast(t('toastSuccess'), 'success');
       }
     } catch (err) {
       console.error('Failed to toggle task:', err);
+      showToast('Could not update task', 'error');
     }
   };
 
@@ -90,10 +95,12 @@ export const CropLifecyclePage: React.FC = () => {
       {/* Top Header */}
       <div className="flex items-center justify-between mb-1">
         <button
+          type="button"
           onClick={() => navigate('/home')}
-          className="p-2 rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50"
+          className="min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl bg-white border border-gray-200 text-dark-text hover:bg-gray-50 active:scale-95 transition cursor-pointer"
+          aria-label={t('navBack')}
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
 
         <div className="text-center">
@@ -105,7 +112,7 @@ export const CropLifecyclePage: React.FC = () => {
           </span>
         </div>
 
-        <div className="w-8" />
+        <div className="w-12" />
       </div>
 
       {/* Crop Progress Banner */}
@@ -113,7 +120,9 @@ export const CropLifecyclePage: React.FC = () => {
         <div>
           <span className="text-xs font-bold text-dark-muted block">Overall Completion</span>
           <div className="flex items-baseline gap-2 mt-0.5">
-            <span className="text-2xl font-black text-forest">{plan.progressPercentage}%</span>
+            <span className="text-2xl font-black text-forest">
+              <AnimatedCounter value={plan.progressPercentage} suffix="%" />
+            </span>
             <span className="text-xs text-dark-muted">
               ({plan.completedTasks} of {plan.totalTasks} tasks done)
             </span>

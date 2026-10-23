@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   ArrowLeft,
   Check,
@@ -24,6 +24,7 @@ export const CropRecommendationsPage: React.FC = () => {
   const location = useLocation();
   const { user } = useAuth();
   const { t, language } = useTranslation();
+  const shouldReduceMotion = useReducedMotion();
 
   const stateData = location.state as
     | { recommendations?: RecommendationResult[]; assessment?: any }
@@ -117,10 +118,10 @@ export const CropRecommendationsPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/home')}
-            className="p-2 rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 transition"
+            className="min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-forest transition"
             aria-label="Back to home"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
             <h1 className="text-xl font-black text-dark-text leading-tight">
@@ -136,9 +137,9 @@ export const CropRecommendationsPage: React.FC = () => {
 
         <button
           onClick={() => navigate('/soil')}
-          className="py-1.5 px-3 rounded-full bg-forest text-white text-xs font-bold hover:bg-forest-dark transition flex items-center gap-1 shadow-sm flex-shrink-0"
+          className="min-h-[48px] py-2 px-3.5 rounded-full bg-forest text-white text-xs font-bold hover:bg-forest-dark focus-visible:ring-2 focus-visible:ring-forest transition flex items-center gap-1.5 shadow-sm flex-shrink-0"
         >
-          <PlusCircle className="w-3.5 h-3.5" />
+          <PlusCircle className="w-4 h-4" />
           <span className="hidden sm:inline">New Assessment</span>
         </button>
       </div>
@@ -212,10 +213,10 @@ export const CropRecommendationsPage: React.FC = () => {
             return (
               <motion.div
                 key={crop.cropId || idx}
-                initial={{ opacity: 0, y: 15 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.08, duration: 0.4 }}
-                whileHover={{ y: -3 }}
+                transition={{ delay: shouldReduceMotion ? 0 : idx * 0.04, duration: 0.3 }}
+                whileHover={shouldReduceMotion ? undefined : { y: -2 }}
                 whileTap={{ scale: 0.98 }}
                 className={`p-5 rounded-3xl bg-white border-2 shadow-card hover:shadow-card-hover transition-all ${
                   isBestMatch
@@ -326,10 +327,10 @@ export const CropRecommendationsPage: React.FC = () => {
                     onClick={() =>
                       navigate(`/crops/${crop.cropId}`, { state: { crop } })
                     }
-                    className="py-2 px-4 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition-colors flex items-center gap-1.5 shadow-sm"
+                    className="min-h-[48px] py-2.5 px-4 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark focus-visible:ring-2 focus-visible:ring-forest transition-colors flex items-center gap-1.5 shadow-sm"
                   >
                     <span>{t('viewDetails') || 'View Details'}</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </motion.div>

@@ -24,10 +24,10 @@ export const LoginPage: React.FC = () => {
           />
         </Link>
 
-        <h2 className="text-xl font-bold text-dark-text mt-3">
+        <h2 className="text-xl sm:text-2xl font-black text-dark-text mt-3">
           {t('welcomeBack') || 'Welcome Back!'}
         </h2>
-        <p className="text-xs text-dark-muted">
+        <p className="text-sm text-dark-muted mt-1 leading-snug">
           {t('loginToAccount') || 'Sign in to access your crop advisories and farm data'}
         </p>
       </motion.div>
@@ -43,9 +43,9 @@ export const LoginPage: React.FC = () => {
       </motion.div>
 
       {/* Footer Navigation to Sign Up */}
-      <div className="text-center pb-4 text-xs">
-        <span className="text-dark-muted">{t('dontHaveAccount') || "Don't have an account?"} </span>
-        <Link to="/register" className="text-forest font-bold underline ml-1">
+      <div className="text-center pb-4 text-sm flex items-center justify-center min-h-[48px]">
+        <span className="text-dark-muted font-medium">{t('dontHaveAccount') || "Don't have an account?"} </span>
+        <Link to="/register" className="text-forest font-bold underline ml-1.5 p-2 min-h-[48px] inline-flex items-center">
           {t('signUp') || 'Register Farmer'}
         </Link>
       </div>

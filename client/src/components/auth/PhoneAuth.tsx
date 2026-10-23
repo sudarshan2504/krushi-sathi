@@ -5,11 +5,13 @@ import { Phone, ShieldCheck, ArrowRight, RotateCcw, AlertCircle, CheckCircle2, L
 import {
   RecaptchaVerifier,
   signInWithPhoneNumber,
+  signOut,
   ConfirmationResult,
 } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from '../../firebase';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../context/LanguageContext';
+import { api } from '../../services/api';
 import { Button } from '../ui/Button';
 
 // Extend window object for RecaptchaVerifier
@@ -32,7 +34,10 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
   const [step, setStep] = useState<'phone' | 'otp'>('phone');
   const [countryCode, setCountryCode] = useState('+91');
   const [phone, setPhone] = useState('');
-  const [otp, setOtp] = useState('');
+  const [otpDigits, setOtpDigits] = useState<string[]>(['', '', '', '', '', '']);
+  const [isShaking, setIsShaking] = useState(false);
+  const [isVerifiedSuccess, setIsVerifiedSuccess] = useState(false);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Confirmation result from signInWithPhoneNumber
   const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
@@ -125,8 +130,10 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
         return 'Wrong OTP code. Please check the 6-digit code and try again.';
       case 'auth/code-expired':
         return 'The OTP has expired. Please tap "Resend OTP" to get a new code.';
+      case 'auth/billing-not-enabled':
+        return 'Real SMS requires Firebase Blaze (pay-as-you-go) plan. Please enable billing in your Firebase Console or use test phone numbers configured under Authentication > Sign-in method.';
       case 'auth/too-many-requests':
-        return 'Too many attempts from this device. Please wait a few minutes before trying again.';
+        return 'Too many SMS requests from this phone number or IP. Please wait a few minutes before trying again.';
       case 'auth/captcha-check-failed':
         return 'reCAPTCHA verification failed. Please refresh and try again.';
       case 'auth/quota-exceeded':
@@ -138,6 +145,50 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
       default:
         return err?.message || 'Authentication error. Please try again.';
     }
+  };
+
+  const handleOtpChange = (index: number, value: string) => {
+    const digit = value.replace(/\D/g, '').slice(-1);
+    const newDigits = [...otpDigits];
+    newDigits[index] = digit;
+    setOtpDigits(newDigits);
+
+    if (digit && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace') {
+      if (!otpDigits[index] && index > 0) {
+        e.preventDefault();
+        const newDigits = [...otpDigits];
+        newDigits[index - 1] = '';
+        setOtpDigits(newDigits);
+        inputRefs.current[index - 1]?.focus();
+      } else if (otpDigits[index]) {
+        const newDigits = [...otpDigits];
+        newDigits[index] = '';
+        setOtpDigits(newDigits);
+      }
+    } else if (e.key === 'ArrowLeft' && index > 0) {
+      inputRefs.current[index - 1]?.focus();
+    } else if (e.key === 'ArrowRight' && index < 5) {
+      inputRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (!pasted) return;
+    const newDigits = ['', '', '', '', '', ''];
+    for (let i = 0; i < 6; i++) {
+      newDigits[i] = pasted[i] || '';
+    }
+    setOtpDigits(newDigits);
+    const focusIdx = Math.min(pasted.length, 5);
+    inputRefs.current[focusIdx]?.focus();
   };
 
   // Step 1: Send OTP via Firebase signInWithPhoneNumber
@@ -163,6 +214,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
       );
       // Still allow step progression for quick testing if user desires
       setStep('otp');
+      setOtpDigits(['', '', '', '', '', '']);
       setCountdown(30);
       return;
     }
@@ -172,7 +224,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
       const confirmation = await signInWithPhoneNumber(auth, fullPhoneNumber, appVerifier);
       setConfirmationResult(confirmation);
       setStep('otp');
-      setOtp('');
+      setOtpDigits(['', '', '', '', '', '']);
       setCountdown(30);
       setSuccessInfo(`OTP sent successfully to ${fullPhoneNumber}`);
     } catch (err: any) {
@@ -192,10 +244,12 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
   // Step 2: Verify 6-digit OTP code
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
-    const cleanOtp = otp.trim().replace(/\D/g, '');
+    const cleanOtp = otpDigits.join('').trim().replace(/\D/g, '');
 
     if (!cleanOtp || cleanOtp.length < 6) {
-      setError('Please enter the 6-digit verification code');
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
+      setError(t('wrongOtp') || 'Please enter the 6-digit verification code');
       return;
     }
 
@@ -204,28 +258,48 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
 
     try {
       if (confirmationResult) {
-        // Firebase Auth Verification
+        // 1. Verify OTP with Firebase Web SDK
         const userCredential = await confirmationResult.confirm(cleanOtp);
         const fbUser = userCredential.user;
 
-        // Store user in app context
-        setFirebaseSession(fbUser);
+        // 2. Obtain verified Firebase ID token
+        const idToken = await fbUser.getIdToken();
 
-        // Attempt backend sync in parallel for database record
+        // 3. Send ID token to backend /api/auth/firebase-login
+        // DO NOT silently catch! If backend rejects, sign out of Firebase and display clear error
+        let loginResult;
         try {
-          const rawPhone = fbUser.phoneNumber || `${countryCode}${phone}`;
-          const cleanPhone = rawPhone.replace(/\D/g, '').slice(-10);
-          await login(cleanPhone, cleanOtp).catch(() => {});
-        } catch {
-          // Backend sync is best-effort for demo
+          loginResult = await api.auth.firebaseLogin(idToken);
+        } catch (serverErr: any) {
+          await signOut(auth).catch(() => {});
+          throw new Error(
+            serverErr?.message || 'Backend rejected Firebase authentication token. Please login again.'
+          );
         }
 
-        // Redirect to main/dashboard page
-        navigate(onSuccessRedirect, { replace: true });
+        // 4. Update AuthContext session with verified Prisma user
+        setFirebaseSession(fbUser, loginResult.user);
+
+        // 5. Success feedback before redirect
+        setIsVerifiedSuccess(true);
+        await new Promise((res) => setTimeout(res, 650));
+
+        // 6. Route: New users go to /register (with phone in state); existing users go to onSuccessRedirect
+        if (loginResult.isNewUser) {
+          const userPhone = loginResult.user.phone || phone.slice(-10);
+          navigate('/register', { state: { phone: userPhone } });
+        } else {
+          navigate(onSuccessRedirect, { replace: true });
+        }
       } else {
         // Fallback demo login when Firebase is unconfigured
         const cleanPhone = phone.trim().replace(/\D/g, '').slice(-10);
         const { isNewUser } = await login(cleanPhone, cleanOtp);
+
+        // Success feedback before redirect
+        setIsVerifiedSuccess(true);
+        await new Promise((res) => setTimeout(res, 650));
+
         if (isNewUser) {
           navigate('/register', { state: { phone: cleanPhone } });
         } else {
@@ -234,6 +308,8 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
       }
     } catch (err: any) {
       console.error('[PhoneAuth] Verify OTP error:', err);
+      setIsShaking(true);
+      setTimeout(() => setIsShaking(false), 500);
       setError(formatFirebaseError(err));
     } finally {
       setIsLoading(false);
@@ -242,7 +318,9 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
 
   const handleChangeNumber = () => {
     setStep('phone');
-    setOtp('');
+    setOtpDigits(['', '', '', '', '', '']);
+    setIsVerifiedSuccess(false);
+    setIsShaking(false);
     setError(null);
     setSuccessInfo(null);
     setCountdown(0);
@@ -357,78 +435,122 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
           <motion.form
             key="otp-step"
             initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
+            animate={
+              isShaking
+                ? { x: [-12, 12, -8, 8, -4, 4, 0] }
+                : { opacity: 1, x: 0 }
+            }
             exit={{ opacity: 0, x: -10 }}
+            transition={isShaking ? { duration: 0.5, ease: 'easeInOut' } : { duration: 0.2 }}
             onSubmit={handleVerifyOtp}
             className="space-y-4"
           >
-            <div>
-              <div className="flex items-center justify-between mb-1.5">
-                <label className="text-xs font-bold text-dark-text">
-                  6-Digit OTP for {formattedDisplayPhone}
-                </label>
-                <button
-                  type="button"
-                  onClick={handleChangeNumber}
-                  className="text-xs text-forest underline font-semibold hover:text-forest-dark transition"
+            {isVerifiedSuccess ? (
+              <motion.div
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                role="status"
+                aria-live="polite"
+                className="py-8 px-4 text-center space-y-3 bg-mint-light rounded-3xl border border-forest/20"
+              >
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: [0, 1.25, 1] }}
+                  transition={{ duration: 0.45, ease: 'easeOut' }}
+                  className="w-16 h-16 rounded-full bg-forest text-white flex items-center justify-center mx-auto shadow-xl shadow-forest/30"
                 >
-                  Change number
-                </button>
-              </div>
-
-              <div className="relative">
-                <input
-                  type="text"
-                  required
-                  autoFocus
-                  maxLength={6}
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
-                  placeholder="------"
-                  className="w-full py-3.5 px-4 text-center tracking-[0.45em] text-2xl font-extrabold rounded-2xl bg-white border-2 border-gray-100 focus:border-forest outline-none transition-all shadow-sm"
-                />
-              </div>
-
-              {/* Resend OTP Row with 30-Second Countdown */}
-              <div className="flex items-center justify-between mt-2.5 text-xs">
-                {/* Quick Fill for test phone numbers */}
-                <button
-                  type="button"
-                  onClick={() => setOtp('123456')}
-                  className="text-xs text-forest font-semibold hover:underline"
-                >
-                  Fill test code (123456)
-                </button>
-
-                {countdown > 0 ? (
-                  <span className="text-dark-muted font-medium flex items-center gap-1">
-                    <RotateCcw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} />
-                    <span>Resend OTP in <strong className="text-forest font-bold">{countdown}s</strong></span>
-                  </span>
-                ) : (
+                  <CheckCircle2 className="w-10 h-10 stroke-[2.5]" />
+                </motion.div>
+                <h3 className="text-base font-black text-forest">
+                  {t('verifiedSuccess')}
+                </h3>
+              </motion.div>
+            ) : (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-dark-text">
+                    6-Digit OTP for {formattedDisplayPhone}
+                  </label>
                   <button
                     type="button"
-                    onClick={handleResendOtp}
-                    disabled={isLoading}
-                    className="text-forest font-bold hover:underline flex items-center gap-1 disabled:opacity-50"
+                    onClick={handleChangeNumber}
+                    className="text-xs text-forest underline font-bold hover:text-forest-dark transition"
                   >
-                    <RotateCcw className="w-3.5 h-3.5" />
-                    <span>Resend OTP</span>
+                    Change number
                   </button>
-                )}
-              </div>
-            </div>
+                </div>
 
-            <Button
-              type="submit"
-              size="lg"
-              fullWidth
-              isLoading={isLoading}
-              className="shadow-xl shadow-forest/20 mt-2 flex items-center justify-center gap-2"
-            >
-              <span>{isLoading ? 'Verifying OTP...' : 'Verify & Continue'}</span>
-              {!isLoading && <ArrowRight className="w-4 h-4 ml-1" />}
-            </Button>
+                {/* 6 Separate OTP Boxes */}
+                <div
+                  role="group"
+                  aria-label="6-Digit Verification Code"
+                  className="grid grid-cols-6 gap-2 sm:gap-2.5 my-3"
+                >
+                  {otpDigits.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={(el) => (inputRefs.current[idx] = el)}
+                      type="text"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      maxLength={1}
+                      autoComplete={idx === 0 ? 'one-time-code' : 'off'}
+                      aria-label={t('otpBoxLabel', { digit: idx + 1 })}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleOtpKeyDown(idx, e)}
+                      onPaste={handleOtpPaste}
+                      className="w-full h-14 sm:h-16 text-center text-xl sm:text-2xl font-black rounded-2xl bg-white border-2 border-gray-200 focus:border-forest focus:ring-2 focus:ring-forest/20 outline-none transition-all shadow-sm select-none"
+                    />
+                  ))}
+                </div>
+
+                {/* Resend OTP Row with 30-Second Countdown */}
+                <div className="flex items-center justify-between mt-3 text-xs">
+                  {/* Quick Fill for test phone numbers */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setOtpDigits(['1', '2', '3', '4', '5', '6']);
+                      inputRefs.current[5]?.focus();
+                    }}
+                    className="text-xs text-forest font-bold hover:underline"
+                  >
+                    Fill test code (123456)
+                  </button>
+
+                  {countdown > 0 ? (
+                    <span className="text-dark-muted font-medium flex items-center gap-1">
+                      <RotateCcw className="w-3.5 h-3.5 animate-spin" style={{ animationDuration: '3s' }} />
+                      <span>Resend OTP in <strong className="text-forest font-bold">{countdown}s</strong></span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={handleResendOtp}
+                      disabled={isLoading}
+                      className="text-forest font-bold hover:underline flex items-center gap-1 disabled:opacity-50"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>Resend OTP</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {!isVerifiedSuccess && (
+              <Button
+                type="submit"
+                size="lg"
+                fullWidth
+                isLoading={isLoading}
+                className="shadow-xl shadow-forest/20 mt-2 flex items-center justify-center gap-2"
+              >
+                <span>{isLoading ? 'Verifying OTP...' : 'Verify & Continue'}</span>
+                {!isLoading && <ArrowRight className="w-4 h-4 ml-1" />}
+              </Button>
+            )}
           </motion.form>
         )}
       </AnimatePresence>

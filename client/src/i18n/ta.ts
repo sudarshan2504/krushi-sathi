@@ -181,4 +181,18 @@ export const ta = {
   completedTasksCount: 'முடிக்கப்பட்ட பணிகள்',
   activePlansCount: 'நடப்பு பயிர்கள்',
   assessmentsCount: 'மண் பரிசோதனைகள்',
+
+  // Network & System Feedback
+  offlineBannerTitle: 'இணைய இணைப்பு இல்லை',
+  offlineBannerMessage: 'நீங்கள் ஆஃப்லைனில் உள்ளீர்கள். சேமிக்கப்பட்ட உள்ளூர் விவசாய தகவல்கள் காண்பிக்கப்படுகின்றன.',
+  onlineRestored: 'மீண்டும் ஆன்லைனில் இணைக்கப்பட்டது! நேரலை தகவல்கள் புதுப்பிக்கப்பட்டன.',
+  retryAction: 'மீண்டும் முயற்சிக்கவும்',
+  loadingData: 'ஏற்றுகிறது...',
+  otpBoxLabel: 'சரிபார்ப்புக் குறியீட்டின் எண் {digit}',
+  verifiedSuccess: 'சரிபார்ப்பு வெற்றிகரமாக முடிந்தது! உங்கள் பண்ணைக்கு வரவேற்கிறோம்.',
+  wrongOtp: 'தவறான குறியீடு. மீண்டும் முயற்சிக்கவும்.',
+  toastSuccess: 'செயல் வெற்றிகரமாக முடிந்தது',
+  toastSaved: 'மாற்றங்கள் வெற்றிகரமாக சேமிக்கப்பட்டன',
+  closeAlert: 'மூடுக',
 };
+

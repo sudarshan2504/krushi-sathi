@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
+import { useToast } from '../context/ToastContext';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { api } from '../services/api';
 import {
@@ -29,6 +30,7 @@ import {
 export const ProfilePage: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
   const { currentLanguageOption, language, t } = useTranslation();
+  const { showToast } = useToast();
   const navigate = useNavigate();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -42,13 +44,7 @@ export const ProfilePage: React.FC = () => {
 
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-
-  const showToast = (msg: string) => {
-    setToastMessage(msg);
-    setTimeout(() => setToastMessage(null), 3500);
-  };
 
   const handleLogout = async () => {
     await logout();
@@ -125,7 +121,7 @@ export const ProfilePage: React.FC = () => {
       });
       updateUser(updated);
       setIsEditing(false);
-      showToast('Profile details updated successfully!');
+      showToast(t('toastSaved'), 'success');
     } catch (err: any) {
       setErrorMessage(err.message || 'Failed to update profile');
     } finally {
@@ -137,18 +133,6 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4 py-2">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0 }}
-          className="p-3 rounded-2xl bg-forest text-white text-xs font-bold flex items-center gap-2 shadow-lg"
-        >
-          <Check className="w-4 h-4 text-mint flex-shrink-0" />
-          <span>{toastMessage}</span>
-        </motion.div>
-      )}
 
       {/* Error Message */}
       {errorMessage && (

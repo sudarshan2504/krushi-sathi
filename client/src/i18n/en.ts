@@ -181,4 +181,17 @@ export const en = {
   completedTasksCount: 'Tasks Completed',
   activePlansCount: 'Active Crop Plans',
   assessmentsCount: 'Soil Assessments',
+
+  // Network & System Feedback
+  offlineBannerTitle: 'No Internet Connection',
+  offlineBannerMessage: 'You are offline. Showing cached local agricultural data.',
+  onlineRestored: 'Back Online! Live data restored.',
+  retryAction: 'Try Again',
+  loadingData: 'Loading...',
+  otpBoxLabel: 'Digit {digit} of verification code',
+  verifiedSuccess: 'Code verified successfully! Welcome to your farm.',
+  wrongOtp: 'Incorrect code. Please try again.',
+  toastSuccess: 'Action completed successfully',
+  toastSaved: 'Changes saved successfully',
+  closeAlert: 'Dismiss',
 };

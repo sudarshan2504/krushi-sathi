@@ -1,12 +1,24 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useReducedMotion } from 'framer-motion';
 
+const isLowEndDevice = (): boolean => {
+  if (typeof navigator === 'undefined') return false;
+  const concurrency = navigator.hardwareConcurrency ?? 8;
+  const memory = (navigator as unknown as { deviceMemory?: number }).deviceMemory ?? 8;
+  return concurrency <= 4 || memory <= 4;
+};
+
 export const FarmingScene3D: React.FC = () => {
   const shouldReduceMotion = useReducedMotion();
+  const [isLowEnd, setIsLowEnd] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
   useEffect(() => {
-    if (shouldReduceMotion) return;
+    setIsLowEnd(isLowEndDevice());
+  }, []);
+
+  useEffect(() => {
+    if (shouldReduceMotion || isLowEnd) return;
 
     const handleMouseMove = (e: MouseEvent) => {
       const { innerWidth, innerHeight } = window;
@@ -17,7 +29,27 @@ export const FarmingScene3D: React.FC = () => {
 
     window.addEventListener('mousemove', handleMouseMove);
     return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, [shouldReduceMotion]);
+  }, [shouldReduceMotion, isLowEnd]);
+
+  // Lightweight fallback for low-end Android devices
+  if (isLowEnd) {
+    return (
+      <div
+        className="relative w-56 h-56 sm:w-64 sm:h-64 rounded-full bg-gradient-to-tr from-mint-light via-cream to-emerald-50 border-4 border-white shadow-xl shadow-forest/15 flex items-center justify-center select-none"
+        role="img"
+        aria-label="Farm scene showing sprouting seedling and fertile soil"
+      >
+        <div className="text-center space-y-2">
+          <div className="w-24 h-24 rounded-full bg-mint/80 border border-forest/20 flex items-center justify-center mx-auto shadow-inner">
+            <span className="text-5xl" role="presentation">🌱</span>
+          </div>
+          <span className="text-xs font-bold text-forest block tracking-wide">
+            Krushi Sathi
+          </span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div

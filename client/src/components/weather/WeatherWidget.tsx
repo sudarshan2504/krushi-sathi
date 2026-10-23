@@ -5,6 +5,8 @@ import { api } from '../../services/api';
 import { WeatherData } from '../../types';
 import { useTranslation } from '../../context/LanguageContext';
 import { Modal } from '../ui/Modal';
+import { AnimatedCounter } from '../ui/AnimatedCounter';
+import { LoadingState } from '../ui/LoadingState';
 
 export interface WeatherWidgetProps {
   initialDistrict?: string;
@@ -69,29 +71,36 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
     return weather.farmingAlert;
   };
 
+  if (isLoading && !weather) {
+    return <LoadingState type="weather" />;
+  }
+
   return (
     <div className="w-full">
       {/* Top Location Bar */}
       <div className="flex items-center justify-between mb-2 px-1">
         <button
+          type="button"
           onClick={() => setIsLocationModalOpen(true)}
-          className="flex items-center gap-1.5 text-xs font-semibold text-dark-text hover:text-forest transition-colors group"
+          className="min-h-[44px] flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-dark-text hover:text-forest transition-colors group cursor-pointer"
         >
-          <MapPin className="w-3.5 h-3.5 text-forest group-hover:scale-110 transition-transform" />
+          <MapPin className="w-4 h-4 text-forest group-hover:scale-110 transition-transform" />
           <span>{weather ? weather.location : `${district}, Karnataka`}</span>
-          <span className="text-[10px] text-forest underline ml-1">Change</span>
+          <span className="text-xs text-forest underline ml-1 font-bold">Change</span>
         </button>
 
         <div className="flex items-center gap-1.5">
-          <span className="text-[11px] text-dark-muted">
+          <span className="text-[11px] text-dark-muted font-medium">
             {weather?.lastUpdated || t('updatedJustNow')}
           </span>
           <button
+            type="button"
             onClick={() => loadWeather(district)}
-            className="p-1 rounded-full text-dark-muted hover:text-forest transition-transform active:rotate-180"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-full text-dark-muted hover:text-forest transition-transform active:rotate-180 cursor-pointer"
             title="Refresh weather"
+            aria-label="Refresh live weather"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin text-forest' : ''}`} />
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-forest' : ''}`} />
           </button>
         </div>
       </div>
@@ -108,16 +117,16 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
         {/* Current Temp and Conditions */}
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-3">
-            <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-forest/10 flex items-center justify-center">
+            <div className="w-14 h-14 rounded-2xl bg-white shadow-sm border border-forest/10 flex items-center justify-center shrink-0">
               <CloudSun className="w-9 h-9 text-harvest" />
             </div>
             <div>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold text-dark-text">
-                  {weather ? `${weather.temperature}°C` : '28°C'}
+                <span className="text-3xl sm:text-4xl font-extrabold text-dark-text">
+                  <AnimatedCounter value={weather?.temperature ?? 28} suffix="°C" />
                 </span>
               </div>
-              <span className="text-xs font-semibold text-dark-muted block">
+              <span className="text-xs sm:text-sm font-semibold text-dark-muted block">
                 {weather?.condition || t('partlyCloudy')}
               </span>
             </div>
@@ -125,30 +134,36 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
 
           {/* Quick Metrics */}
           <div className="text-right space-y-1">
-            <div className="flex items-center justify-end gap-1 text-xs text-dark-muted font-medium">
-              <Droplets className="w-3.5 h-3.5 text-blue-500" />
-              <span>{weather ? `${weather.humidity}%` : '68%'} Humidity</span>
+            <div className="flex items-center justify-end gap-1 text-xs sm:text-sm text-dark-muted font-medium">
+              <Droplets className="w-4 h-4 text-blue-500" />
+              <span>
+                <AnimatedCounter value={weather?.humidity ?? 68} suffix="%" /> Humidity
+              </span>
             </div>
-            <div className="flex items-center justify-end gap-1 text-xs text-dark-muted font-medium">
-              <Wind className="w-3.5 h-3.5 text-forest" />
-              <span>{weather ? `${weather.windSpeedKmH} km/h` : '14 km/h'}</span>
+            <div className="flex items-center justify-end gap-1 text-xs sm:text-sm text-dark-muted font-medium">
+              <Wind className="w-4 h-4 text-forest" />
+              <span>
+                <AnimatedCounter value={weather?.windSpeedKmH ?? 14} suffix=" km/h" />
+              </span>
             </div>
           </div>
         </div>
 
         {/* Week Summary Pills */}
-        <div className="grid grid-cols-3 gap-2 py-2 px-3 rounded-2xl bg-white/70 border border-forest/10 mb-4 text-center">
+        <div className="grid grid-cols-3 gap-2 py-2.5 px-3 rounded-2xl bg-white/70 border border-forest/10 mb-4 text-center">
           <div>
-            <span className="text-[10px] text-dark-muted block font-medium">{t('thisWeek')}</span>
-            <span className="text-xs font-bold text-dark-text">{weather?.weekRange || '25° - 31°'}</span>
+            <span className="text-[11px] text-dark-muted block font-medium">{t('thisWeek')}</span>
+            <span className="text-xs sm:text-sm font-bold text-dark-text">{weather?.weekRange || '25° - 31°'}</span>
           </div>
           <div className="border-x border-gray-100">
-            <span className="text-[10px] text-dark-muted block font-medium">{t('rainChance')}</span>
-            <span className="text-xs font-bold text-blue-600">{weather?.rainfallProbability || 40}%</span>
+            <span className="text-[11px] text-dark-muted block font-medium">{t('rainChance')}</span>
+            <span className="text-xs sm:text-sm font-bold text-blue-600">
+              <AnimatedCounter value={weather?.rainfallProbability ?? 40} suffix="%" />
+            </span>
           </div>
           <div>
-            <span className="text-[10px] text-dark-muted block font-medium">{t('nextWeek')}</span>
-            <span className="text-xs font-bold text-dark-text">{weather?.nextWeekRange || '22° - 30°'}</span>
+            <span className="text-[11px] text-dark-muted block font-medium">{t('nextWeek')}</span>
+            <span className="text-xs sm:text-sm font-bold text-dark-text">{weather?.nextWeekRange || '22° - 30°'}</span>
           </div>
         </div>
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { Outlet, useLocation, Link } from 'react-router-dom';
 import { Header } from './Header';
 import { BottomNav } from './BottomNav';
+import { OfflineBanner } from '../ui/OfflineBanner';
 import { Home, Sprout, Bot, User } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
 
@@ -14,6 +15,7 @@ export const Layout: React.FC = () => {
   if (isFullscreenRoute) {
     return (
       <main className="min-h-screen bg-cream-light text-dark-text flex flex-col">
+        <OfflineBanner />
         <Outlet />
       </main>
     );
@@ -21,6 +23,7 @@ export const Layout: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-cream-light text-dark-text flex flex-col selection:bg-mint selection:text-forest">
+      <OfflineBanner />
       <Header />
 
       {/* Desktop Navigation Bar */}

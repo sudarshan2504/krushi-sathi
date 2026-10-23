@@ -5,12 +5,14 @@ import { ArrowLeft, CheckCircle2, Circle, Wrench, Lightbulb, ArrowRight, Chevron
 import { api } from '../services/api';
 import { CropPlan, CropStageGroup } from '../types';
 import { useTranslation } from '../context/LanguageContext';
+import { useToast } from '../context/ToastContext';
 import { LoadingState } from '../components/ui/LoadingState';
 
 export const StageDetailPage: React.FC = () => {
   const navigate = useNavigate();
   const { planId, stageName } = useParams();
   const { t, language } = useTranslation();
+  const { showToast } = useToast();
 
   const [plan, setPlan] = useState<CropPlan | null>(null);
   const [currentStage, setCurrentStage] = useState<CropStageGroup | null>(null);
@@ -43,12 +45,16 @@ export const StageDetailPage: React.FC = () => {
 
   const handleToggleTask = async (taskId: string, currentStatus: boolean) => {
     try {
-      const res = await api.lifecycle.toggleTask(taskId, !currentStatus);
+      const nextStatus = !currentStatus;
+      const res = await api.lifecycle.toggleTask(taskId, nextStatus);
       if (res && res.plan) {
         setPlan(res.plan);
         if (res.plan.stages && res.plan.stages[currentStageIdx]) {
           setCurrentStage(res.plan.stages[currentStageIdx]);
         }
+      }
+      if (nextStatus) {
+        showToast(t('toastSuccess'), 'success');
       }
     } catch (err) {
       console.error('Toggle task error:', err);
@@ -115,9 +121,10 @@ export const StageDetailPage: React.FC = () => {
       <div className="flex items-center justify-between mb-2">
         <button
           onClick={() => navigate(`/crops/lifecycle/${planId}`)}
-          className="p-2 rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50"
+          className="min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-forest transition"
+          aria-label="Back to crop plan"
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
 
         <div className="text-center">
@@ -129,7 +136,7 @@ export const StageDetailPage: React.FC = () => {
           </h1>
         </div>
 
-        <div className="w-8" />
+        <div className="w-12" />
       </div>
 
       {/* Stage Visual Card (Matching Screen 8 from reference image) */}
@@ -237,7 +244,7 @@ export const StageDetailPage: React.FC = () => {
           <button
             onClick={() => goToStage(currentStageIdx - 1)}
             disabled={!hasPrev}
-            className={`py-2.5 px-4 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
+            className={`min-h-[48px] py-2.5 px-4 rounded-2xl text-xs font-bold flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-forest transition-colors ${
               hasPrev ? 'bg-white border border-gray-200 text-dark-text hover:bg-gray-100' : 'opacity-40 cursor-not-allowed text-gray-400'
             }`}
           >
@@ -248,7 +255,7 @@ export const StageDetailPage: React.FC = () => {
           <button
             onClick={() => goToStage(currentStageIdx + 1)}
             disabled={!hasNext}
-            className={`py-2.5 px-5 rounded-2xl text-xs font-bold flex items-center gap-1.5 transition-colors ${
+            className={`min-h-[48px] py-2.5 px-5 rounded-2xl text-xs font-bold flex items-center gap-1.5 focus-visible:ring-2 focus-visible:ring-forest transition-colors ${
               hasNext ? 'bg-forest text-white hover:bg-forest-dark shadow-sm' : 'opacity-40 cursor-not-allowed bg-gray-200 text-gray-400'
             }`}
           >

@@ -181,4 +181,18 @@ export const kn = {
   completedTasksCount: 'ಮುಗಿಸಿದ ಕೆಲಸಗಳು',
   activePlansCount: 'ಪ್ರಸ್ತುತ ಬೆಳೆಗಳು',
   assessmentsCount: 'ಮಣ್ಣು ಪರೀಕ್ಷೆಗಳು',
+
+  // Network & System Feedback
+  offlineBannerTitle: 'ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕವಿಲ್ಲ',
+  offlineBannerMessage: 'ನೀವು ಆಫ್‌ಲೈನ್‌ನಲ್ಲಿದ್ದೀರಿ. ಸಂಗ್ರಹಿಸಿದ ಸ್ಥಳೀಯ ಕೃಷಿ ಮಾಹಿತಿಯನ್ನು ತೋರಿಸಲಾಗುತ್ತಿದೆ.',
+  onlineRestored: 'ಆನ್‌ಲೈನ್‌ಗೆ ಮರಳಿದೆ! ನೈಜ ಕೃಷಿ ಮಾಹಿತಿ ಲಭ್ಯವಿದೆ.',
+  retryAction: 'ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ',
+  loadingData: 'ಲೋಡ್ ಆಗುತ್ತಿದೆ...',
+  otpBoxLabel: 'ಪರಿಶೀಲನಾ ಕೋಡ್‌ನ ಅಂಕಿ {digit}',
+  verifiedSuccess: 'ಕೋಡ್ ಪರಿಶೀಲನೆ ಯಶಸ್ವಿಯಾಗಿದೆ! ನಿಮ್ಮ ಜಮೀನಿಗೆ ಸ್ವಾಗತ.',
+  wrongOtp: 'ತಪ್ಪಾದ ಕೋಡ್. ದಯವಿಟ್ಟು ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ.',
+  toastSuccess: 'ಕಾರ್ಯ ಯಶಸ್ವಿಯಾಗಿ ಪೂರ್ಣಗೊಂಡಿದೆ',
+  toastSaved: 'ಬದಲಾವಣೆಗಳನ್ನು ಯಶಸ್ವಿಯಾಗಿ ಉಳಿಸಲಾಗಿದೆ',
+  closeAlert: 'ಮುಚ್ಚಿ',
 };
+

@@ -39,6 +39,20 @@ export const api = {
       return data;
     },
 
+    async firebaseLogin(idToken: string) {
+      const res = await fetch(`${API_BASE}/auth/firebase-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ idToken }),
+      });
+      const data = await handleResponse<{ token: string; user: User; isNewUser: boolean }>(res);
+      if (data.token) {
+        localStorage.setItem('krishi_sathi_token', data.token);
+      }
+      return data;
+    },
+
     async register(formData: {
       name: string;
       phone: string;
@@ -103,7 +117,10 @@ export const api = {
     async logout() {
       localStorage.removeItem('krishi_sathi_token');
       try {
-        await fetch(`${API_BASE}/auth/logout`, { method: 'POST' });
+        await fetch(`${API_BASE}/auth/logout`, {
+          method: 'POST',
+          credentials: 'include',
+        });
       } catch {
         // ignore
       }

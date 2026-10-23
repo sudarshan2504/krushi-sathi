@@ -496,9 +496,9 @@ export const ChatPage: React.FC = () => {
                     onClick={handleMicClick}
                     disabled={isPreparing || isUnderstanding}
                     aria-label={isListening ? 'Stop recording' : 'Start speaking'}
-                    className={`w-36 h-36 sm:w-40 sm:h-40 rounded-full shadow-xl shadow-green-950/20 flex items-center justify-center text-white cursor-pointer active:scale-95 hover:scale-105 transition-all duration-200 focus:outline-none ${
+                    className={`w-36 h-36 sm:w-40 sm:h-40 min-h-[48px] rounded-full shadow-xl shadow-green-950/20 flex items-center justify-center text-white cursor-pointer active:scale-95 hover:scale-105 transition-all duration-200 focus:outline-none ${
                       isListening
-                        ? 'bg-gradient-to-b from-red-500 to-rose-600 shadow-red-900/30 ring-4 ring-red-300/40'
+                        ? 'bg-gradient-to-b from-red-500 to-rose-600 shadow-red-900/30 ring-4 ring-red-300/40 animate-pulse'
                         : isSpeaking
                         ? 'bg-gradient-to-b from-[#1F8C4C] to-[#105C32] ring-4 ring-[#E6F4E8]'
                         : 'bg-gradient-to-b from-[#1F8C4C] via-[#176B3A] to-[#105C32]'
@@ -858,14 +858,18 @@ export const ChatPage: React.FC = () => {
                 startListening();
               }}
               title="Speak with Voice Assistant"
-              className="p-3 rounded-2xl bg-[#E6F4E8] text-[#176B3A] hover:bg-mint font-bold transition shadow-sm active:scale-95"
+              aria-label="Speak with Voice Assistant"
+              className={`p-3 min-w-[48px] min-h-[48px] rounded-2xl bg-[#E6F4E8] text-[#176B3A] hover:bg-mint font-bold transition shadow-sm active:scale-95 flex items-center justify-center cursor-pointer ${
+                isListening ? 'ring-2 ring-red-400 animate-pulse bg-red-50 text-red-600' : ''
+              }`}
             >
               <Mic className="w-5 h-5" />
             </button>
             <button
               type="submit"
               disabled={isLoading || !input.trim()}
-              className="bg-[#176B3A] hover:bg-[#105C32] text-white p-3 rounded-2xl font-bold flex items-center justify-center transition shadow-sm active:scale-95 disabled:opacity-40"
+              aria-label="Send message"
+              className="bg-[#176B3A] hover:bg-[#105C32] text-white p-3 min-w-[48px] min-h-[48px] rounded-2xl font-bold flex items-center justify-center transition shadow-sm active:scale-95 disabled:opacity-40 cursor-pointer"
             >
               <Send className="w-5 h-5" />
             </button>

@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import prisma from '../utils/prisma';
+import admin from '../utils/firebaseAdmin';
 
 interface OtpChallenge {
   phone: string;
@@ -36,7 +37,85 @@ export function cleanPhone(phone: string): string {
   return cleaned;
 }
 
+/**
+ * Real Firebase Phone Authentication Login
+ * - Accepts idToken
+ * - Verifies it using admin.auth().verifyIdToken()
+ * - Reads phone_number exclusively from the verified token
+ * - Normalizes with cleanPhone()
+ * - Finds or creates Prisma user
+ * - Issues existing JWT and returns { user, isNewUser, token }
+ */
+export async function verifyFirebaseLogin(idToken: string) {
+  if (!idToken || typeof idToken !== 'string') {
+    throw new Error('Firebase ID token is required');
+  }
+
+  // Verifies it with admin.auth().verifyIdToken
+  let decodedToken;
+  try {
+    decodedToken = await admin.auth().verifyIdToken(idToken);
+  } catch (err: any) {
+    throw new Error(err.message || 'Invalid or expired Firebase authentication token');
+  }
+
+  // Read phone_number from the VERIFIED token only (never from request body)
+  const verifiedPhone = decodedToken.phone_number;
+  if (!verifiedPhone) {
+    throw new Error('Firebase token does not contain a verified phone number');
+  }
+
+  // Normalize phone number with existing cleanPhone()
+  const phone = cleanPhone(verifiedPhone);
+  if (!isValidIndianPhone(phone)) {
+    throw new Error('Verified phone number must be a valid 10-digit Indian mobile number');
+  }
+
+  // Find or create the Prisma user
+  let user = await prisma.user.findUnique({
+    where: { phone },
+  });
+
+  const isNewUser = !user;
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        phone,
+        name: `Farmer ${phone.slice(-4)}`,
+        language: 'en',
+        state: 'Karnataka',
+        district: 'Mandya',
+        farmSize: 2.5,
+        farmUnit: 'Acres',
+      },
+    });
+  }
+
+  // Issue signed JWT token valid for 7 days
+  const token = jwt.sign(
+    {
+      userId: user.id,
+      phone: user.phone,
+      name: user.name,
+      language: user.language,
+    },
+    config.jwtSecret,
+    { expiresIn: '7d' }
+  );
+
+  return {
+    token,
+    user,
+    isNewUser,
+  };
+}
+
 export async function createOtpChallenge(rawPhone: string) {
+  if (!(config.nodeEnv === 'development' && config.demoOtpEnabled)) {
+    throw new Error('Demo OTP is disabled. Please use real Firebase Phone Authentication.');
+  }
+
   const phone = cleanPhone(rawPhone);
   if (!isValidIndianPhone(phone)) {
     throw new Error('Please enter a valid 10-digit Indian mobile number');
@@ -67,6 +146,10 @@ export async function createOtpChallenge(rawPhone: string) {
 }
 
 export async function verifyOtp(rawPhone: string, enteredOtp: string) {
+  if (!(config.nodeEnv === 'development' && config.demoOtpEnabled)) {
+    throw new Error('Demo OTP is disabled. Please use real Firebase Phone Authentication.');
+  }
+
   const phone = cleanPhone(rawPhone);
   if (!isValidIndianPhone(phone)) {
     throw new Error('Please enter a valid 10-digit Indian mobile number');

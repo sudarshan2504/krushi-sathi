@@ -6,6 +6,7 @@ import { api } from '../services/api';
 import { Disease } from '../types';
 import { useTranslation } from '../context/LanguageContext';
 import { Modal } from '../components/ui/Modal';
+import { LoadingState } from '../components/ui/LoadingState';
 
 export const DiseasePreventionPage: React.FC = () => {
   const navigate = useNavigate();
@@ -77,45 +78,58 @@ export const DiseasePreventionPage: React.FC = () => {
     );
   });
 
+  if (isLoading) {
+    return (
+      <div className="max-w-xl mx-auto py-4">
+        <LoadingState type="list" loadingText="Loading pest & disease database..." />
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-xl mx-auto space-y-4 py-2">
       {/* Top Header */}
       <div className="flex items-center justify-between mb-2">
         <button
+          type="button"
           onClick={() => navigate('/home')}
-          className="p-2 rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50"
+          className="min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl bg-white border border-gray-200 text-dark-text hover:bg-gray-50 active:scale-95 transition cursor-pointer"
+          aria-label={t('navBack')}
         >
-          <ArrowLeft className="w-4 h-4" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <h1 className="text-base font-extrabold text-dark-text">
+        <h1 className="text-base sm:text-lg font-black text-dark-text">
           {t('pestAndDiseases')}
         </h1>
 
-        <div className="w-8" />
+        <div className="w-12" />
       </div>
 
-      {/* Tabs */}
-      <div className="flex rounded-2xl bg-white p-1 border border-gray-100 shadow-sm text-xs font-bold">
+      {/* Tabs with accessible 48px touch target */}
+      <div className="flex rounded-2xl bg-white p-1.5 border border-gray-100 shadow-sm text-xs sm:text-sm font-bold gap-1">
         <button
+          type="button"
           onClick={() => setActiveTab('common')}
-          className={`flex-1 py-2.5 rounded-xl transition-all ${
+          className={`flex-1 min-h-[48px] py-2.5 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center ${
             activeTab === 'common' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
           }`}
         >
           {t('commonProblems')}
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('prevention')}
-          className={`flex-1 py-2.5 rounded-xl transition-all ${
+          className={`flex-1 min-h-[48px] py-2.5 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center ${
             activeTab === 'prevention' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
           }`}
         >
           {t('prevention')}
         </button>
         <button
+          type="button"
           onClick={() => setActiveTab('checker')}
-          className={`flex-1 py-2.5 rounded-xl transition-all ${
+          className={`flex-1 min-h-[48px] py-2.5 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center ${
             activeTab === 'checker' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
           }`}
         >
@@ -128,23 +142,27 @@ export const DiseasePreventionPage: React.FC = () => {
         <div className="space-y-3">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3.5 top-3 w-4 h-4 text-forest" />
+            <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-forest" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search pest by name or symptom..."
-              className="w-full pl-10 pr-4 py-2.5 rounded-2xl bg-white border border-gray-200 text-xs font-semibold focus:border-forest outline-none shadow-sm"
+              aria-label="Search pest by name or symptom"
+              className="w-full pl-10 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 text-xs sm:text-sm font-semibold focus:border-forest outline-none shadow-sm"
             />
           </div>
 
-          {/* Cards List (Matching Screen 9) */}
+          {/* Cards List with light 35ms stagger */}
           <div className="space-y-3">
-            {filteredDiseases.map((d) => (
+            {filteredDiseases.map((d, idx) => (
               <motion.div
                 key={d.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.035, duration: 0.2 }}
                 whileHover={{ y: -2 }}
-                className="p-4 rounded-3xl bg-white border border-gray-100 shadow-card hover:border-forest/30 transition-all"
+                className="p-4 rounded-3xl bg-white border border-gray-100 shadow-card hover:border-forest/30 transition-all cursor-pointer"
               >
                 <div className="flex items-start gap-3.5">
                   <div className="w-16 h-16 rounded-2xl overflow-hidden bg-mint flex-shrink-0 border border-forest/15">

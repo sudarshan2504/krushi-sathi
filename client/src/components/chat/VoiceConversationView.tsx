@@ -354,23 +354,33 @@ export const VoiceConversationView: React.FC<VoiceConversationViewProps> = ({
             />
           )}
 
+          {/* Animated Breathing Pulse Ring when listening */}
+          {isListening && (
+            <motion.div
+              animate={{ scale: [1, 1.25, 1], opacity: [0.55, 0, 0.55] }}
+              transition={{ repeat: Infinity, duration: 1.8, ease: 'easeInOut' }}
+              className="absolute -inset-3 rounded-full bg-red-400/35 pointer-events-none"
+            />
+          )}
+
           {/* Central Microphone Button */}
           <button
             type="button"
             onClick={handleMicClick}
             disabled={isPreparing || isUnderstanding}
-            className={`relative z-10 w-28 h-28 md:w-32 md:h-32 rounded-full flex flex-col items-center justify-center text-white shadow-xl transition-all duration-300 active:scale-95 ${
-              isListening
-                ? 'bg-gradient-to-tr from-red-600 to-rose-500 ring-8 ring-red-100 shadow-red-200'
-                : isSpeaking
-                ? 'bg-gradient-to-tr from-forest to-emerald-500 ring-8 ring-emerald-100 shadow-emerald-200'
-                : isPreparing || isUnderstanding
-                ? 'bg-gradient-to-tr from-purple-600 to-indigo-500 ring-8 ring-purple-100 shadow-purple-200 cursor-wait'
-                : isError
-                ? 'bg-gradient-to-tr from-amber-600 to-red-500 ring-8 ring-red-100 shadow-red-200'
-                : 'bg-gradient-to-tr from-forest to-forest-dark ring-8 ring-mint shadow-forest/20 hover:scale-105'
-            }`}
-          >
+            aria-label={isListening ? 'Stop listening' : 'Start speaking with assistant'}
+            className={`relative z-10 w-28 h-28 md:w-32 md:h-32 min-h-[48px] rounded-full flex flex-col items-center justify-center text-white shadow-xl transition-all duration-300 active:scale-95 cursor-pointer ${
+                isListening
+                  ? 'bg-gradient-to-tr from-red-600 to-rose-500 ring-8 ring-red-100 shadow-red-200'
+                  : isSpeaking
+                  ? 'bg-gradient-to-tr from-forest to-emerald-500 ring-8 ring-emerald-100 shadow-emerald-200'
+                  : isPreparing || isUnderstanding
+                  ? 'bg-gradient-to-tr from-purple-600 to-indigo-500 ring-8 ring-purple-100 shadow-purple-200 cursor-wait'
+                  : isError
+                  ? 'bg-gradient-to-tr from-amber-600 to-red-500 ring-8 ring-red-100 shadow-red-200'
+                  : 'bg-gradient-to-tr from-forest to-forest-dark ring-8 ring-mint shadow-forest/20 hover:scale-105'
+              }`}
+            >
             {isListening ? (
               <Mic className="w-10 h-10 md:w-12 md:h-12 animate-pulse" />
             ) : isSpeaking ? (

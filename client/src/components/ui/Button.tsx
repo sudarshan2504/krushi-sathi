@@ -21,19 +21,19 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-2xl transition-all duration-200 select-none focus:outline-none focus:ring-2 focus:ring-forest/30 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none';
+  const baseStyles = 'inline-flex items-center justify-center font-semibold rounded-2xl transition-all duration-200 select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-2 active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none cursor-pointer';
 
   const variants = {
     primary: 'bg-forest hover:bg-forest-dark text-white shadow-md shadow-forest/20',
-    secondary: 'bg-mint text-forest hover:bg-mint-dark border border-forest/10',
+    secondary: 'bg-mint text-forest hover:bg-mint-dark border border-forest/15',
     outline: 'border-2 border-forest text-forest hover:bg-forest/5',
     ghost: 'text-forest hover:bg-forest/5',
     harvest: 'bg-harvest hover:bg-harvest-dark text-dark-text shadow-md shadow-harvest/20 font-bold',
   };
 
   const sizes = {
-    sm: 'text-sm py-2 px-3.5 gap-1.5',
-    md: 'text-base py-3 px-5 gap-2',
+    sm: 'text-sm py-2.5 px-4 gap-1.5 min-h-[48px]',
+    md: 'text-base py-3 px-5 gap-2 min-h-[48px]',
     lg: 'text-lg py-3.5 px-6 gap-2.5 rounded-3xl min-h-[52px]',
   };
 
@@ -42,6 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
       whileTap={{ scale: disabled || isLoading ? 1 : 0.98 }}
       className={`${baseStyles} ${variants[variant]} ${sizes[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
       disabled={disabled || isLoading}
+      aria-busy={isLoading}
       {...props}
     >
       {isLoading ? (

@@ -181,4 +181,18 @@ export const te = {
   completedTasksCount: 'పూర్తయిన పనులు',
   activePlansCount: 'ప్రస్తుత పంటలు',
   assessmentsCount: 'నేల పరీక్షలు',
+
+  // Network & System Feedback
+  offlineBannerTitle: 'ఇంటర్నెట్ కనెక్షన్ లేదు',
+  offlineBannerMessage: 'మీరు ఆఫ్‌లైన్‌లో ఉన్నారు. కాష్ చేయబడిన స్థానిక వ్యవసాయ సమాచారం చూపబడుతోంది.',
+  onlineRestored: 'తిరిగి ఆన్‌లైన్‌లోకి వచ్చారు! ప్రత్యక్ష డేటా పునరుద్ధరించబడింది.',
+  retryAction: 'మళ్లీ ప్రయత్నించండి',
+  loadingData: 'లోడ్ అవుతోంది...',
+  otpBoxLabel: 'ధృవీకరణ కోడ్ అంకె {digit}',
+  verifiedSuccess: 'కోడ్ విజయవంతంగా ధృవీకరించబడింది! మీ పొలానికి స్వాగతం.',
+  wrongOtp: 'తప్పు కోడ్. దయచేసి మళ్లీ ప్రయత్నించండి.',
+  toastSuccess: 'చర్య విజయవంతంగా పూర్తయింది',
+  toastSaved: 'మార్పులు విజయవంతంగా భద్రపరచబడ్డాయి',
+  closeAlert: 'మూసివేయి',
 };
+

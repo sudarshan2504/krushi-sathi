@@ -1,14 +1,78 @@
 import { Router, Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
-import { createOtpChallenge, verifyOtp, registerFarmer } from '../services/authService';
+import {
+  createOtpChallenge,
+  verifyOtp,
+  registerFarmer,
+  verifyFirebaseLogin,
+} from '../services/authService';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { authRateLimiter } from '../middleware/rateLimiter';
+import { config } from '../config';
 import prisma from '../utils/prisma';
 
 const router = Router();
 
-// Send OTP
+// Apply simple rate limiting (10 requests per minute per IP) to all /api/auth routes
+router.use(authRateLimiter);
+
+/**
+ * POST /api/auth/firebase-login
+ * - Accepts { idToken }
+ * - Verifies it with admin.auth().verifyIdToken
+ * - Reads phone_number exclusively from the VERIFIED token
+ * - Normalizes with cleanPhone() and finds or creates the Prisma user
+ * - Issues JWT in httpOnly cookie and returns { user, isNewUser }
+ * - Returns clear 401 if token is invalid or has no phone number
+ */
+router.post('/firebase-login', async (req: Request, res: Response) => {
+  try {
+    const { idToken } = req.body;
+    if (!idToken || typeof idToken !== 'string') {
+      return res.status(401).json({
+        success: false,
+        message: 'Firebase ID token is required. Please sign in via Firebase phone authentication.',
+      });
+    }
+
+    const result = await verifyFirebaseLogin(idToken);
+
+    // Set HTTP-only cookie for secure browser session
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      sameSite: 'lax',
+    });
+
+    res.json({
+      success: true,
+      data: {
+        token: result.token,
+        user: result.user,
+        isNewUser: result.isNewUser,
+      },
+      message: result.isNewUser ? 'New user registered via Firebase' : 'Login successful',
+    });
+  } catch (err: any) {
+    console.error('[auth/firebase-login] Verification failed:', err.message);
+    res.status(401).json({
+      success: false,
+      message: err.message || 'Firebase authentication failed. Invalid or expired token.',
+    });
+  }
+});
+
+// Send OTP (Demo Path — Disabled unless NODE_ENV === 'development' AND DEMO_OTP_ENABLED === 'true')
 router.post('/send-otp', async (req: Request, res: Response) => {
+  if (!(config.nodeEnv === 'development' && config.demoOtpEnabled)) {
+    return res.status(404).json({
+      success: false,
+      message: 'Demo OTP is disabled. Please use real Firebase Phone Authentication via /api/auth/firebase-login',
+    });
+  }
+
   try {
     const { phone } = req.body;
     if (!phone) {
@@ -26,8 +90,15 @@ router.post('/send-otp', async (req: Request, res: Response) => {
   }
 });
 
-// Verify OTP
+// Verify OTP (Demo Path — Disabled unless NODE_ENV === 'development' AND DEMO_OTP_ENABLED === 'true')
 router.post('/verify-otp', async (req: Request, res: Response) => {
+  if (!(config.nodeEnv === 'development' && config.demoOtpEnabled)) {
+    return res.status(404).json({
+      success: false,
+      message: 'Demo OTP is disabled. Please use real Firebase Phone Authentication via /api/auth/firebase-login',
+    });
+  }
+
   try {
     const { phone, otp } = req.body;
     if (!phone || !otp) {
