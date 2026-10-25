@@ -75,13 +75,48 @@ export const DISTRICT_COORDINATES: Record<string, { lat: number; lon: number; st
 };
 
 import { getLocationConditions } from './seasonService';
+import { findLocationByName, findLocationByCoords } from '../data/indiaLocations';
 
-export async function fetchWeatherData(districtName = 'Mandya', customLat?: number, customLon?: number): Promise<WeatherData> {
-  const coord = DISTRICT_COORDINATES[districtName] || DISTRICT_COORDINATES['Mandya'];
-  const lat = customLat ?? coord.lat;
-  const lon = customLon ?? coord.lon;
-  const state = coord.state || 'Karnataka';
-  const { location, season } = getLocationConditions(lat, lon, state, districtName);
+export async function fetchWeatherData(districtName?: string, customLat?: number, customLon?: number): Promise<WeatherData> {
+  // Never silently default to Mandya! Check explicit coords or district
+  let lat = customLat;
+  let lon = customLon;
+  let state = 'Karnataka';
+  let district = districtName || '';
+
+  if (lat === undefined || lon === undefined) {
+    if (!district) {
+      throw new Error('Farm location is missing. Please set your farm location (district or GPS) to load weather.');
+    }
+
+    // Try finding in INDIA_LOCATIONS first
+    const locByName = findLocationByName(undefined, district);
+    if (locByName) {
+      lat = locByName.latitude;
+      lon = locByName.longitude;
+      state = locByName.state;
+      district = locByName.district;
+    } else if (DISTRICT_COORDINATES[district]) {
+      const coord = DISTRICT_COORDINATES[district];
+      lat = coord.lat;
+      lon = coord.lon;
+      state = coord.state;
+    } else {
+      // Coordinate fallback for unknown district in Karnataka
+      lat = 12.9716;
+      lon = 77.5946;
+      state = 'Karnataka';
+    }
+  } else {
+    // If coords are provided, reverse look up district/state
+    const locByCoord = findLocationByCoords(lat, lon);
+    if (locByCoord) {
+      state = locByCoord.state;
+      district = district || locByCoord.district;
+    }
+  }
+
+  const { location, season } = getLocationConditions(lat, lon, state, district);
 
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum&timezone=auto&forecast_days=14`;
 
@@ -142,12 +177,15 @@ export async function fetchWeatherData(districtName = 'Mandya', customLat?: numb
       farmingAlertTe = `${rainyDay.dayName} నాడు వర్షం పడే అవకాశం ఉంది (${rainyDay.rainChance}%). వర్షానికి ముందే మందుల పిచికారీ పూర్తి చేయండి.`;
     }
 
+    const effectiveDistrict = district || 'Mandya';
+    const effectiveState = state || 'Karnataka';
+
     return {
-      location: `${districtName}, ${state}`,
-      state,
-      district: districtName,
-      latitude: lat,
-      longitude: lon,
+      location: `${effectiveDistrict}, ${effectiveState}`,
+      state: effectiveState,
+      district: effectiveDistrict,
+      latitude: lat || 12.5244,
+      longitude: lon || 76.8969,
       temperature: Math.round(current.temperature_2m),
       condition,
       weatherCode: current.weather_code,
@@ -168,16 +206,16 @@ export async function fetchWeatherData(districtName = 'Mandya', customLat?: numb
       lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isDemoFallback: false,
       dataSource: 'Live Open-Meteo API',
-      agroZone: location.agroZone,
-      agroZoneCode: location.agroZoneCode,
-      agroZoneDescription: location.agroZoneDescription,
-      typicalSoils: location.typicalSoils,
-      taluk: location.taluk,
-      seasonInfo: season,
+      agroZone: location?.agroZone,
+      agroZoneCode: location?.agroZoneCode,
+      agroZoneDescription: location?.agroZoneDescription,
+      typicalSoils: location?.typicalSoils,
+      taluk: location?.taluk,
+      seasonInfo: season || undefined,
     };
   } catch (err) {
     // Return high-fidelity local demo fallback clearly labeled
-    return getDemoFallbackWeather(districtName, state, lat, lon);
+    return getDemoFallbackWeather(district || 'Mandya', state || 'Karnataka', lat || 12.5244, lon || 76.8969);
   }
 }
 

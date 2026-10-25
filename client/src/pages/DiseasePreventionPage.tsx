@@ -1,419 +1,717 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Search, ShieldAlert, AlertTriangle, ArrowRight, Camera, Upload, Check, Info } from 'lucide-react';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  ArrowLeft,
+  Search,
+  Filter,
+  ShieldAlert,
+  Calendar,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  X,
+  SlidersHorizontal,
+  Info,
+} from 'lucide-react';
 import { api } from '../services/api';
-import { Disease } from '../types';
+import { ProblemItem } from '../types';
 import { useTranslation } from '../context/LanguageContext';
-import { Modal } from '../components/ui/Modal';
 import { LoadingState } from '../components/ui/LoadingState';
+import { CropSelector, CropOption } from '../components/cropHealth/CropSelector';
+import { ProblemCard } from '../components/cropHealth/ProblemCard';
+import { ProblemDetailModal } from '../components/cropHealth/ProblemDetailModal';
+import { PreventionCalendar } from '../components/cropHealth/PreventionCalendar';
+import { SymptomCheckerWizard } from '../components/cropHealth/SymptomCheckerWizard';
+
+const PROBLEM_TYPES = [
+  { key: 'all', labelKey: 'allTypes' },
+  { key: 'insect_pest', labelKey: 'typeInsectPest' },
+  { key: 'fungal', labelKey: 'typeFungal' },
+  { key: 'bacterial', labelKey: 'typeBacterial' },
+  { key: 'viral', labelKey: 'typeViral' },
+  { key: 'nematode', labelKey: 'typeNematode' },
+  { key: 'nutrient_deficiency', labelKey: 'typeNutrient' },
+  { key: 'abiotic_stress', labelKey: 'typeAbiotic' },
+  { key: 'weed', labelKey: 'typeWeed' },
+];
+
+const SEVERITIES = [
+  { key: 'all', labelKey: 'allSeverities' },
+  { key: 'critical', labelKey: 'sevCritical' },
+  { key: 'high', labelKey: 'sevHigh' },
+  { key: 'medium', labelKey: 'sevMedium' },
+  { key: 'low', labelKey: 'sevLow' },
+];
+
+const STAGES = [
+  { key: 'all', label: 'All Stages' },
+  { key: 'seedling', label: 'Seedling / Nursery' },
+  { key: 'vegetative', label: 'Vegetative' },
+  { key: 'flowering', label: 'Flowering' },
+  { key: 'fruiting', label: 'Fruiting / Grain' },
+  { key: 'harvest', label: 'Harvest' },
+];
+
+const SEASONS = [
+  { key: 'all', label: 'All Seasons' },
+  { key: 'Kharif', label: 'Kharif (Monsoon)' },
+  { key: 'Rabi', label: 'Rabi (Winter)' },
+  { key: 'Summer', label: 'Summer' },
+];
 
 export const DiseasePreventionPage: React.FC = () => {
   const navigate = useNavigate();
-  const { diseaseId } = useParams();
+  const location = useLocation();
+  const [searchParams] = useSearchParams();
   const { t, language } = useTranslation();
 
-  const [diseases, setDiseases] = useState<Disease[]>([]);
-  const [activeTab, setActiveTab] = useState<'common' | 'prevention' | 'checker'>('common');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDisease, setSelectedDisease] = useState<Disease | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  // Active top navigation tab
+  const [activeTab, setActiveTab] = useState<'common' | 'calendar' | 'checker'>('common');
 
-  // Photo / Symptom checker state
-  const [selectedCrop, setSelectedCrop] = useState('Paddy (Rice)');
-  const [symptomText, setSymptomText] = useState('');
-  const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [diagnosisResult, setDiagnosisResult] = useState<any>(null);
-  const [isDiagnosing, setIsDiagnosing] = useState(false);
+  // Crops & Problems Database State
+  const [crops, setCrops] = useState<CropOption[]>([]);
+  const [selectedCrop, setSelectedCrop] = useState<CropOption | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [allProblems, setAllProblems] = useState<ProblemItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  // Filters State
+  const [searchQuery, setSearchQuery] = useState<string>('');
+  const [selectedType, setSelectedType] = useState<string>('all');
+  const [selectedSeverity, setSelectedSeverity] = useState<string>('all');
+  const [selectedStage, setSelectedStage] = useState<string>('all');
+  const [selectedSeason, setSelectedSeason] = useState<string>('all');
+  const [showFilterDrawer, setShowFilterDrawer] = useState<boolean>(false);
+
+  // Collapsible sections
+  const [showSecondaryProblems, setShowSecondaryProblems] = useState<boolean>(false);
+  const [showOtherCropProblems, setShowOtherCropProblems] = useState<boolean>(false);
+
+  // Active Modal Problem Detail
+  const [activeDetailProblem, setActiveDetailProblem] = useState<ProblemItem | null>(null);
+
+  // Initial Data Fetch
   useEffect(() => {
-    api.diseases.getAll()
-      .then((data) => {
-        setDiseases(data);
-        if (diseaseId) {
-          const found = data.find((d: any) => d.id === diseaseId);
-          if (found) setSelectedDisease(found);
+    async function loadData() {
+      setIsLoading(true);
+      try {
+        const [cropsData, problemsData, userPlans] = await Promise.all([
+          api.diseases.getCropsCatalog().catch(() => []),
+          api.diseases.getAll().catch(() => []),
+          api.lifecycle.getPlans().catch(() => []),
+        ]);
+
+        setCrops(cropsData);
+        setAllProblems(problemsData);
+
+        // Determine pre-selected crop
+        const savedCropId = localStorage.getItem('krushi_sathi_crop_health_crop');
+        let initialCrop: CropOption | null = null;
+
+        // 1. Try saved crop from localStorage
+        if (savedCropId) {
+          initialCrop = cropsData.find((c: CropOption) => c.id === savedCropId || c.name.toLowerCase().includes(savedCropId.toLowerCase())) || null;
         }
-      })
-      .catch(console.error)
-      .finally(() => setIsLoading(false));
-  }, [diseaseId]);
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+        // 2. If none saved, check farmer's active crop plans
+        if (!initialCrop && userPlans && userPlans.length > 0) {
+          const activePlan = userPlans.find((p: any) => p.status === 'active') || userPlans[0];
+          if (activePlan) {
+            initialCrop = cropsData.find((c: CropOption) =>
+              c.name.toLowerCase().includes(activePlan.cropName.toLowerCase()) ||
+              c.id === activePlan.cropId
+            ) || null;
+          }
+        }
+
+        // 3. Fallback to Paddy / first crop
+        if (!initialCrop && cropsData.length > 0) {
+          initialCrop = cropsData.find((c: CropOption) => c.name.toLowerCase().includes('paddy')) || cropsData[0];
+        }
+
+        if (initialCrop) {
+          setSelectedCrop(initialCrop);
+          if (initialCrop.category) {
+            setSelectedCategory(initialCrop.category);
+          }
+        }
+
+        // Deep-link check: ?problem=slug or state.selectedProblemId
+        const problemParam = searchParams.get('problem') || (location.state as any)?.selectedProblemId;
+        if (problemParam && problemsData.length > 0) {
+          const match = problemsData.find((p: any) => p.slug === problemParam || p.id === problemParam);
+          if (match) {
+            setActiveDetailProblem(match);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading crop health data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    loadData();
+  }, [searchParams]);
+
+  // Handler for Crop Selection
+  const handleSelectCrop = (crop: CropOption) => {
+    setSelectedCrop(crop);
+    localStorage.setItem('krushi_sathi_crop_health_crop', crop.id);
+  };
+
+  // Filter application
+  const selectedCropSlug = selectedCrop ? selectedCrop.name.toLowerCase().split(' ')[0] : 'paddy';
+
+  const applyFilters = (items: ProblemItem[]) => {
+    return items.filter((p) => {
+      // Type filter
+      if (selectedType !== 'all' && p.type !== selectedType) {
+        return false;
+      }
+      // Severity filter
+      if (selectedSeverity !== 'all' && p.severity !== selectedSeverity) {
+        return false;
+      }
+      // Stage filter
+      if (selectedStage !== 'all' && p.affectedStages) {
+        if (!p.affectedStages.some(s => s.toLowerCase().includes(selectedStage.toLowerCase()))) {
+          return false;
+        }
+      }
+      // Season filter
+      if (selectedSeason !== 'all' && p.favourableSeasons) {
+        if (!p.favourableSeasons.some(s => s.toLowerCase().includes(selectedSeason.toLowerCase()))) {
+          return false;
+        }
+      }
+      // Search Query filter (matches names, symptoms, and symptom tags)
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase().trim();
+        const matchesName =
+          p.name.toLowerCase().includes(q) ||
+          p.nameKannada?.toLowerCase().includes(q) ||
+          p.nameTamil?.toLowerCase().includes(q) ||
+          p.nameTelugu?.toLowerCase().includes(q) ||
+          p.scientificName?.toLowerCase().includes(q);
+
+        const matchesSymptoms =
+          p.symptoms.toLowerCase().includes(q) ||
+          (p.symptomsKn && p.symptomsKn.toLowerCase().includes(q)) ||
+          (p.symptomsTa && p.symptomsTa.toLowerCase().includes(q)) ||
+          (p.symptomsTe && p.symptomsTe.toLowerCase().includes(q));
+
+        const matchesTags = p.symptomTags?.some((st) =>
+          st.symptomTag.labelEn.toLowerCase().includes(q) ||
+          st.symptomTag.labelKn.toLowerCase().includes(q) ||
+          st.symptomTag.labelTa.toLowerCase().includes(q) ||
+          st.symptomTag.labelTe.toLowerCase().includes(q)
+        );
+
+        if (!matchesName && !matchesSymptoms && !matchesTags) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
+  // Group problems relative to selected crop:
+  // 1. Primary problems for this crop
+  const primaryCropProblems = applyFilters(
+    allProblems.filter((p) => {
+      return p.crops?.some(
+        c => (c.cropName.toLowerCase().includes(selectedCropSlug) || c.cropSlug.toLowerCase().includes(selectedCropSlug)) &&
+             c.importance === 'primary'
+      );
+    })
+  );
+
+  // 2. Secondary problems that can also affect this crop
+  const secondaryCropProblems = applyFilters(
+    allProblems.filter((p) => {
+      const isPrimary = p.crops?.some(
+        c => (c.cropName.toLowerCase().includes(selectedCropSlug) || c.cropSlug.toLowerCase().includes(selectedCropSlug)) &&
+             c.importance === 'primary'
+      );
+      if (isPrimary) return false;
+
+      return p.crops?.some(
+        c => c.cropName.toLowerCase().includes(selectedCropSlug) || c.cropSlug.toLowerCase().includes(selectedCropSlug)
+      );
+    })
+  );
+
+  // 3. Problems in other crops
+  const otherCropProblems = applyFilters(
+    allProblems.filter((p) => {
+      const affectsCurrentCrop = p.crops?.some(
+        c => c.cropName.toLowerCase().includes(selectedCropSlug) || c.cropSlug.toLowerCase().includes(selectedCropSlug)
+      );
+      return !affectsCurrentCrop;
+    })
+  );
+
+  // Group primary problems by type for tidy layout with counts
+  const groupByType = (items: ProblemItem[]) => {
+    const groups: Record<string, ProblemItem[]> = {};
+    for (const item of items) {
+      const groupKey = item.type || 'other';
+      if (!groups[groupKey]) groups[groupKey] = [];
+      groups[groupKey].push(item);
+    }
+    return groups;
+  };
+
+  const primaryGrouped = groupByType(primaryCropProblems);
+
+  const getTypeHeading = (typeKey: string) => {
+    switch (typeKey) {
+      case 'insect_pest':
+        return t('typeInsectPest') || 'Insect Pests';
+      case 'fungal':
+        return t('typeFungal') || 'Fungal Diseases';
+      case 'bacterial':
+        return t('typeBacterial') || 'Bacterial Diseases';
+      case 'viral':
+        return t('typeViral') || 'Viral Diseases';
+      case 'nematode':
+        return t('typeNematode') || 'Nematodes';
+      case 'nutrient_deficiency':
+        return t('typeNutrient') || 'Nutrient Deficiencies';
+      case 'abiotic_stress':
+        return t('typeAbiotic') || 'Weather & Abiotic Stress';
+      case 'weed':
+        return t('typeWeed') || 'Weeds';
+      default:
+        return 'Other Health Issues';
     }
   };
 
-  const handleDiagnose = async () => {
-    setIsDiagnosing(true);
-    try {
-      const res = await api.diseases.diagnose({
-        cropName: selectedCrop,
-        symptomsDescription: symptomText,
-        hasImage: !!previewImage,
-      });
-      setDiagnosisResult(res);
-    } catch (err) {
-      console.error('Diagnosis error:', err);
-    } finally {
-      setIsDiagnosing(false);
-    }
-  };
+  const hasActiveFilters =
+    selectedType !== 'all' ||
+    selectedSeverity !== 'all' ||
+    selectedStage !== 'all' ||
+    selectedSeason !== 'all' ||
+    searchQuery.trim().length > 0;
 
-  const filteredDiseases = diseases.filter((d) => {
-    const q = searchQuery.toLowerCase();
-    return (
-      d.name.toLowerCase().includes(q) ||
-      d.nameKannada.includes(q) ||
-      d.nameTamil.includes(q) ||
-      d.nameTelugu.includes(q) ||
-      d.symptoms.toLowerCase().includes(q) ||
-      d.affectedCrops.some((c) => c.toLowerCase().includes(q))
-    );
-  });
+  const handleClearFilters = () => {
+    setSelectedType('all');
+    setSelectedSeverity('all');
+    setSelectedStage('all');
+    setSelectedSeason('all');
+    setSearchQuery('');
+  };
 
   if (isLoading) {
     return (
-      <div className="max-w-xl mx-auto py-4">
-        <LoadingState type="list" loadingText="Loading pest & disease database..." />
+      <div className="max-w-3xl mx-auto py-8 px-4">
+        <LoadingState type="list" loadingText="Loading verified ICAR Crop Health library..." />
       </div>
     );
   }
 
   return (
-    <div className="max-w-xl mx-auto space-y-4 py-2">
-      {/* Top Header */}
-      <div className="flex items-center justify-between mb-2">
+    <div className="max-w-3xl mx-auto space-y-4 py-3 px-2 sm:px-4">
+      {/* Top Navigation Header */}
+      <div className="flex items-center justify-between">
         <button
           type="button"
           onClick={() => navigate('/home')}
-          className="min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl bg-white border border-gray-200 text-dark-text hover:bg-gray-50 active:scale-95 transition cursor-pointer"
+          className="min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl bg-white border border-gray-200 text-dark-text hover:bg-gray-50 active:scale-95 transition cursor-pointer shadow-sm"
           aria-label={t('navBack')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <h1 className="text-base sm:text-lg font-black text-dark-text">
-          {t('pestAndDiseases')}
-        </h1>
+        <div className="text-center">
+          <h1 className="text-base sm:text-lg font-black text-dark-text flex items-center justify-center gap-1.5">
+            <ShieldAlert className="w-5 h-5 text-forest" />
+            <span>{t('pestAndDiseases') || 'Crop Health'}</span>
+          </h1>
+          <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">
+            Verified ICAR / UAS / TNAU Guidance
+          </span>
+        </div>
 
-        <div className="w-12" />
+        <button
+          type="button"
+          onClick={() => setShowFilterDrawer(!showFilterDrawer)}
+          className={`min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl border transition cursor-pointer shadow-sm relative ${
+            hasActiveFilters
+              ? 'bg-forest text-white border-forest'
+              : 'bg-white border-gray-200 text-dark-text hover:bg-gray-50'
+          }`}
+          aria-label="Filter"
+        >
+          <SlidersHorizontal className="w-5 h-5" />
+          {hasActiveFilters && (
+            <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white" />
+          )}
+        </button>
       </div>
 
-      {/* Tabs with accessible 48px touch target */}
-      <div className="flex rounded-2xl bg-white p-1.5 border border-gray-100 shadow-sm text-xs sm:text-sm font-bold gap-1">
+      {/* Main Mode Tabs */}
+      <div className="flex rounded-2xl bg-white p-1.5 border border-gray-200 shadow-sm text-xs sm:text-sm font-bold gap-1">
         <button
           type="button"
           onClick={() => setActiveTab('common')}
-          className={`flex-1 min-h-[48px] py-2.5 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center ${
+          className={`flex-1 min-h-[46px] py-2 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 ${
             activeTab === 'common' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
           }`}
         >
-          {t('commonProblems')}
+          <ShieldAlert className="w-4 h-4 flex-shrink-0" />
+          <span>{t('commonProblems') || 'Common Problems'}</span>
         </button>
+
         <button
           type="button"
-          onClick={() => setActiveTab('prevention')}
-          className={`flex-1 min-h-[48px] py-2.5 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center ${
-            activeTab === 'prevention' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
+          onClick={() => setActiveTab('calendar')}
+          className={`flex-1 min-h-[46px] py-2 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 ${
+            activeTab === 'calendar' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
           }`}
         >
-          {t('prevention')}
+          <Calendar className="w-4 h-4 flex-shrink-0" />
+          <span>{t('preventionCalendar') || 'Prevention Calendar'}</span>
         </button>
+
         <button
           type="button"
           onClick={() => setActiveTab('checker')}
-          className={`flex-1 min-h-[48px] py-2.5 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center ${
+          className={`flex-1 min-h-[46px] py-2 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 ${
             activeTab === 'checker' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
           }`}
         >
-          {t('diagnoseLeaf')}
+          <Sparkles className="w-4 h-4 flex-shrink-0 text-amber-300" />
+          <span>{t('diagnoseLeaf') || 'Symptom Checker'}</span>
         </button>
       </div>
 
-      {/* TAB 1 & 2: Disease Catalog List */}
-      {(activeTab === 'common' || activeTab === 'prevention') && (
-        <div className="space-y-3">
-          {/* Search Bar */}
+      {/* CROP SELECTOR (Database driven with categories & cards) */}
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-100 shadow-card">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs font-bold text-gray-500 uppercase tracking-wider">
+            {t('selectCrop') || 'Select Crop to View Health Profile'}:
+          </span>
+          {selectedCrop && (
+            <span className="text-xs font-bold text-forest">
+              {primaryCropProblems.length} major problems
+            </span>
+          )}
+        </div>
+
+        <CropSelector
+          crops={crops}
+          selectedCropId={selectedCrop?.id || ''}
+          onSelectCrop={handleSelectCrop}
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+        />
+      </div>
+
+      {/* FILTER DRAWER / EXPANDABLE ACCORDION */}
+      <AnimatePresence>
+        {showFilterDrawer && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-200 shadow-card space-y-3.5 overflow-hidden"
+          >
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <span className="text-xs font-extrabold text-dark-text uppercase tracking-wider flex items-center gap-1.5">
+                <Filter className="w-4 h-4 text-forest" />
+                Advanced Filters
+              </span>
+              <button
+                type="button"
+                onClick={handleClearFilters}
+                className="text-xs font-bold text-red-600 hover:underline"
+              >
+                Reset Filters
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              {/* Type Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                  Problem Type
+                </label>
+                <select
+                  value={selectedType}
+                  onChange={(e) => setSelectedType(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[40px]"
+                >
+                  {PROBLEM_TYPES.map((pt) => (
+                    <option key={pt.key} value={pt.key}>
+                      {t(pt.labelKey as any) || pt.key}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Severity Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                  Severity
+                </label>
+                <select
+                  value={selectedSeverity}
+                  onChange={(e) => setSelectedSeverity(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[40px]"
+                >
+                  {SEVERITIES.map((sv) => (
+                    <option key={sv.key} value={sv.key}>
+                      {t(sv.labelKey as any) || sv.key}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Growth Stage Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                  Growth Stage
+                </label>
+                <select
+                  value={selectedStage}
+                  onChange={(e) => setSelectedStage(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[40px]"
+                >
+                  {STAGES.map((st) => (
+                    <option key={st.key} value={st.key}>
+                      {st.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Season Filter */}
+              <div>
+                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                  Season
+                </label>
+                <select
+                  value={selectedSeason}
+                  onChange={(e) => setSelectedSeason(e.target.value)}
+                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[40px]"
+                >
+                  {SEASONS.map((sn) => (
+                    <option key={sn.key} value={sn.key}>
+                      {sn.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* TAB 1: COMMON PROBLEMS (Crop-First Grouping) */}
+      {activeTab === 'common' && (
+        <div className="space-y-4">
+          {/* Multilingual Search Bar */}
           <div className="relative">
             <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-forest" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search pest by name or symptom..."
-              aria-label="Search pest by name or symptom"
-              className="w-full pl-10 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 text-xs sm:text-sm font-semibold focus:border-forest outline-none shadow-sm"
+              placeholder="Search by pest name, symptom (e.g. leaf spots, borer), or signs..."
+              className="w-full pl-10 pr-10 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 text-xs sm:text-sm font-semibold focus:border-forest outline-none shadow-sm"
             />
-          </div>
-
-          {/* Cards List with light 35ms stagger */}
-          <div className="space-y-3">
-            {filteredDiseases.map((d, idx) => (
-              <motion.div
-                key={d.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: idx * 0.035, duration: 0.2 }}
-                whileHover={{ y: -2 }}
-                className="p-4 rounded-3xl bg-white border border-gray-100 shadow-card hover:border-forest/30 transition-all cursor-pointer"
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600"
               >
-                <div className="flex items-start gap-3.5">
-                  <div className="w-16 h-16 rounded-2xl overflow-hidden bg-mint flex-shrink-0 border border-forest/15">
-                    <img
-                      src={d.imageUrl || 'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=200&auto=format&fit=crop&q=80'}
-                      alt={d.name}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-1 mb-1">
-                      <h3 className="text-sm font-extrabold text-dark-text truncate">
-                        {d.name}
-                      </h3>
-                      <span className="py-0.5 px-2 rounded-full bg-red-100 text-red-700 text-[10px] font-bold uppercase">
-                        {d.severity}
-                      </span>
-                    </div>
-
-                    <span className="text-[11px] text-forest font-semibold block mb-2">
-                      {language === 'kn' ? d.nameKannada :
-                       language === 'ta' ? d.nameTamil :
-                       language === 'te' ? d.nameTelugu : d.affectedCrops.join(', ')}
-                    </span>
-
-                    {/* Symptoms Bullet */}
-                    <div className="text-xs text-dark-text/90 mb-1.5 leading-relaxed">
-                      <span className="font-bold text-dark-muted">Symptoms: </span>
-                      <span>{language === 'kn' ? (d.symptomsKn || d.symptoms) : d.symptoms}</span>
-                    </div>
-
-                    {/* Prevention Bullet */}
-                    <div className="text-xs text-dark-text/90 mb-3 leading-relaxed">
-                      <span className="font-bold text-forest">Prevention: </span>
-                      <span>{language === 'kn' ? (d.preventionKn || d.prevention) : d.prevention}</span>
-                    </div>
-
-                    <button
-                      onClick={() => setSelectedDisease(d)}
-                      className="py-1.5 px-3.5 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition-colors inline-flex items-center gap-1.5 shadow-sm"
-                    >
-                      <span>View Solution</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* TAB 3: Symptom Checker & Field Photo Upload */}
-      {activeTab === 'checker' && (
-        <div className="p-5 rounded-3xl bg-white border border-gray-100 shadow-card space-y-4">
-          <div>
-            <h2 className="text-sm font-extrabold text-dark-text mb-1">
-              {t('diagnoseLeaf')}
-            </h2>
-            <p className="text-xs text-dark-muted">
-              Select your crop and describe visual symptoms or upload a photo of the affected plant:
-            </p>
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
 
-          <div>
-            <label className="block text-xs font-bold text-dark-text mb-1">
-              Affected Crop
-            </label>
-            <select
-              value={selectedCrop}
-              onChange={(e) => setSelectedCrop(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-gray-200 text-xs font-semibold focus:border-forest outline-none"
-            >
-              <option value="Paddy (Rice)">Paddy (Rice)</option>
-              <option value="Maize (Corn)">Maize (Corn)</option>
-              <option value="Cotton">Cotton</option>
-              <option value="Tomato">Tomato</option>
-              <option value="Groundnut">Groundnut</option>
-              <option value="Ragi">Ragi (Finger Millet)</option>
-            </select>
-          </div>
+          {/* Group 1: Primary Documented Problems for Selected Crop */}
+          <div className="space-y-5">
+            <div className="flex items-center justify-between border-b border-gray-200 pb-2">
+              <h2 className="text-sm sm:text-base font-black text-dark-text">
+                Documented Problems in <span className="text-forest">{selectedCrop?.name}</span> ({primaryCropProblems.length})
+              </h2>
+              <span className="text-[10px] font-bold bg-forest/10 text-forest px-2.5 py-1 rounded-full">
+                Primary Threats
+              </span>
+            </div>
 
-          {/* Photo Upload Zone */}
-          <div>
-            <label className="block text-xs font-bold text-dark-text mb-1">
-              {t('uploadPhoto')} (Optional)
-            </label>
-            <div className="border-2 border-dashed border-gray-200 rounded-3xl p-4 text-center hover:border-forest/40 transition-colors bg-cream-light/40">
-              {previewImage ? (
-                <div className="space-y-2">
-                  <div className="w-32 h-32 rounded-2xl overflow-hidden mx-auto border-2 border-forest shadow-md">
-                    <img src={previewImage} alt="Crop sample" className="w-full h-full object-cover" />
-                  </div>
+            {primaryCropProblems.length === 0 ? (
+              <div className="p-8 bg-white rounded-3xl border border-gray-200 text-center space-y-2">
+                <ShieldAlert className="w-10 h-10 text-gray-300 mx-auto" />
+                <h3 className="text-sm font-bold text-dark-text">No primary problems match your filters</h3>
+                <p className="text-xs text-dark-muted max-w-sm mx-auto">
+                  Try adjusting the type or severity filter above, or check the secondary problems section below.
+                </p>
+                {hasActiveFilters && (
                   <button
                     type="button"
-                    onClick={() => setPreviewImage(null)}
-                    className="text-xs text-red-600 font-bold hover:underline"
+                    onClick={handleClearFilters}
+                    className="mt-2 px-4 py-2 bg-gray-100 rounded-xl text-xs font-bold text-dark-text hover:bg-gray-200 transition"
                   >
-                    Remove Photo
+                    Clear Filters
                   </button>
-                </div>
-              ) : (
-                <label className="cursor-pointer flex flex-col items-center justify-center gap-1.5 py-3">
-                  <Camera className="w-8 h-8 text-forest" />
-                  <span className="text-xs font-bold text-forest">Tap to upload leaf photo</span>
-                  <span className="text-[10px] text-dark-muted">Supports JPG, PNG up to 5MB</span>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                </label>
-              )}
-            </div>
-            <span className="text-[10px] text-dark-muted mt-1 block italic">
-              {t('photoNotice')}
-            </span>
-          </div>
-
-          {/* Symptom Description Text */}
-          <div>
-            <label className="block text-xs font-bold text-dark-text mb-1">
-              Describe Symptoms (Leaves, stem, colors)
-            </label>
-            <textarea
-              rows={3}
-              value={symptomText}
-              onChange={(e) => setSymptomText(e.target.value)}
-              placeholder="e.g. Yellowing of bottom leaves, holes in stem, brown spots with ash center..."
-              className="w-full px-3.5 py-2.5 rounded-2xl bg-white border border-gray-200 text-xs font-medium focus:border-forest outline-none resize-none"
-            />
-          </div>
-
-          <button
-            onClick={handleDiagnose}
-            disabled={isDiagnosing}
-            className="w-full py-3 px-4 rounded-2xl bg-forest text-white text-xs font-bold shadow-md hover:bg-forest-dark transition-colors flex items-center justify-center gap-2"
-          >
-            {isDiagnosing ? 'Analyzing Symptoms...' : 'Analyze Symptoms & Match Disease'}
-          </button>
-
-          {/* Diagnosis Results */}
-          {diagnosisResult && (
-            <div className="pt-3 border-t border-gray-100 space-y-3">
-              <div className="p-3 rounded-2xl bg-mint border border-forest/20 text-xs text-dark-text">
-                <span className="font-bold text-forest block mb-1">
-                  {diagnosisResult.mode === 'image_unavailable' ? 'Offline Guidance Mode' : 'Symptom Match Analysis'}
-                </span>
-                <p className="text-[11px] leading-relaxed">
-                  {diagnosisResult.message || diagnosisResult.note}
-                </p>
+                )}
               </div>
-
-              {(diagnosisResult.matches || diagnosisResult.candidates)?.map((item: Disease) => (
-                <div
-                  key={item.id}
-                  onClick={() => setSelectedDisease(item)}
-                  className="p-3 rounded-2xl bg-gray-50 border border-gray-200 flex items-center justify-between cursor-pointer hover:border-forest"
-                >
-                  <div>
-                    <span className="text-xs font-bold text-dark-text block">{item.name}</span>
-                    <span className="text-[10px] text-forest">{item.affectedCrops.join(', ')}</span>
+            ) : (
+              Object.entries(primaryGrouped).map(([typeKey, items]) => (
+                <div key={typeKey} className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-forest" />
+                    <h3 className="text-xs sm:text-sm font-extrabold text-dark-text">
+                      {getTypeHeading(typeKey)}
+                    </h3>
+                    <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                      {items.length}
+                    </span>
                   </div>
-                  <span className="text-xs font-bold text-forest">View Solution →</span>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {items.map((prob) => (
+                      <ProblemCard
+                        key={prob.id}
+                        problem={prob}
+                        onSelect={setActiveDetailProblem}
+                        selectedCropSlug={selectedCropSlug}
+                      />
+                    ))}
+                  </div>
                 </div>
-              ))}
+              ))
+            )}
+          </div>
+
+          {/* Group 2: Collapsible Secondary Problems That Can Also Affect This Crop */}
+          {secondaryCropProblems.length > 0 && (
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowSecondaryProblems(!showSecondaryProblems)}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-extrabold text-dark-text">
+                    Other Problems That Can Also Affect {selectedCrop?.name} ({secondaryCropProblems.length})
+                  </span>
+                  <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                    Secondary Hosts
+                  </span>
+                </div>
+                {showSecondaryProblems ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+              </button>
+
+              <AnimatePresence>
+                {showSecondaryProblems && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-4 border-t border-gray-100 bg-gray-50/50"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {secondaryCropProblems.map((prob) => (
+                        <ProblemCard
+                          key={prob.id}
+                          problem={prob}
+                          onSelect={setActiveDetailProblem}
+                          selectedCropSlug={selectedCropSlug}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
+
+          {/* Group 3: Collapsible Problems in Other Crops */}
+          {otherCropProblems.length > 0 && (
+            <div className="bg-white rounded-3xl border border-gray-200 shadow-sm overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowOtherCropProblems(!showOtherCropProblems)}
+                className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 transition cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-xs sm:text-sm font-extrabold text-gray-700">
+                    Problems in Other Crops ({otherCropProblems.length})
+                  </span>
+                  <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    General Library
+                  </span>
+                </div>
+                {showOtherCropProblems ? <ChevronUp className="w-5 h-5 text-gray-500" /> : <ChevronDown className="w-5 h-5 text-gray-500" />}
+              </button>
+
+              <AnimatePresence>
+                {showOtherCropProblems && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-4 border-t border-gray-100 bg-gray-50/50"
+                  >
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {otherCropProblems.map((prob) => (
+                        <ProblemCard
+                          key={prob.id}
+                          problem={prob}
+                          onSelect={setActiveDetailProblem}
+                          selectedCropSlug={selectedCropSlug}
+                        />
+                      ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
         </div>
       )}
 
-      {/* Disease Detail Solution Modal */}
-      <Modal
-        isOpen={!!selectedDisease}
-        onClose={() => setSelectedDisease(null)}
-        title={selectedDisease?.name}
-      >
-        {selectedDisease && (
-          <div className="space-y-4 text-xs">
-            {/* Visual thumbnail */}
-            <div className="h-40 rounded-2xl overflow-hidden bg-mint border border-forest/10">
-              <img
-                src={selectedDisease.imageUrl || 'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=600&auto=format&fit=crop&q=80'}
-                alt={selectedDisease.name}
-                className="w-full h-full object-cover"
-              />
-            </div>
+      {/* TAB 2: PREVENTION CALENDAR */}
+      {activeTab === 'calendar' && (
+        <PreventionCalendar
+          cropName={selectedCrop?.name || 'Selected Crop'}
+          cropSlug={selectedCropSlug}
+          problems={[...primaryCropProblems, ...secondaryCropProblems]}
+          onSelectProblem={setActiveDetailProblem}
+        />
+      )}
 
-            <div>
-              <span className="text-[11px] font-bold text-forest block">
-                {language === 'kn' ? selectedDisease.nameKannada :
-                 language === 'ta' ? selectedDisease.nameTamil :
-                 language === 'te' ? selectedDisease.nameTelugu : selectedDisease.name}
-              </span>
-              <span className="text-[10px] text-dark-muted">
-                Affects: {selectedDisease.affectedCrops.join(', ')}
-              </span>
-            </div>
+      {/* TAB 3: SYMPTOM CHECKER WIZARD */}
+      {activeTab === 'checker' && (
+        <SymptomCheckerWizard
+          crops={crops}
+          selectedCropSlug={selectedCropSlug}
+          onSelectCropSlug={(slug) => {
+            const found = crops.find(c => c.name.toLowerCase().includes(slug.toLowerCase()));
+            if (found) handleSelectCrop(found);
+          }}
+          onOpenProblemDetail={setActiveDetailProblem}
+          allProblems={allProblems}
+        />
+      )}
 
-            {/* Symptoms */}
-            <div className="p-3 rounded-2xl bg-red-50 border border-red-200">
-              <span className="font-extrabold text-red-900 block mb-0.5">
-                {t('symptoms')}:
-              </span>
-              <p className="text-red-800 leading-relaxed text-[11px]">
-                {language === 'kn' ? (selectedDisease.symptomsKn || selectedDisease.symptoms) :
-                 language === 'ta' ? (selectedDisease.symptomsTa || selectedDisease.symptoms) :
-                 language === 'te' ? (selectedDisease.symptomsTe || selectedDisease.symptoms) :
-                 selectedDisease.symptoms}
-              </p>
-            </div>
-
-            {/* Integrated Pest Management (IPM) Steps */}
-            <div>
-              <span className="font-extrabold text-dark-text block mb-1.5 uppercase tracking-wide">
-                {t('ipmSolutions')}:
-              </span>
-              <div className="space-y-1.5 pl-1">
-                {(language === 'kn' && selectedDisease.ipmStepsKn
-                  ? selectedDisease.ipmStepsKn
-                  : language === 'ta' && selectedDisease.ipmStepsTa
-                  ? selectedDisease.ipmStepsTa
-                  : language === 'te' && selectedDisease.ipmStepsTe
-                  ? selectedDisease.ipmStepsTe
-                  : selectedDisease.ipmSteps
-                ).map((step: string, sIdx: number) => (
-                  <div key={sIdx} className="flex items-start gap-2">
-                    <span className="w-4 h-4 rounded-full bg-forest text-white text-[10px] font-bold flex items-center justify-center flex-shrink-0 mt-0.5">
-                      {sIdx + 1}
-                    </span>
-                    <span className="text-[11px] text-dark-text leading-snug">{step}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Expert Advisory Note */}
-            <div className="p-3 rounded-2xl bg-amber-50 border border-amber-200">
-              <div className="flex items-center gap-1.5 font-bold text-amber-900 mb-0.5">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-700" />
-                <span>{t('expertAdvisory')}</span>
-              </div>
-              <p className="text-[11px] text-amber-900/90 leading-relaxed">
-                {selectedDisease.expertAdvice}
-              </p>
-            </div>
-          </div>
+      {/* Problem Detail Modal */}
+      <AnimatePresence>
+        {activeDetailProblem && (
+          <ProblemDetailModal
+            problem={activeDetailProblem}
+            onClose={() => setActiveDetailProblem(null)}
+          />
         )}
-      </Modal>
+      </AnimatePresence>
     </div>
   );
 };

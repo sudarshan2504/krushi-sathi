@@ -198,6 +198,39 @@ export const api = {
     },
   },
 
+  season: {
+    async detect(params: {
+      state?: string;
+      district?: string;
+      taluk?: string;
+      lat?: number;
+      lon?: number;
+    }): Promise<any> {
+      const q = new URLSearchParams(
+        Object.entries(params)
+          .filter(([_, v]) => v !== undefined && v !== null && v !== '')
+          .map(([k, v]) => [k, String(v)])
+      ).toString();
+      const res = await fetch(`${API_BASE}/season/detect?${q}`);
+      return handleResponse(res);
+    },
+
+    async getVerificationList(): Promise<any> {
+      const res = await fetch(`${API_BASE}/season/verification-list`);
+      return handleResponse(res);
+    },
+
+    async getCropStatus(cropId: string, params?: { state?: string; district?: string }): Promise<any> {
+      const q = params ? new URLSearchParams(
+        Object.entries(params)
+          .filter(([_, v]) => v !== undefined && v !== null && v !== '')
+          .map(([k, v]) => [k, String(v)])
+      ).toString() : '';
+      const res = await fetch(`${API_BASE}/season/crop-status/${cropId}?${q}`);
+      return handleResponse(res);
+    },
+  },
+
   soil: {
     async submitAssessment(data: any): Promise<{ assessment: any; recommendations: RecommendationResult[] }> {
       const res = await fetch(`${API_BASE}/soil/assessments`, {
@@ -373,8 +406,19 @@ export const api = {
   },
 
   diseases: {
-    async getAll(params?: { crop?: string; search?: string }): Promise<Disease[]> {
-      const q = new URLSearchParams(params as any).toString();
+    async getAll(params?: {
+      crop?: string;
+      type?: string;
+      severity?: string;
+      stage?: string;
+      season?: string;
+      search?: string;
+    }): Promise<Disease[]> {
+      const filteredParams = Object.entries(params || {}).reduce((acc, [k, v]) => {
+        if (v && v !== 'all') acc[k] = v;
+        return acc;
+      }, {} as Record<string, string>);
+      const q = new URLSearchParams(filteredParams).toString();
       const res = await fetch(`${API_BASE}/diseases?${q}`);
       return handleResponse<Disease[]>(res);
     },
@@ -384,13 +428,76 @@ export const api = {
       return handleResponse<Disease>(res);
     },
 
-    async diagnose(data: { cropName?: string; symptomsDescription?: string; hasImage?: boolean }) {
-      const res = await fetch(`${API_BASE}/diseases/diagnose`, {
+    async getCropsCatalog(): Promise<any[]> {
+      const res = await fetch(`${API_BASE}/diseases/crops/catalog`);
+      return handleResponse<any[]>(res);
+    },
+
+    async getTags(): Promise<any[]> {
+      const res = await fetch(`${API_BASE}/diseases/tags/all`);
+      return handleResponse<any[]>(res);
+    },
+
+    async diagnose(data: any) {
+      let res;
+      if (data instanceof FormData) {
+        res = await fetch(`${API_BASE}/diseases/diagnose`, {
+          method: 'POST',
+          body: data,
+        });
+      } else {
+        res = await fetch(`${API_BASE}/diseases/diagnose`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(data),
+        });
+      }
+      return handleResponse<{
+        mode: string;
+        message?: string;
+        matches?: any[];
+        candidates?: any[];
+        note?: string;
+        extractedTags?: any[];
+        topChecks?: string[];
+      }>(res);
+    },
+
+    async analyzePhoto(payload: {
+      photos: Array<{ kind: 'closeup_leaf' | 'whole_plant' | 'underside_stem'; dataUrl: string }>;
+      crop: string;
+      cropSlug: string;
+      location?: { state?: string; district?: string };
+      season?: string;
+      weather?: { humidity?: number; temperature?: number; condition?: string };
+      guidedTags?: any;
+      consentToStore?: boolean;
+      language?: string;
+    }) {
+      const res = await fetch(`${API_BASE}/diseases/analyze-photo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify(payload),
       });
-      return handleResponse<{ mode: string; message?: string; matches?: Disease[]; candidates?: Disease[] }>(res);
+      return handleResponse<any>(res);
+    },
+
+    async sendDiagnosisFeedback(feedback: {
+      problemSlug: string;
+      confidence: string;
+      crop: string;
+      rating: 'correct' | 'incorrect' | 'not_sure';
+      farmerCorrection?: string;
+      notes?: string;
+      hasConsent?: boolean;
+      storedImagePath?: string;
+    }) {
+      const res = await fetch(`${API_BASE}/diseases/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(feedback),
+      });
+      return handleResponse<any>(res);
     },
   },
 

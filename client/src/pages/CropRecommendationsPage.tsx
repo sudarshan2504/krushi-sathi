@@ -479,6 +479,34 @@ export const CropRecommendationsPage: React.FC = () => {
                         </div>
                       )}
 
+                      {/* Sowing Window Status */}
+                      {crop.sowingWindowStatus && (
+                        <div className="mb-2.5">
+                          <span
+                            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border ${
+                              crop.sowingWindowStatus.status === 'open'
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                : crop.sowingWindowStatus.status === 'closing_soon'
+                                ? 'bg-amber-50 text-amber-900 border-amber-200'
+                                : crop.sowingWindowStatus.status === 'opens_in_n_days'
+                                ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                : 'bg-gray-100 text-gray-700 border-gray-200'
+                            }`}
+                          >
+                            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
+                            <span>
+                              {language === 'kn'
+                                ? crop.sowingWindowStatus.labelKn || crop.sowingWindowStatus.label
+                                : language === 'ta'
+                                ? crop.sowingWindowStatus.labelTa || crop.sowingWindowStatus.label
+                                : language === 'te'
+                                ? crop.sowingWindowStatus.labelTe || crop.sowingWindowStatus.label
+                                : crop.sowingWindowStatus.label}
+                            </span>
+                          </span>
+                        </div>
+                      )}
+
                       {/* Key Reasons */}
                       <div className="space-y-1 mb-3">
                         {crop.keyReasons &&

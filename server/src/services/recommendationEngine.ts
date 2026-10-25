@@ -1,4 +1,5 @@
 import { CROPS_DATA, CropData } from '../data/cropKnowledge';
+import { detectSeasonFromLocation, getCropSowingStatus } from './seasonService';
 
 export interface SoilAssessmentInput {
   soilType: string; // red, black, sandy, clay, loamy, alluvial, laterite, unknown
@@ -21,6 +22,10 @@ export interface SoilAssessmentInput {
   drainage?: string | null; // good, moderate, poor, waterlogged
   category?: string | null; // filter by category: cereal_millet, pulse, vegetable, fruit, flower, plantation, spice, oilseed, fodder, all
   agroZone?: string | null; // e.g. "Southern Transition Zone", "Coastal Zone", "Northern Dry Zone"
+  state?: string | null;
+  district?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   landSize?: number | null;
   landSizeGuntas?: number | null;
 }
@@ -52,6 +57,16 @@ export interface RecommendationResult {
   risks: string[];
   benefits: string[];
   imageUrl: string;
+  sowingWindowStatus?: {
+    status: 'open' | 'closing_soon' | 'closed' | 'opens_in_n_days';
+    label: string;
+    labelKn?: string;
+    labelTa?: string;
+    labelTe?: string;
+    daysRemaining?: number;
+    daysUntilOpen?: number;
+  };
+  detectedSeasonName?: string;
 }
 
 /**
@@ -64,9 +79,18 @@ export interface RecommendationResult {
  * 6. Crop Rotation & Predecessor Bonus (10 pts): Prevents monoculture, awards bonus for legume/cereal rotation.
  */
 export function calculateCropRecommendations(input: SoilAssessmentInput): RecommendationResult[] {
+  // Automatically detect regional season from location
+  const detectedSeason = detectSeasonFromLocation(
+    input.state || undefined,
+    input.district || undefined,
+    input.latitude || undefined,
+    input.longitude || undefined
+  );
+
   const normSoil = (input.soilType || 'unknown').toLowerCase();
   const normWater = (input.waterSource || 'rainfed').toLowerCase();
-  const normSeason = (input.season || 'kharif').toLowerCase();
+  const activeSeason = detectedSeason?.standardSeason || input.season || 'Kharif';
+  const normSeason = activeSeason.toLowerCase();
   const userPh = input.ph && input.ph > 0 ? input.ph : null;
   const userBudget = (input.budget || 'medium').toLowerCase();
   const normDrainage = (input.drainage || 'good').toLowerCase();
@@ -161,14 +185,27 @@ export function calculateCropRecommendations(input: SoilAssessmentInput): Recomm
       keyReasons.push('Micro-irrigation & fertigation significantly boosts yield');
     }
 
-    // --- 3. Seasonal & Climatic Match (Max 15) ---
+    // --- 3. Seasonal & Climatic Match & Sowing Window Status (Max 25) ---
     const cropSeasons = crop.seasons.map(s => s.toLowerCase());
     const isYearRound = cropSeasons.includes('year-round') || crop.durationType === 'perennial';
     if (isYearRound || cropSeasons.some(s => normSeason.includes(s) || s.includes(normSeason))) {
       score += 15;
-      keyReasons.push(`Perfect timing for ${crop.seasons.join('/')} planting window`);
+      keyReasons.push(`Aligned with ${detectedSeason?.localSeasonName || activeSeason} season`);
     } else {
       score += 5;
+    }
+
+    // Sowing window status calculation
+    const sowingStatus = getCropSowingStatus(crop, detectedSeason);
+    if (sowingStatus.status === 'open') {
+      score += 10;
+      keyReasons.push(sowingStatus.label);
+    } else if (sowingStatus.status === 'closing_soon') {
+      score += 8;
+      keyReasons.push(sowingStatus.label);
+    } else if (sowingStatus.status === 'opens_in_n_days') {
+      score += 5;
+      keyReasons.push(sowingStatus.label);
     }
 
     // Agro-climatic zone bonus
@@ -313,6 +350,8 @@ export function calculateCropRecommendations(input: SoilAssessmentInput): Recomm
       risks: crop.risks,
       benefits: crop.benefits,
       imageUrl: crop.imageUrl,
+      sowingWindowStatus: sowingStatus,
+      detectedSeasonName: detectedSeason?.localSeasonName || detectedSeason?.name,
     });
   }
 

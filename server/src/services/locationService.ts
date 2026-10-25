@@ -44,7 +44,7 @@ async function geocodeWithGoogle(lat: number, lon: number): Promise<GeocodedLoca
     clearTimeout(timeout);
 
     if (!res.ok) return null;
-    const json = await res.json();
+    const json: any = await res.json();
     if (json.status !== 'OK' || !json.results || json.results.length === 0) {
       return null;
     }
@@ -128,7 +128,7 @@ async function geocodeWithNominatim(lat: number, lon: number): Promise<GeocodedL
     clearTimeout(timeout);
 
     if (!res.ok) return null;
-    const json = await res.json();
+    const json: any = await res.json();
     const address = json.address || {};
 
     const village = address.village || address.hamlet || address.suburb || address.neighbourhood || address.residential || '';
@@ -231,7 +231,7 @@ export async function getLocationFromIp(clientIp?: string): Promise<GeocodedLoca
     clearTimeout(timeout);
 
     if (res.ok) {
-      const data = await res.json();
+      const data: any = await res.json();
       if (data && data.latitude && data.longitude) {
         return {
           village: data.city || '',
@@ -259,7 +259,7 @@ export async function getLocationFromIp(clientIp?: string): Promise<GeocodedLoca
     clearTimeout(timeout);
 
     if (res.ok) {
-      const data = await res.json();
+      const data: any = await res.json();
       if (data && data.status === 'success' && data.lat && data.lon) {
         return {
           village: data.city || '',

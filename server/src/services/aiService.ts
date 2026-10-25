@@ -5,6 +5,7 @@ import { CROPS_DATA } from '../data/cropKnowledge';
 import { DISEASES_DATA } from '../data/diseaseKnowledge';
 import { AGRICULTURAL_FAQS } from '../data/agriculturalFaq';
 import { MsEdgeTTS, OUTPUT_FORMAT } from 'msedge-tts';
+import { detectSeasonFromLocation } from './seasonService';
 
 export interface ChatResponse {
   answer: string;
@@ -25,6 +26,8 @@ export interface FarmerContext {
   taluk?: string;
   agroZone?: string;
   currentSeason?: string;
+  localSeasonName?: string;
+  sowingWindowStatusSummary?: string;
   preferredCategory?: string;
   soilType?: string;
   soilInfo?: string;
@@ -554,14 +557,30 @@ export async function generateChatResponse(
   const normQuery = query.trim();
   const effectiveLang = resolveEffectiveLanguage(normQuery, language, context?.language);
 
-  // 1. Build System Prompt with farmer context and verified agricultural grounding
+  // 1. Resolve seasonal context from location if not explicitly provided
+  const autoSeason = (context?.state || context?.district)
+    ? detectSeasonFromLocation(context?.state, context?.district)
+    : null;
+
+  const effectiveSeason = context?.currentSeason || autoSeason?.standardSeason || 'Kharif';
+  const effectiveLocalSeason = context?.localSeasonName || autoSeason?.localSeasonName;
+  const effectiveSowingSummary = context?.sowingWindowStatusSummary ||
+    (autoSeason ? `${autoSeason.sowingWindow} (${autoSeason.sowingWindowStatus})` : undefined);
+
+  const locDisplay = context?.district
+    ? `${context.district}${context.state ? ', ' + context.state : ''}`
+    : context?.state || 'South India';
+
+  // 2. Build System Prompt with farmer context and verified agricultural grounding
   const systemPrompt = buildSystemPrompt({
     language: effectiveLang,
     farmerName: context?.farmerName || 'Farmer',
-    location: `${context?.district || 'Mandya'}, ${context?.state || 'South India'}`,
+    location: locDisplay,
     taluk: context?.taluk,
     agroZone: context?.agroZone,
-    currentSeason: context?.currentSeason,
+    currentSeason: effectiveSeason,
+    localSeasonName: effectiveLocalSeason,
+    sowingWindowStatusSummary: effectiveSowingSummary,
     preferredCategory: context?.preferredCategory,
     landSize: context?.landSize || '2',
     soilInfo: context?.soilInfo,

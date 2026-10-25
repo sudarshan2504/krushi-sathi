@@ -1,0 +1,3196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Krushi Sathi — Crop Health Images Verification & Review Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #059669;
+      --primary-dark: #065f46;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 32px 24px;
+    }
+    .header {
+      max-width: 1400px;
+      margin: 0 auto 32px;
+      background: white;
+      padding: 32px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+    }
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #f1f5f9;
+      padding: 16px 20px;
+      border-radius: 16px;
+      border-left: 4px solid var(--primary);
+    }
+    .stat-card.warning { border-color: var(--warning); background: #fefce8; }
+    .stat-card.success { border-color: var(--success); background: #ecfdf5; }
+    .stat-card.danger { border-color: var(--danger); background: #fef2f2; }
+    .stat-val { font-size: 26px; font-weight: 800; }
+    .stat-lbl { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .controls-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .search-input {
+      flex: 1;
+      min-width: 280px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      font-size: 15px;
+      outline: none;
+      font-family: inherit;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .filter-btn {
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .btn-export {
+      padding: 10px 20px;
+      background: #1e293b;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .problem-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .problem-card.flagged {
+      border: 2px solid var(--danger);
+      background: #fff5f5;
+    }
+    .problem-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .problem-title {
+      font-size: 20px;
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .problem-sci {
+      font-size: 14px;
+      font-style: italic;
+      color: #475569;
+      margin-top: 2px;
+    }
+    .problem-crops {
+      font-size: 13px;
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 4px;
+    }
+    .badges {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .badge-insect_pest { background: #fee2e2; color: #991b1b; }
+    .badge-fungal { background: #fef3c7; color: #92400e; }
+    .badge-bacterial { background: #dbeafe; color: #1e40af; }
+    .badge-viral { background: #f3e8ff; color: #6b21a8; }
+    .badge-nutrient_deficiency { background: #ffedd5; color: #9a3412; }
+    .badge-abiotic_stress { background: #e0e7ff; color: #3730a3; }
+    .badge-mite { background: #fce7f3; color: #9d174d; }
+
+    .images-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .img-box {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      background: #f8fafc;
+      display: flex;
+      flex-direction: column;
+    }
+    .img-box img {
+      width: 100%;
+      height: 180px;
+      object-fit: cover;
+      background: #e2e8f0;
+      transition: transform 0.2s;
+    }
+    .img-box img:hover {
+      transform: scale(1.02);
+    }
+    .img-info {
+      padding: 12px;
+      font-size: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex: 1;
+    }
+    .img-caption {
+      font-weight: 600;
+      color: #334155;
+      line-height: 1.4;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .img-meta {
+      color: var(--text-muted);
+      font-size: 11px;
+      margin-top: auto;
+    }
+    .mark-btn {
+      margin-top: 8px;
+      padding: 6px 12px;
+      border: 1px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .mark-btn.wrong {
+      background: var(--danger);
+      color: white;
+      border-color: var(--danger);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="title-row">
+      <h1>🌱 Krushi Sathi — Crop Health Image Verification Review</h1>
+      <button class="btn-export" onclick="exportWrongReport()">Download Marked Report (JSON)</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val" id="totalCount">54</div>
+        <div class="stat-lbl">Total Problems</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-val" id="verifiedCount">43</div>
+        <div class="stat-lbl">Photos Present</div>
+      </div>
+      <div class="stat-card warning">
+        <div class="stat-val" id="placeholderCount">11</div>
+        <div class="stat-lbl">Visual Placeholder</div>
+      </div>
+      <div class="stat-card danger">
+        <div class="stat-val" id="flaggedCount">0</div>
+        <div class="stat-lbl">Marked Wrong by User</div>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <input type="text" class="search-input" id="searchBox" placeholder="Search problem by name, scientific name or crop..." oninput="filterCards()">
+      <button class="filter-btn active" data-filter="all" onclick="setFilter('all', this)">All Problems</button>
+      <button class="filter-btn" data-filter="photos" onclick="setFilter('photos', this)">Has Photos</button>
+      <button class="filter-btn" data-filter="placeholder" onclick="setFilter('placeholder', this)">Placeholder Only</button>
+      <button class="filter-btn" data-filter="flagged" onclick="setFilter('flagged', this)">Marked Wrong</button>
+    </div>
+  </div>
+
+  <div class="container" id="problemsContainer">
+    
+      <div class="problem-card" id="card-parawilt-cotton" data-slug="parawilt-cotton" data-type="abiotic_stress" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Parawilt / Sudden Physiological Wilt of Cotton</div>
+            <div class="problem-sci">Physiological Stress (Anoxia)</div>
+            <div class="problem-crops">Affects: Cotton</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-abiotic_stress">abiotic stress</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-parawilt-cotton-0">
+              <img src="/problems/parawilt-cotton/response_to_stress_jpg_1.webp" alt="Parawilt / Sudden Physiological Wilt of Cotton" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Parawilt / Sudden Physiological Wilt of Cotton - In response to stress, the hypothalamus (H) releases the corticotrophin releasing factor (CRF) into the anterior pituitary (P), causing the release of</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0
+                  <br>Author: Campos-Rodríguez R, Godínez-Victoria M, Abarca-Rojano E, Pacheco-Yépez J, Reyna-Garfias H, Barbosa-Cabrera RE, Drago-Serrano ME
+                </div>
+                <button class="mark-btn" id="btn-parawilt-cotton-0" onclick="toggleMark('parawilt-cotton', 0, '/problems/parawilt-cotton/response_to_stress_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-parawilt-cotton-1">
+              <img src="/problems/parawilt-cotton/technology_stress_hunch_png_2.webp" alt="Parawilt / Sudden Physiological Wilt of Cotton" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Parawilt / Sudden Physiological Wilt of Cotton - stress points from computer posture</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Andwall2
+                </div>
+                <button class="mark-btn" id="btn-parawilt-cotton-1" onclick="toggleMark('parawilt-cotton', 1, '/problems/parawilt-cotton/technology_stress_hunch_png_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-bacterial-blight-cotton" data-slug="bacterial-blight-cotton" data-type="bacterial" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Bacterial Blight of Cotton (Black Arm)</div>
+            <div class="problem-sci">Xanthomonas citri pv. malvacearum</div>
+            <div class="problem-crops">Affects: Cotton</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-bacterial">bacterial</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-bacterial-blight-cotton-0">
+              <img src="/problems/bacterial-blight-cotton/xanthomonas_leaf_spot_png_1.webp" alt="Bacterial Blight of Cotton (Black Arm)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bacterial Blight of Cotton (Black Arm) - Xanthomonas hortorum pv. hederae leaf spot on English ivy English ivy (Hedera helix L.).</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Ninjatacoshell
+                </div>
+                <button class="mark-btn" id="btn-bacterial-blight-cotton-0" onclick="toggleMark('bacterial-blight-cotton', 0, '/problems/bacterial-blight-cotton/xanthomonas_leaf_spot_png_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-bacterial-blight-cotton-1">
+              <img src="/problems/bacterial-blight-cotton/the_time_sequence_of_physiological_event_2.webp" alt="Bacterial Blight of Cotton (Black Arm)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bacterial Blight of Cotton (Black Arm) - The figure shows the time sequence of physiological events of the cotton plant during bacterial blight resistance. The resistance is characterized by </div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Aida Jalloul
+                </div>
+                <button class="mark-btn" id="btn-bacterial-blight-cotton-1" onclick="toggleMark('bacterial-blight-cotton', 1, '/problems/bacterial-blight-cotton/the_time_sequence_of_physiological_event_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-bacterial-blight-pomegranate" data-slug="bacterial-blight-pomegranate" data-type="bacterial" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Bacterial Blight of Pomegranate (Telya Disease)</div>
+            <div class="problem-sci">Xanthomonas axonopodis pv. punicae</div>
+            <div class="problem-crops">Affects: Pomegranate</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-bacterial">bacterial</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-bacterial-blight-pomegranate-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Bacterial Blight of Pomegranate (Telya Disease)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bacterial Blight of Pomegranate (Telya Disease): Field photo not yet verified. Look for: Water-soaked oily dark spots with yellowish halo on leaves, turning necrotic and brown; dark brown to black elongated cankers on stems that ...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-bacterial-blight-pomegranate-0" onclick="toggleMark('bacterial-blight-pomegranate', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-bacterial-leaf-blight-paddy" data-slug="bacterial-leaf-blight-paddy" data-type="bacterial" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Bacterial Leaf Blight of Paddy (BLB)</div>
+            <div class="problem-sci">Xanthomonas oryzae pv. oryzae</div>
+            <div class="problem-crops">Affects: Paddy (Rice)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-bacterial">bacterial</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-bacterial-leaf-blight-paddy-0">
+              <img src="/problems/bacterial-leaf-blight-paddy/bacterial_blight_of_rice_jpeg_1.webp" alt="Bacterial Leaf Blight of Paddy (BLB)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bacterial Leaf Blight of Paddy (BLB) - Bacterial blight of rice</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Donald Groth, Louisiana State University AgCenter, Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-bacterial-leaf-blight-paddy-0" onclick="toggleMark('bacterial-leaf-blight-paddy', 0, '/problems/bacterial-leaf-blight-paddy/bacterial_blight_of_rice_jpeg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-bacterial-leaf-blight-paddy-1">
+              <img src="/problems/bacterial-leaf-blight-paddy/xanthomonas-disease_jpg_2.webp" alt="Bacterial Leaf Blight of Paddy (BLB)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bacterial Leaf Blight of Paddy (BLB) - Xanthomonas campestris pv. campestris caused black rot of cabbage (i, ii). Xanthomonas citri pv. citri. - citrus canker (iii, iv) Xanthomonas oryzae p</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 4.0
+                  <br>Author: An SQ, Potnis N, Dow M, Vorhölter FJ, He YQ, Becker A, Teper D, Li Y, Wang N, Bleris L, Tang JL.
+                </div>
+                <button class="mark-btn" id="btn-bacterial-leaf-blight-paddy-1" onclick="toggleMark('bacterial-leaf-blight-paddy', 1, '/problems/bacterial-leaf-blight-paddy/xanthomonas-disease_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-bacterial-wilt-tomato" data-slug="bacterial-wilt-tomato" data-type="bacterial" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Bacterial Wilt of Tomato</div>
+            <div class="problem-sci">Ralstonia solanacearum</div>
+            <div class="problem-crops">Affects: Chilli (Green / Dry), Tomato</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-bacterial">bacterial</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-bacterial-wilt-tomato-0">
+              <img src="/problems/bacterial-wilt-tomato/ralstonia_solanacearum_symptoms_jpg_1.webp" alt="Bacterial Wilt of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bacterial Wilt of Tomato - Symptoms of southern bacterial wilt in tomato caused by Ralstonia solanacearum</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Clemson University - USDA Cooperative Extension Slide Series, , Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-bacterial-wilt-tomato-0" onclick="toggleMark('bacterial-wilt-tomato', 0, '/problems/bacterial-wilt-tomato/ralstonia_solanacearum_symptoms_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-bacterial-wilt-tomato-1">
+              <img src="/problems/bacterial-wilt-tomato/tomato_bacterial_wilt_pathogen_ralstonia_2.webp" alt="Bacterial Wilt of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bacterial Wilt of Tomato - Location: Florida
+
+
+
+In an email to Wikimedia Commons' Volunteer Response Team, Scot Nelson has released all content from their Flickr photostream und</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Scot Nelson
+                </div>
+                <button class="mark-btn" id="btn-bacterial-wilt-tomato-1" onclick="toggleMark('bacterial-wilt-tomato', 1, '/problems/bacterial-wilt-tomato/tomato_bacterial_wilt_pathogen_ralstonia_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-bacterial-wilt-tomato-2">
+              <img src="/problems/bacterial-wilt-tomato/ginger_bacterial_wilt_13_jpg_3.webp" alt="Bacterial Wilt of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bacterial Wilt of Tomato - Symptoms of bacterial blight disease of ginger: rot of edible root.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Plant pests and diseases
+                </div>
+                <button class="mark-btn" id="btn-bacterial-wilt-tomato-2" onclick="toggleMark('bacterial-wilt-tomato', 2, '/problems/bacterial-wilt-tomato/ginger_bacterial_wilt_13_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-blast-disease-paddy" data-slug="blast-disease-paddy" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Blast Disease of Paddy (Magnaporthe)</div>
+            <div class="problem-sci">Magnaporthe oryzae</div>
+            <div class="problem-crops">Affects: Paddy (Rice), Ragi (Finger Millet)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-blast-disease-paddy-0">
+              <img src="/problems/blast-disease-paddy/magnaporthe_grisea_jpg_1.webp" alt="Blast Disease of Paddy (Magnaporthe)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Blast Disease of Paddy (Magnaporthe) - Hyphae and a spore of Magnaporthe grisea, the causal fungus of blast of rice.
+
+Photo by Fk.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 2.5
+                  <br>Author: No machine-readable author provided. Fk assumed (based on copyright claims).
+                </div>
+                <button class="mark-btn" id="btn-blast-disease-paddy-0" onclick="toggleMark('blast-disease-paddy', 0, '/problems/blast-disease-paddy/magnaporthe_grisea_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-blast-disease-paddy-1">
+              <img src="/problems/blast-disease-paddy/patrol_through_afghan_farmland_110808-f-_2.webp" alt="Blast Disease of Paddy (Magnaporthe)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Blast Disease of Paddy (Magnaporthe) - Army Staff Sgt. Michael Duffy, squad leader attached to Laghman Provincial Reconstruction Team, navigates through a series of rice paddies and corn fi</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Staff Sgt. Ryan Crane
+                </div>
+                <button class="mark-btn" id="btn-blast-disease-paddy-1" onclick="toggleMark('blast-disease-paddy', 1, '/problems/blast-disease-paddy/patrol_through_afghan_farmland_110808-f-_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-blast-disease-paddy-2">
+              <img src="/problems/blast-disease-paddy/patrol_through_afghan_farmland_110807-f-_3.webp" alt="Blast Disease of Paddy (Magnaporthe)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Blast Disease of Paddy (Magnaporthe) - Spc. Michael Bartolo, grenadier attached to Laghman Provincial Reconstruction Team, and Afghan National Army soldiers navigate through a series of ric</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Staff Sgt. Ryan Crane
+                </div>
+                <button class="mark-btn" id="btn-blast-disease-paddy-2" onclick="toggleMark('blast-disease-paddy', 2, '/problems/blast-disease-paddy/patrol_through_afghan_farmland_110807-f-_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-bud-rot-coconut" data-slug="bud-rot-coconut" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Bud Rot of Coconut Palm</div>
+            <div class="problem-sci">Phytophthora palmivora</div>
+            <div class="problem-crops">Affects: Coconut</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-bud-rot-coconut-0">
+              <img src="/problems/bud-rot-coconut/oospores1a_5681059901_jpg_1.webp" alt="Bud Rot of Coconut Palm" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bud Rot of Coconut Palm - Oospores of Phytophthora palmivora | Read: www.ctahr.hawaii.edu/oc/freepubs/pdf/PD-53.pdf</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Scot Nelson from Honolulu, Hawaii, USA
+                </div>
+                <button class="mark-btn" id="btn-bud-rot-coconut-0" onclick="toggleMark('bud-rot-coconut', 0, '/problems/bud-rot-coconut/oospores1a_5681059901_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-bud-rot-coconut-1">
+              <img src="/problems/bud-rot-coconut/papaya_phytophthora_blight_5684242641_jp_2.webp" alt="Bud Rot of Coconut Palm" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bud Rot of Coconut Palm - Phytophthora blight of papaya caused by Phytophthora palmivora | Read: www.ctahr.hawaii.edu/oc/freepubs/pdf/PD-53.pdf</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Scot Nelson from Honolulu, Hawaii, USA
+                </div>
+                <button class="mark-btn" id="btn-bud-rot-coconut-1" onclick="toggleMark('bud-rot-coconut', 1, '/problems/bud-rot-coconut/papaya_phytophthora_blight_5684242641_jp_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-bud-rot-coconut-2">
+              <img src="/problems/bud-rot-coconut/african_snails_achatina_fulica_and_their_3.webp" alt="Bud Rot of Coconut Palm" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Bud Rot of Coconut Palm - African snails (Achatina fulica) and their feeding injury to papaya fruits. The whitish mycelium is Phytophthora palmivora | Read: www.ctahr.hawaii.ed</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Scot Nelson from Honolulu, Hawaii, USA
+                </div>
+                <button class="mark-btn" id="btn-bud-rot-coconut-2" onclick="toggleMark('bud-rot-coconut', 2, '/problems/bud-rot-coconut/african_snails_achatina_fulica_and_their_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-chilli-anthracnose-fruit-rot" data-slug="chilli-anthracnose-fruit-rot" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Chilli Anthracnose and Die-back</div>
+            <div class="problem-sci">Colletotrichum capsici</div>
+            <div class="problem-crops">Affects: Chilli (Green / Dry)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-chilli-anthracnose-fruit-rot-0">
+              <img src="/problems/chilli-anthracnose-fruit-rot/pepper_disease_in_tropical_bonakanda_jpg_1.webp" alt="Chilli Anthracnose and Die-back" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Chilli Anthracnose and Die-back - Anthracnose: fruit damage of Organic hot pepper in Tropical Bonakanda  Forest  in Buea, SWR, CMR</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: DannykhorskhiLXII
+                </div>
+                <button class="mark-btn" id="btn-chilli-anthracnose-fruit-rot-0" onclick="toggleMark('chilli-anthracnose-fruit-rot', 0, '/problems/chilli-anthracnose-fruit-rot/pepper_disease_in_tropical_bonakanda_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-collar-rot-groundnut" data-slug="collar-rot-groundnut" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Collar Rot of Groundnut (Crown Rot)</div>
+            <div class="problem-sci">Aspergillus niger</div>
+            <div class="problem-crops">Affects: Groundnut (Peanut)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-collar-rot-groundnut-0">
+              <img src="/problems/collar-rot-groundnut/aspergillus_niger_micrograph_jpg_1.webp" alt="Collar Rot of Groundnut (Crown Rot)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Collar Rot of Groundnut (Crown Rot) - Microscopic image (100-fold magnification) of Aspergillus niger, grown on Sabouraud agar medium.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: No machine-readable author provided. Y tambe assumed (based on copyright claims).
+                </div>
+                <button class="mark-btn" id="btn-collar-rot-groundnut-0" onclick="toggleMark('collar-rot-groundnut', 0, '/problems/collar-rot-groundnut/aspergillus_niger_micrograph_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-collar-rot-groundnut-1">
+              <img src="/problems/collar-rot-groundnut/aspergillus_niger_01_jpg_2.webp" alt="Collar Rot of Groundnut (Crown Rot)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Collar Rot of Groundnut (Crown Rot) - File:Aspergillus niger 01.jpg</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Rasbak
+                </div>
+                <button class="mark-btn" id="btn-collar-rot-groundnut-1" onclick="toggleMark('collar-rot-groundnut', 1, '/problems/collar-rot-groundnut/aspergillus_niger_01_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-collar-rot-groundnut-2">
+              <img src="/problems/collar-rot-groundnut/aspergillus_niger_67542788_jpg_3.webp" alt="Collar Rot of Groundnut (Crown Rot)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Collar Rot of Groundnut (Crown Rot) - Black Mold (Aspergillus niger)</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: pynklynx
+                </div>
+                <button class="mark-btn" id="btn-collar-rot-groundnut-2" onclick="toggleMark('collar-rot-groundnut', 2, '/problems/collar-rot-groundnut/aspergillus_niger_67542788_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-damping-off-tomato" data-slug="damping-off-tomato" data-type="fungal" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Damping Off of Vegetable Seedlings (Tomato, Chilli, Brinjal)</div>
+            <div class="problem-sci">Pythium aphanidermatum & Rhizoctonia solani</div>
+            <div class="problem-crops">Affects: Chilli (Green / Dry), Tomato</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-damping-off-tomato-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Damping Off of Vegetable Seedlings (Tomato, Chilli, Brinjal)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Damping Off of Vegetable Seedlings (Tomato, Chilli, Brinjal): Field photo not yet verified. Look for: Pre-emergence: Seeds rot and decompose before sprouting; Post-emergence: Water-soaked soft brown lesion girdles the tender seedling stem at ...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-damping-off-tomato-0" onclick="toggleMark('damping-off-tomato', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-dry-root-rot-chickpea" data-slug="dry-root-rot-chickpea" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Dry Root Rot of Chickpea</div>
+            <div class="problem-sci">Rhizoctonia bataticola (Macrophomina phaseolina)</div>
+            <div class="problem-crops">Affects: Chickpea (Bengal Gram)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-dry-root-rot-chickpea-0">
+              <img src="/problems/dry-root-rot-chickpea/macrophomina_phaseolina_jpg_1.webp" alt="Dry Root Rot of Chickpea" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Dry Root Rot of Chickpea - Black microselerotia and orange pycnidia of the fungi Macrophomina phaseolina  infecting the host Pinus elliottii</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Edward L. Barnard, Florida Department of Agriculture and Consumer Services
+                </div>
+                <button class="mark-btn" id="btn-dry-root-rot-chickpea-0" onclick="toggleMark('dry-root-rot-chickpea', 0, '/problems/dry-root-rot-chickpea/macrophomina_phaseolina_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-dry-root-rot-chickpea-1">
+              <img src="/problems/dry-root-rot-chickpea/macrophomina_phaseolina_field_symptom_of_2.webp" alt="Dry Root Rot of Chickpea" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Dry Root Rot of Chickpea - Field symptom of Mungbean</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 au
+                  <br>Author: Photchana Trakunsukharati, Department of Agriculture, Thailand
+                </div>
+                <button class="mark-btn" id="btn-dry-root-rot-chickpea-1" onclick="toggleMark('dry-root-rot-chickpea', 1, '/problems/dry-root-rot-chickpea/macrophomina_phaseolina_field_symptom_of_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-dry-root-rot-chickpea-2">
+              <img src="/problems/dry-root-rot-chickpea/host_symptom_of_macrophomina_phaseolina__3.webp" alt="Dry Root Rot of Chickpea" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Dry Root Rot of Chickpea - Host symptom of Macrophomina phaseolina onMungbean</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 au
+                  <br>Author: Photchana Trakunsukharati, Department of Agriculture, Thailand
+                </div>
+                <button class="mark-btn" id="btn-dry-root-rot-chickpea-2" onclick="toggleMark('dry-root-rot-chickpea', 2, '/problems/dry-root-rot-chickpea/host_symptom_of_macrophomina_phaseolina__3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-early-blight-tomato" data-slug="early-blight-tomato" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Early Blight of Tomato</div>
+            <div class="problem-sci">Alternaria solani</div>
+            <div class="problem-crops">Affects: Chilli (Green / Dry), Tomato</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-early-blight-tomato-0">
+              <img src="/problems/early-blight-tomato/alternaria_solani_-_leaf_lesions_jpg_1.webp" alt="Early Blight of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Early Blight of Tomato - A tomato leaf showing typical target shaped lesions of Alternaria solani</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Clemson University - USDA Cooperative Extension Slide Series
+                </div>
+                <button class="mark-btn" id="btn-early-blight-tomato-0" onclick="toggleMark('early-blight-tomato', 0, '/problems/early-blight-tomato/alternaria_solani_-_leaf_lesions_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-early-blight-tomato-1">
+              <img src="/problems/early-blight-tomato/alternaria_solani_-_stem_lesions_jpg_2.webp" alt="Early Blight of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Early Blight of Tomato - Tomato stem with lesion due to Alternaria solani</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Clemson University - USDA Cooperative Extension Slide Series
+                </div>
+                <button class="mark-btn" id="btn-early-blight-tomato-1" onclick="toggleMark('early-blight-tomato', 1, '/problems/early-blight-tomato/alternaria_solani_-_stem_lesions_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-early-blight-tomato-2">
+              <img src="/problems/early-blight-tomato/alternaria_solani_a1_3_jpg_3.webp" alt="Early Blight of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Early Blight of Tomato - Alternaria solani on a leaf Solanum lycopersicon (bottom)</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Jerzy Opioła
+                </div>
+                <button class="mark-btn" id="btn-early-blight-tomato-2" onclick="toggleMark('early-blight-tomato', 2, '/problems/early-blight-tomato/alternaria_solani_a1_3_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-foot-rot-ragi" data-slug="foot-rot-ragi" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Foot Rot / Collar Rot of Finger Millet (Ragi)</div>
+            <div class="problem-sci">Sclerotium rolfsii</div>
+            <div class="problem-crops">Affects: Finger Millet (Ragi)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-foot-rot-ragi-0">
+              <img src="/problems/foot-rot-ragi/athelia_rolfsii_sclerotia_jpg_1.webp" alt="Foot Rot / Collar Rot of Finger Millet (Ragi)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Foot Rot / Collar Rot of Finger Millet (Ragi) - Athelia rolfsii sclerotia on Solanum lycopersicum (tomato)</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Persley D. &amp; Cooke T
+                </div>
+                <button class="mark-btn" id="btn-foot-rot-ragi-0" onclick="toggleMark('foot-rot-ragi', 0, '/problems/foot-rot-ragi/athelia_rolfsii_sclerotia_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-foot-rot-ragi-1">
+              <img src="/problems/foot-rot-ragi/athelia_rolfsii_jpg_2.webp" alt="Foot Rot / Collar Rot of Finger Millet (Ragi)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Foot Rot / Collar Rot of Finger Millet (Ragi) - southern blight Athelia rolfsii on Eastern Juniper Juniperus virginiana L.; fruiting bodies at base of foliage.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Edward L. Barnard - Florida Department of Agriculture and Consumer Services
+                </div>
+                <button class="mark-btn" id="btn-foot-rot-ragi-1" onclick="toggleMark('foot-rot-ragi', 1, '/problems/foot-rot-ragi/athelia_rolfsii_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-foot-rot-ragi-2">
+              <img src="/problems/foot-rot-ragi/sclerotium_rolfsii_jpg_3.webp" alt="Foot Rot / Collar Rot of Finger Millet (Ragi)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Foot Rot / Collar Rot of Finger Millet (Ragi) - Here, the carrot disks are used as baits to detect S. rolfsii in soil samples.
+This pathogen causes southern blight of several crops</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Plant pests and diseases
+                </div>
+                <button class="mark-btn" id="btn-foot-rot-ragi-2" onclick="toggleMark('foot-rot-ragi', 2, '/problems/foot-rot-ragi/sclerotium_rolfsii_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-fusarium-wilt-chickpea" data-slug="fusarium-wilt-chickpea" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Fusarium Wilt of Chickpea</div>
+            <div class="problem-sci">Fusarium oxysporum f. sp. ciceris</div>
+            <div class="problem-crops">Affects: Chickpea (Bengal Gram)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-fusarium-wilt-chickpea-0">
+              <img src="/problems/fusarium-wilt-chickpea/k7725-1-sm_jpg_1.webp" alt="Fusarium Wilt of Chickpea" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Fusarium Wilt of Chickpea - Plant-pathogenic strain of Fusarium oxysporum that causes fusarium wilt (image cropped from original version).</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Keith Weller, USDA-ARS
+                </div>
+                <button class="mark-btn" id="btn-fusarium-wilt-chickpea-0" onclick="toggleMark('fusarium-wilt-chickpea', 0, '/problems/fusarium-wilt-chickpea/k7725-1-sm_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-fusarium-wilt-chickpea-1">
+              <img src="/problems/fusarium-wilt-chickpea/characteristic_of_fusarium_equiseti_colo_2.webp" alt="Fusarium Wilt of Chickpea" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Fusarium Wilt of Chickpea - Characteristic of Fusarium equiseti colony (A); chlamydospores (B); macroconidia and microconidia (C). Magnification 400×; mounting medium, lactopheno</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 4.0
+                  <br>Author: El Hazzat, Naila, Manal Adnani, Soukaina Msairi, Moulay Abdelaziz El Alaoui, Najoua Mouden, Mohamed Chliyeh, Said Boughribil, Karima Selmaoui, Ouazzani Touhami Amina, and Allal Douira.
+                </div>
+                <button class="mark-btn" id="btn-fusarium-wilt-chickpea-1" onclick="toggleMark('fusarium-wilt-chickpea', 1, '/problems/fusarium-wilt-chickpea/characteristic_of_fusarium_equiseti_colo_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-fusarium-wilt-chickpea-2">
+              <img src="/problems/fusarium-wilt-chickpea/symptoms_of_stunting_in_chickpea_plants__3.webp" alt="Fusarium Wilt of Chickpea" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Fusarium Wilt of Chickpea - Symptoms of stunting in chickpea plants - Cicer arietinum - (a) derived from seeds inoculated with Fusarium equiseti isolate (F.e) and control seedlin</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 4.0
+                  <br>Author: El Hazzat, Naila, Manal Adnani, Soukaina Msairi, Moulay Abdelaziz El Alaoui, Najoua Mouden, Mohamed Chliyeh, Said Boughribil, Karima Selmaoui, Ouazzani Touhami Amina, and Allal Douira.
+                </div>
+                <button class="mark-btn" id="btn-fusarium-wilt-chickpea-2" onclick="toggleMark('fusarium-wilt-chickpea', 2, '/problems/fusarium-wilt-chickpea/symptoms_of_stunting_in_chickpea_plants__3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-fusarium-wilt-pigeonpea" data-slug="fusarium-wilt-pigeonpea" data-type="fungal" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Fusarium Wilt of Pigeonpea</div>
+            <div class="problem-sci">Fusarium udum</div>
+            <div class="problem-crops">Affects: Red Gram / Tur (Pigeonpea)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-fusarium-wilt-pigeonpea-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Fusarium Wilt of Pigeonpea" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Fusarium Wilt of Pigeonpea: Field photo not yet verified. Look for: Gradual withering and yellowing of foliage starting from bottom branches; leaves turn yellow, droop, and dry up while clinging to the plant;...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-fusarium-wilt-pigeonpea-0" onclick="toggleMark('fusarium-wilt-pigeonpea', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-groundnut-rust" data-slug="groundnut-rust" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Groundnut Rust</div>
+            <div class="problem-sci">Puccinia arachidis</div>
+            <div class="problem-crops">Affects: Groundnut (Peanut)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-groundnut-rust-0">
+              <img src="/problems/groundnut-rust/puccinia_arachidis_jpg_1.webp" alt="Groundnut Rust" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Groundnut Rust - Puccinia arachidis: Lower surface of peanut leaflets with light and heavy infections.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: LandCare Ltd., New Zealand
+                </div>
+                <button class="mark-btn" id="btn-groundnut-rust-0" onclick="toggleMark('groundnut-rust', 0, '/problems/groundnut-rust/puccinia_arachidis_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-groundnut-rust-1">
+              <img src="/problems/groundnut-rust/puccinia_arachidis2_jpg_2.webp" alt="Groundnut Rust" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Groundnut Rust - Puccinia arachidis: Lower surface of peanut leaflets with heavy infections.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: LandCare Ltd., New Zealand
+                </div>
+                <button class="mark-btn" id="btn-groundnut-rust-1" onclick="toggleMark('groundnut-rust', 1, '/problems/groundnut-rust/puccinia_arachidis2_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-groundnut-rust-2">
+              <img src="/problems/groundnut-rust/puccinia_arachidis1_jpg_3.webp" alt="Groundnut Rust" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Groundnut Rust - Puccinia arachidis: Lower surface of a peanut leaflet with brown pustules.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: LandCare Ltd., New Zealand
+                </div>
+                <button class="mark-btn" id="btn-groundnut-rust-2" onclick="toggleMark('groundnut-rust', 2, '/problems/groundnut-rust/puccinia_arachidis1_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-koleroga-fruit-rot-arecanut" data-slug="koleroga-fruit-rot-arecanut" data-type="fungal" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Koleroga / Mahali of Arecanut (Fruit Rot)</div>
+            <div class="problem-sci">Phytophthora meadii</div>
+            <div class="problem-crops">Affects: Areca nut (Betel Nut / Supari)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-koleroga-fruit-rot-arecanut-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Koleroga / Mahali of Arecanut (Fruit Rot)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Koleroga / Mahali of Arecanut (Fruit Rot): Field photo not yet verified. Look for: Water-soaked dark lesions appear on the surface of young tender nuts near the calyx; infected nuts turn dark green to brownish-black and dro...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-koleroga-fruit-rot-arecanut-0" onclick="toggleMark('koleroga-fruit-rot-arecanut', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-late-blight-tomato" data-slug="late-blight-tomato" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Late Blight of Tomato</div>
+            <div class="problem-sci">Phytophthora infestans</div>
+            <div class="problem-crops">Affects: Tomato</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-late-blight-tomato-0">
+              <img src="/problems/late-blight-tomato/tomato_with_phytophthora_infestans_late__1.webp" alt="Late Blight of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Late Blight of Tomato - Garden tomato (variety "Ace") with Phytophthora infestans (late blight or potato blight). Los Angeles, California</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Downtowngal
+                </div>
+                <button class="mark-btn" id="btn-late-blight-tomato-0" onclick="toggleMark('late-blight-tomato', 0, '/problems/late-blight-tomato/tomato_with_phytophthora_infestans_late__1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-late-blight-tomato-1">
+              <img src="/problems/late-blight-tomato/modell_von_phytophthora_infestans_-oster_2.webp" alt="Late Blight of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Late Blight of Tomato - Model from the collection of the Botanical Museum in Greifswald, Germany. .see also universitaetssammlungen.de/modelle for more information on the mod</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: David Ludwig
+                </div>
+                <button class="mark-btn" id="btn-late-blight-tomato-1" onclick="toggleMark('late-blight-tomato', 1, '/problems/late-blight-tomato/modell_von_phytophthora_infestans_-oster_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-late-blight-tomato-2">
+              <img src="/problems/late-blight-tomato/phytophthora_infestans_migration_and_div_3.webp" alt="Late Blight of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Late Blight of Tomato - Phytophthora infestans migration and diversification</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Paul RJ Birch and David EL Cooke Scot Nelson
+                </div>
+                <button class="mark-btn" id="btn-late-blight-tomato-2" onclick="toggleMark('late-blight-tomato', 2, '/problems/late-blight-tomato/phytophthora_infestans_migration_and_div_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-mango-anthracnose" data-slug="mango-anthracnose" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Mango Anthracnose and Blossom Blight</div>
+            <div class="problem-sci">Colletotrichum gloeosporioides</div>
+            <div class="problem-crops">Affects: Mango (Alphonso / Kesar / Totapuri)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-mango-anthracnose-0">
+              <img src="/problems/mango-anthracnose/bitter_rot_jpg_1.webp" alt="Mango Anthracnose and Blossom Blight" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Mango Anthracnose and Blossom Blight - Symptoms of bitter rot on California laurel caused by the fungus Colletotrichum gloeosporioides</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: USDA Forest Service
+                </div>
+                <button class="mark-btn" id="btn-mango-anthracnose-0" onclick="toggleMark('mango-anthracnose', 0, '/problems/mango-anthracnose/bitter_rot_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-mango-anthracnose-1">
+              <img src="/problems/mango-anthracnose/tart_cherry_bitter_rot_jpg_2.webp" alt="Mango Anthracnose and Blossom Blight" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Mango Anthracnose and Blossom Blight - Tart cherry fruits caused by Glomerella cingulata (bitter rot)</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Glysiak
+                </div>
+                <button class="mark-btn" id="btn-mango-anthracnose-1" onclick="toggleMark('mango-anthracnose', 1, '/problems/mango-anthracnose/tart_cherry_bitter_rot_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-mango-anthracnose-2">
+              <img src="/problems/mango-anthracnose/picholine_momifi_e_1_jpg_3.webp" alt="Mango Anthracnose and Blossom Blight" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Mango Anthracnose and Blossom Blight - Picholine olive fruit hit by dalmaticosies</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: RGimilio
+                </div>
+                <button class="mark-btn" id="btn-mango-anthracnose-2" onclick="toggleMark('mango-anthracnose', 2, '/problems/mango-anthracnose/picholine_momifi_e_1_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-mango-powdery-mildew" data-slug="mango-powdery-mildew" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Mango Powdery Mildew</div>
+            <div class="problem-sci">Oidium mangiferae</div>
+            <div class="problem-crops">Affects: Mango</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-mango-powdery-mildew-0">
+              <img src="/problems/mango-powdery-mildew/mango_powdery_mildew_severe_leaf_blight__1.webp" alt="Mango Powdery Mildew" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Mango Powdery Mildew - A photograph of a mango tree where the leaves are heavily infected by powdery mildew caused by Oidium mangiferae</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Scot Nelson, Wayne Nishijima
+                </div>
+                <button class="mark-btn" id="btn-mango-powdery-mildew-0" onclick="toggleMark('mango-powdery-mildew', 0, '/problems/mango-powdery-mildew/mango_powdery_mildew_severe_leaf_blight__1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-mango-powdery-mildew-1">
+              <img src="/problems/mango-powdery-mildew/mango_powdery_mildew_leaf_blight_curling_2.webp" alt="Mango Powdery Mildew" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Mango Powdery Mildew - A photograph of mango leaves being curled, caused by an infection of Oidium mangiferae.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Scot Nelson, Wayne Nishijima
+                </div>
+                <button class="mark-btn" id="btn-mango-powdery-mildew-1" onclick="toggleMark('mango-powdery-mildew', 1, '/problems/mango-powdery-mildew/mango_powdery_mildew_leaf_blight_curling_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-mango-powdery-mildew-2">
+              <img src="/problems/mango-powdery-mildew/mango_powdery_mildew_mycelium_leaf_surfa_3.webp" alt="Mango Powdery Mildew" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Mango Powdery Mildew - A mango leaf infected by Oidium mangiferae</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Scot Nelson, Wayne Nishijima
+                </div>
+                <button class="mark-btn" id="btn-mango-powdery-mildew-2" onclick="toggleMark('mango-powdery-mildew', 2, '/problems/mango-powdery-mildew/mango_powdery_mildew_mycelium_leaf_surfa_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-panama-wilt-banana" data-slug="panama-wilt-banana" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Panama Wilt of Banana (Fusarium Wilt)</div>
+            <div class="problem-sci">Fusarium oxysporum f. sp. cubense</div>
+            <div class="problem-crops">Affects: Banana (Grand Naine / Yelakki)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-panama-wilt-banana-0">
+              <img src="/problems/panama-wilt-banana/fusarium_oxysporum_f_sp_cubense_race_1_2_1.webp" alt="Panama Wilt of Banana (Fusarium Wilt)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Panama Wilt of Banana (Fusarium Wilt) - Flickr description
+This fungal plant pathogen causes Fusarium wilt (Panama disease) of certain banana varieties. Here the fungus has been growing for </div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Scot Nelson
+                </div>
+                <button class="mark-btn" id="btn-panama-wilt-banana-0" onclick="toggleMark('panama-wilt-banana', 0, '/problems/panama-wilt-banana/fusarium_oxysporum_f_sp_cubense_race_1_2_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-panama-wilt-banana-1">
+              <img src="/problems/panama-wilt-banana/fusarium_oxysporum_f_sp_cubense_race_1_f_2.webp" alt="Panama Wilt of Banana (Fusarium Wilt)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Panama Wilt of Banana (Fusarium Wilt) - Flickr description
+Disease: Fusarium wilt of banana (Panama disease) Here the pathogen was growing for several days on brown rice 
+
+
+
+In an email to W</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Scot Nelson
+                </div>
+                <button class="mark-btn" id="btn-panama-wilt-banana-1" onclick="toggleMark('panama-wilt-banana', 1, '/problems/panama-wilt-banana/fusarium_oxysporum_f_sp_cubense_race_1_f_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-panama-wilt-banana-2">
+              <img src="/problems/panama-wilt-banana/fusarium_oxysporum_f_sp_cubense_race_1_f_3.webp" alt="Panama Wilt of Banana (Fusarium Wilt)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Panama Wilt of Banana (Fusarium Wilt) - Flickr description
+Disease: Fusarium wilt of banana (Panama disease) 
+Fusarium oxysporum f. sp. cubense race 1 (Foc) mycelium emerging from infected b</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Scot Nelson
+                </div>
+                <button class="mark-btn" id="btn-panama-wilt-banana-2" onclick="toggleMark('panama-wilt-banana', 2, '/problems/panama-wilt-banana/fusarium_oxysporum_f_sp_cubense_race_1_f_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-purple-blotch-onion" data-slug="purple-blotch-onion" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Purple Blotch of Onion</div>
+            <div class="problem-sci">Alternaria porri</div>
+            <div class="problem-crops">Affects: Onion</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-purple-blotch-onion-0">
+              <img src="/problems/purple-blotch-onion/alternaria_solani_-_leaf_lesions_jpg_1.webp" alt="Purple Blotch of Onion" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Purple Blotch of Onion - A tomato leaf showing typical target shaped lesions of Alternaria solani</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Clemson University - USDA Cooperative Extension Slide Series
+                </div>
+                <button class="mark-btn" id="btn-purple-blotch-onion-0" onclick="toggleMark('purple-blotch-onion', 0, '/problems/purple-blotch-onion/alternaria_solani_-_leaf_lesions_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-purple-blotch-onion-1">
+              <img src="/problems/purple-blotch-onion/alternaria_porri_396462144_jpg_2.webp" alt="Purple Blotch of Onion" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Purple Blotch of Onion - this is my lovely fungi. i will graduate or not depends on them!!</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 2.0
+                  <br>Author: honey-bee from Bangkok, Thailand
+                </div>
+                <button class="mark-btn" id="btn-purple-blotch-onion-1" onclick="toggleMark('purple-blotch-onion', 1, '/problems/purple-blotch-onion/alternaria_porri_396462144_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-purple-blotch-onion-2">
+              <img src="/problems/purple-blotch-onion/alternaria_porri_jpg_3.webp" alt="Purple Blotch of Onion" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Purple Blotch of Onion - Alternariose du poireau</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0
+                  <br>Author: New Zealand Fungal and Plant Disease Collection (PDD) - Landcare Research
+                </div>
+                <button class="mark-btn" id="btn-purple-blotch-onion-2" onclick="toggleMark('purple-blotch-onion', 2, '/problems/purple-blotch-onion/alternaria_porri_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-ragi-blast" data-slug="ragi-blast" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Ragi Blast (Finger Millet Blast)</div>
+            <div class="problem-sci">Pyricularia grisea</div>
+            <div class="problem-crops">Affects: Ragi (Finger Millet)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-ragi-blast-0">
+              <img src="/problems/ragi-blast/magnaporthe_grisea_jpg_1.webp" alt="Ragi Blast (Finger Millet Blast)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Ragi Blast (Finger Millet Blast) - Hyphae and a spore of Magnaporthe grisea, the causal fungus of blast of rice.
+
+Photo by Fk.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 2.5
+                  <br>Author: No machine-readable author provided. Fk assumed (based on copyright claims).
+                </div>
+                <button class="mark-btn" id="btn-ragi-blast-0" onclick="toggleMark('ragi-blast', 0, '/problems/ragi-blast/magnaporthe_grisea_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-ragi-blast-1">
+              <img src="/problems/ragi-blast/rice_blast_magnaporthe_grisea_jpg_2.webp" alt="Ragi Blast (Finger Millet Blast)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Ragi Blast (Finger Millet Blast) - File:Rice blast Magnaporthe grisea.jpg</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: PDH
+                </div>
+                <button class="mark-btn" id="btn-ragi-blast-1" onclick="toggleMark('ragi-blast', 1, '/problems/ragi-blast/rice_blast_magnaporthe_grisea_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-ragi-blast-2">
+              <img src="/problems/ragi-blast/j_sendra_with_magnaporthe_grisea_jpeg_3.webp" alt="Ragi Blast (Finger Millet Blast)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Ragi Blast (Finger Millet Blast) - J. Sendra amb pyricularia.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Coentor
+                </div>
+                <button class="mark-btn" id="btn-ragi-blast-2" onclick="toggleMark('ragi-blast', 2, '/problems/ragi-blast/j_sendra_with_magnaporthe_grisea_jpeg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-red-rot-sugarcane" data-slug="red-rot-sugarcane" data-type="fungal" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Red Rot of Sugarcane</div>
+            <div class="problem-sci">Colletotrichum falcatum</div>
+            <div class="problem-crops">Affects: Sugarcane</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-red-rot-sugarcane-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Red Rot of Sugarcane" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Red Rot of Sugarcane: Field photo not yet verified. Look for: Third or fourth leaf from the top shows yellowing, drying along margins, and withering; split cane reveals internal reddening of pith with c...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-red-rot-sugarcane-0" onclick="toggleMark('red-rot-sugarcane', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-sheath-blight-paddy" data-slug="sheath-blight-paddy" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Sheath Blight of Paddy</div>
+            <div class="problem-sci">Rhizoctonia solani</div>
+            <div class="problem-crops">Affects: Paddy (Rice)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-sheath-blight-paddy-0">
+              <img src="/problems/sheath-blight-paddy/thanatephorus_cucumeris_infected_peanuts_1.webp" alt="Sheath Blight of Paddy" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sheath Blight of Paddy - File:Thanatephorus cucumeris infected peanuts.jpg</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: PDH
+                </div>
+                <button class="mark-btn" id="btn-sheath-blight-paddy-0" onclick="toggleMark('sheath-blight-paddy', 0, '/problems/sheath-blight-paddy/thanatephorus_cucumeris_infected_peanuts_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-sheath-blight-paddy-1">
+              <img src="/problems/sheath-blight-paddy/rhizoctonia_hyphae_160x_png_2.webp" alt="Sheath Blight of Paddy" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sheath Blight of Paddy - Rhizoctonia solani hyphae magnified 160X. Identified using Barnett, H. L. &amp; Hunter, B. B. (1998) Illustrated Genera of Imperfect Fungi. APS Press:</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Ninjatacoshell
+                </div>
+                <button class="mark-btn" id="btn-sheath-blight-paddy-1" onclick="toggleMark('sheath-blight-paddy', 1, '/problems/sheath-blight-paddy/rhizoctonia_hyphae_160x_png_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-sheath-blight-paddy-2">
+              <img src="/problems/sheath-blight-paddy/culture_of_soil_fungus_thanatephorus_cuc_3.webp" alt="Sheath Blight of Paddy" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sheath Blight of Paddy - Culture of soil fungus Thanatephorus cucumeris (anamorphic Rhizoctonia solani)</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Tashkoskip
+                </div>
+                <button class="mark-btn" id="btn-sheath-blight-paddy-2" onclick="toggleMark('sheath-blight-paddy', 2, '/problems/sheath-blight-paddy/culture_of_soil_fungus_thanatephorus_cuc_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-sheath-rot-paddy" data-slug="sheath-rot-paddy" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Sheath Rot of Paddy (Rice)</div>
+            <div class="problem-sci">Sarocladium oryzae</div>
+            <div class="problem-crops">Affects: Paddy (Rice)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-sheath-rot-paddy-0">
+              <img src="/problems/sheath-rot-paddy/sarocladium_oryzae_jpg_1.webp" alt="Sheath Rot of Paddy (Rice)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sheath Rot of Paddy (Rice) - Conidiophore and conidia of Sarocladium oryzae (Sawada) W. Gams &amp; D. Hawksw. 1976</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Windesa
+                </div>
+                <button class="mark-btn" id="btn-sheath-rot-paddy-0" onclick="toggleMark('sheath-rot-paddy', 0, '/problems/sheath-rot-paddy/sarocladium_oryzae_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-sheath-rot-paddy-1">
+              <img src="/problems/sheath-rot-paddy/rice_sheath_rot_jpg_2.webp" alt="Sheath Rot of Paddy (Rice)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sheath Rot of Paddy (Rice) - Rice infected by rice sheath rot fungus, Sarocladium oryzae.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Jie-Hao Ou
+                </div>
+                <button class="mark-btn" id="btn-sheath-rot-paddy-1" onclick="toggleMark('sheath-rot-paddy', 1, '/problems/sheath-rot-paddy/rice_sheath_rot_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-sheath-rot-paddy-2">
+              <img src="/problems/sheath-rot-paddy/sarocladium_oryzae_5390549_png_3.webp" alt="Sheath Rot of Paddy (Rice)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sheath Rot of Paddy (Rice) - pourriture de la gaine du riz (Sarocladium oryzae) (Sawada) W. Gams &amp; D. Hawksw.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Donald Groth, Louisiana State University AgCenter, Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-sheath-rot-paddy-2" onclick="toggleMark('sheath-rot-paddy', 2, '/problems/sheath-rot-paddy/sarocladium_oryzae_5390549_png_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-sigatoka-leaf-spot-banana" data-slug="sigatoka-leaf-spot-banana" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Sigatoka Leaf Spot of Banana (Yellow & Black Sigatoka)</div>
+            <div class="problem-sci">Pseudocercospora musae (Mycosphaerella musicola)</div>
+            <div class="problem-crops">Affects: Banana</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-sigatoka-leaf-spot-banana-0">
+              <img src="/problems/sigatoka-leaf-spot-banana/banana-_black_leaf_streak_black_sigatoka_1.webp" alt="Sigatoka Leaf Spot of Banana (Yellow & Black Sigatoka)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sigatoka Leaf Spot of Banana (Yellow & Black Sigatoka) - Pathogen: Mycosphaerella fijiensis
+The streaks are absent on the leaves of young plants. Instead, circular leaf spots form.
+
+Read: www.ctahr.hawaii.ed</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Plant pests and diseases
+                </div>
+                <button class="mark-btn" id="btn-sigatoka-leaf-spot-banana-0" onclick="toggleMark('sigatoka-leaf-spot-banana', 0, '/problems/sigatoka-leaf-spot-banana/banana-_black_leaf_streak_black_sigatoka_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-downy-mildew-maize" data-slug="downy-mildew-maize" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Sorghum / Maize Downy Mildew (Crazy Top)</div>
+            <div class="problem-sci">Peronosclerospora sorghi</div>
+            <div class="problem-crops">Affects: Maize (Corn), Sorghum (Jowar)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-downy-mildew-maize-0">
+              <img src="/problems/downy-mildew-maize/sorghum_bicolor_jpg_1.webp" alt="Sorghum / Maize Downy Mildew (Crazy Top)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sorghum / Maize Downy Mildew (Crazy Top) - Sorghum bicolor (Moench), grain type panicle, in a field in Saxony-Anhalt, Germany</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Daniel Georg Döhne (user Bugdream)
+                </div>
+                <button class="mark-btn" id="btn-downy-mildew-maize-0" onclick="toggleMark('downy-mildew-maize', 0, '/problems/downy-mildew-maize/sorghum_bicolor_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-downy-mildew-maize-1">
+              <img src="/problems/downy-mildew-maize/peronosclerospora_sorghi_1_400_x_2_jpg_2.webp" alt="Sorghum / Maize Downy Mildew (Crazy Top)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sorghum / Maize Downy Mildew (Crazy Top) - Peronosclerospora sorghi fungi on Zea mays</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Angphotorion
+                </div>
+                <button class="mark-btn" id="btn-downy-mildew-maize-1" onclick="toggleMark('downy-mildew-maize', 1, '/problems/downy-mildew-maize/peronosclerospora_sorghi_1_400_x_2_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-downy-mildew-maize-2">
+              <img src="/problems/downy-mildew-maize/peronosclerospora_sorghi_2_400x_2_jpg_3.webp" alt="Sorghum / Maize Downy Mildew (Crazy Top)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sorghum / Maize Downy Mildew (Crazy Top) - Peronosclerospora sorghi fungi on Zea mays</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Angphotorion
+                </div>
+                <button class="mark-btn" id="btn-downy-mildew-maize-2" onclick="toggleMark('downy-mildew-maize', 2, '/problems/downy-mildew-maize/peronosclerospora_sorghi_2_400x_2_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-stem-rot-groundnut" data-slug="stem-rot-groundnut" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Stem Rot / Southern Blight of Groundnut</div>
+            <div class="problem-sci">Sclerotium rolfsii (Athelia rolfsii)</div>
+            <div class="problem-crops">Affects: Groundnut (Peanut)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-stem-rot-groundnut-0">
+              <img src="/problems/stem-rot-groundnut/athelia_rolfsii_sclerotia_jpg_1.webp" alt="Stem Rot / Southern Blight of Groundnut" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Stem Rot / Southern Blight of Groundnut - Athelia rolfsii sclerotia on Solanum lycopersicum (tomato)</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Persley D. &amp; Cooke T
+                </div>
+                <button class="mark-btn" id="btn-stem-rot-groundnut-0" onclick="toggleMark('stem-rot-groundnut', 0, '/problems/stem-rot-groundnut/athelia_rolfsii_sclerotia_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-stem-rot-groundnut-1">
+              <img src="/problems/stem-rot-groundnut/athelia_rolfsii_jpg_2.webp" alt="Stem Rot / Southern Blight of Groundnut" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Stem Rot / Southern Blight of Groundnut - southern blight Athelia rolfsii on Eastern Juniper Juniperus virginiana L.; fruiting bodies at base of foliage.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Edward L. Barnard - Florida Department of Agriculture and Consumer Services
+                </div>
+                <button class="mark-btn" id="btn-stem-rot-groundnut-1" onclick="toggleMark('stem-rot-groundnut', 1, '/problems/stem-rot-groundnut/athelia_rolfsii_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-stem-rot-groundnut-2">
+              <img src="/problems/stem-rot-groundnut/sclerotium_rolfsii_jpg_3.webp" alt="Stem Rot / Southern Blight of Groundnut" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Stem Rot / Southern Blight of Groundnut - Here, the carrot disks are used as baits to detect S. rolfsii in soil samples.
+This pathogen causes southern blight of several crops</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Plant pests and diseases
+                </div>
+                <button class="mark-btn" id="btn-stem-rot-groundnut-2" onclick="toggleMark('stem-rot-groundnut', 2, '/problems/stem-rot-groundnut/sclerotium_rolfsii_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-tikka-leaf-spot-groundnut" data-slug="tikka-leaf-spot-groundnut" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Tikka Leaf Spot of Groundnut (Cercospora)</div>
+            <div class="problem-sci">Cercospora arachidicola & Phaeoisariopsis personata</div>
+            <div class="problem-crops">Affects: Groundnut (Peanut)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-tikka-leaf-spot-groundnut-0">
+              <img src="/problems/tikka-leaf-spot-groundnut/passalora_arachidicola_10_3897-mycokeys__1.webp" alt="Tikka Leaf Spot of Groundnut (Cercospora)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Tikka Leaf Spot of Groundnut (Cercospora) - Figure 16; Passalora arachidicola on Arachis hypogaea (YMM49B): A fascicle of conidiophores growing out from a small stroma embedded in the epidermis;</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 4.0
+                  <br>Author: Meswaet Y, Mangelsdorff R, Yorou NS, Piepenbring M (2021) Unravelling unexplored diversity of cercosporoid fungi (Mycosphaerellaceae, Mycosphaerellales, Ascomycota) in tropical Africa. MycoKeys 81: 69-138. https://doi.org/10.3897/mycokeys.81.67850
+                </div>
+                <button class="mark-btn" id="btn-tikka-leaf-spot-groundnut-0" onclick="toggleMark('tikka-leaf-spot-groundnut', 0, '/problems/tikka-leaf-spot-groundnut/passalora_arachidicola_10_3897-mycokeys__1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-tikka-leaf-spot-groundnut-1">
+              <img src="/problems/tikka-leaf-spot-groundnut/leaf_spot_symptoms_10_3897-mycokeys_81_6_2.webp" alt="Tikka Leaf Spot of Groundnut (Cercospora)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Tikka Leaf Spot of Groundnut (Cercospora) - Figure 14; Leaf spot symptoms associated with cercosporoid fungi: A, B Nothopassalora personata on Arachis hypogaea (YMM49A); B close-up of lesions wi</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 4.0
+                  <br>Author: Meswaet Y, Mangelsdorff R, Yorou NS, Piepenbring M (2021) Unravelling unexplored diversity of cercosporoid fungi (Mycosphaerellaceae, Mycosphaerellales, Ascomycota) in tropical Africa. MycoKeys 81: 69-138. https://doi.org/10.3897/mycokeys.81.67850
+                </div>
+                <button class="mark-btn" id="btn-tikka-leaf-spot-groundnut-1" onclick="toggleMark('tikka-leaf-spot-groundnut', 1, '/problems/tikka-leaf-spot-groundnut/leaf_spot_symptoms_10_3897-mycokeys_81_6_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-turcicum-leaf-blight-maize" data-slug="turcicum-leaf-blight-maize" data-type="fungal" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Turcicum Leaf Blight of Maize</div>
+            <div class="problem-sci">Exserohilum turcicum</div>
+            <div class="problem-crops">Affects: Jowar (Sorghum), Maize (Corn)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-fungal">fungal</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-turcicum-leaf-blight-maize-0">
+              <img src="/problems/turcicum-leaf-blight-maize/conidia_of_exserohilum_turcicum_jpg_1.webp" alt="Turcicum Leaf Blight of Maize" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Turcicum Leaf Blight of Maize - Conidia of Exserohilum turcicum. Scale bar = 10 µm.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 au
+                  <br>Author: Wanich Khampanich, Department of Agriculture, Thailand
+                </div>
+                <button class="mark-btn" id="btn-turcicum-leaf-blight-maize-0" onclick="toggleMark('turcicum-leaf-blight-maize', 0, '/problems/turcicum-leaf-blight-maize/conidia_of_exserohilum_turcicum_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-turcicum-leaf-blight-maize-1">
+              <img src="/problems/turcicum-leaf-blight-maize/exserohilum_turcicum_on_zea_mays_jpg_2.webp" alt="Turcicum Leaf Blight of Maize" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Turcicum Leaf Blight of Maize - Exserohilum turcicum on Zea mays. Scale bar = 2 cm.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 au
+                  <br>Author: Wanich Khampanich, Department of Agriculture, Thailand
+                </div>
+                <button class="mark-btn" id="btn-turcicum-leaf-blight-maize-1" onclick="toggleMark('turcicum-leaf-blight-maize', 1, '/problems/turcicum-leaf-blight-maize/exserohilum_turcicum_on_zea_mays_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-turcicum-leaf-blight-maize-2">
+              <img src="/problems/turcicum-leaf-blight-maize/exserohilum_turcicum_a1_1_jpg_3.webp" alt="Turcicum Leaf Blight of Maize" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Turcicum Leaf Blight of Maize - Exserohilum turcicum on leaf Zea mays. Location: Poland, Trzciana, województwo małopolskie</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Jerzy Opioła
+                </div>
+                <button class="mark-btn" id="btn-turcicum-leaf-blight-maize-2" onclick="toggleMark('turcicum-leaf-blight-maize', 2, '/problems/turcicum-leaf-blight-maize/exserohilum_turcicum_a1_1_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-brown-planthopper" data-slug="brown-planthopper" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Brown Planthopper (BPH)</div>
+            <div class="problem-sci">Nilaparvata lugens</div>
+            <div class="problem-crops">Affects: Paddy (Rice)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-brown-planthopper-0">
+              <img src="/problems/brown-planthopper/nilaparvata_lugens_from_csiro_jpg_1.webp" alt="Brown Planthopper (BPH)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Brown Planthopper (BPH) - Brown planthopper. Nilaparvata lugens (Hemiptera: Delphacidae)</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Unknown authorUnknown author
+                </div>
+                <button class="mark-btn" id="btn-brown-planthopper-0" onclick="toggleMark('brown-planthopper', 0, '/problems/brown-planthopper/nilaparvata_lugens_from_csiro_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-brown-planthopper-1">
+              <img src="/problems/brown-planthopper/nilaparvata_lugens_-_brown_planthopper_-_2.webp" alt="Brown Planthopper (BPH)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Brown Planthopper (BPH) - Nilaparvata lugens, cicadelle brune du riz.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Natasha Wright, Florida Department of Agriculture and Consumer Services, Bugwood.org - See more at: http://www.forestryimages.org/browse/detail.cfm?imgnum=5190055#sthash.UX6OgMTv.dpuf
+                </div>
+                <button class="mark-btn" id="btn-brown-planthopper-1" onclick="toggleMark('brown-planthopper', 1, '/problems/brown-planthopper/nilaparvata_lugens_-_brown_planthopper_-_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-brown-planthopper-2">
+              <img src="/problems/brown-planthopper/reconstructed_internal_structures_of_a_f_3.webp" alt="Brown Planthopper (BPH)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Brown Planthopper (BPH) - (A) Left-lateral view. Half of the exoskeleton is shown. The body can be grouped into three parts, the head, thorax, and abdomen. The green dotted lin</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 4.0
+                  <br>Author: Xin-Qiu WangJian-sheng GuoDan-Ting LiYang YuJaco HagoortBernard MoussianChuan-Xi Zhang (2021) Three-dimensional reconstruction of a whole insect reveals its phloem sap-sucking mechanism at nano-resolution eLife 10:e62875.
+
+https://doi.org/10.7554/eLife.62875
+                </div>
+                <button class="mark-btn" id="btn-brown-planthopper-2" onclick="toggleMark('brown-planthopper', 2, '/problems/brown-planthopper/reconstructed_internal_structures_of_a_f_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-whitefly-cotton" data-slug="whitefly-cotton" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Cotton Whitefly and Sooty Mould</div>
+            <div class="problem-sci">Bemisia tabaci</div>
+            <div class="problem-crops">Affects: Chilli (Green / Dry), Cotton, Tomato</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-whitefly-cotton-0">
+              <img src="/problems/whitefly-cotton/silverleaf_whitefly_jpg_1.webp" alt="Cotton Whitefly and Sooty Mould" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Cotton Whitefly and Sooty Mould - File:Silverleaf whitefly.jpg</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: PDH
+                </div>
+                <button class="mark-btn" id="btn-whitefly-cotton-0" onclick="toggleMark('whitefly-cotton', 0, '/problems/whitefly-cotton/silverleaf_whitefly_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-whitefly-cotton-1">
+              <img src="/problems/whitefly-cotton/csiro_scienceimage_1489_silverleaf_white_2.webp" alt="Cotton Whitefly and Sooty Mould" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Cotton Whitefly and Sooty Mould - Silverleaf whitefly, Bemisia tabaci biotype B, nymphs on the underside of a leaf.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0
+                  <br>Author: division, CSIRO
+                </div>
+                <button class="mark-btn" id="btn-whitefly-cotton-1" onclick="toggleMark('whitefly-cotton', 1, '/problems/whitefly-cotton/csiro_scienceimage_1489_silverleaf_white_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-whitefly-cotton-2">
+              <img src="/problems/whitefly-cotton/csiro_scienceimage_7704_silverleaf_white_3.webp" alt="Cotton Whitefly and Sooty Mould" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Cotton Whitefly and Sooty Mould - Adult silverleaf whitefly (SLW) – Bemisia tabaci – biotype B on a watermelon leaf</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0
+                  <br>Author: division, CSIRO
+                </div>
+                <button class="mark-btn" id="btn-whitefly-cotton-2" onclick="toggleMark('whitefly-cotton', 2, '/problems/whitefly-cotton/csiro_scienceimage_7704_silverleaf_white_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-early-shoot-borer-sugarcane" data-slug="early-shoot-borer-sugarcane" data-type="insect_pest" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Early Shoot Borer of Sugarcane</div>
+            <div class="problem-sci">Chilo infuscatellus</div>
+            <div class="problem-crops">Affects: Sugarcane</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-early-shoot-borer-sugarcane-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Early Shoot Borer of Sugarcane" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Early Shoot Borer of Sugarcane: Field photo not yet verified. Look for: Drying of the central whorl shoot causing a typical "Dead Heart" in young cane crops (1 to 3 months old); the dried shoot can be pulled out ...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-early-shoot-borer-sugarcane-0" onclick="toggleMark('early-shoot-borer-sugarcane', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-fall-armyworm-maize" data-slug="fall-armyworm-maize" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Fall Armyworm (FAW)</div>
+            <div class="problem-sci">Spodoptera frugiperda</div>
+            <div class="problem-crops">Affects: Jowar (Sorghum), Maize (Corn), Sugarcane</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-fall-armyworm-maize-0">
+              <img src="/problems/fall-armyworm-maize/spodoptera_frugiperda_jpg_1.webp" alt="Fall Armyworm (FAW)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Fall Armyworm (FAW) - Spodoptera frugiperda</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Hoffmeier
+                </div>
+                <button class="mark-btn" id="btn-fall-armyworm-maize-0" onclick="toggleMark('fall-armyworm-maize', 0, '/problems/fall-armyworm-maize/spodoptera_frugiperda_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-fall-armyworm-maize-1">
+              <img src="/problems/fall-armyworm-maize/spodoptera_frugiperda_caterpillar01_jpg_2.webp" alt="Fall Armyworm (FAW)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Fall Armyworm (FAW) - Raupe von Spodoptera frugiperda</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Frank Peairs, Colorado State University, Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-fall-armyworm-maize-1" onclick="toggleMark('fall-armyworm-maize', 1, '/problems/fall-armyworm-maize/spodoptera_frugiperda_caterpillar01_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-fall-armyworm-maize-2">
+              <img src="/problems/fall-armyworm-maize/spodoptera_frugiperda_pupa_jpg_3.webp" alt="Fall Armyworm (FAW)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Fall Armyworm (FAW) - Source: United States Department of Agriculture [1]
+Image Number k5557-9
+
+Author: Scott Bauer (USDA)</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: original work: Giancarlodessi
+
+derivative work:靖天子
+                </div>
+                <button class="mark-btn" id="btn-fall-armyworm-maize-2" onclick="toggleMark('fall-armyworm-maize', 2, '/problems/fall-armyworm-maize/spodoptera_frugiperda_pupa_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-pod-borer-chickpea" data-slug="pod-borer-chickpea" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Gram Pod Borer (Helicoverpa armigera)</div>
+            <div class="problem-sci">Helicoverpa armigera</div>
+            <div class="problem-crops">Affects: Chickpea (Bengal Gram), Red Gram / Tur (Pigeonpea), Tomato</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-pod-borer-chickpea-0">
+              <img src="/problems/pod-borer-chickpea/helicoverpa_armigera_jpg_1.webp" alt="Gram Pod Borer (Helicoverpa armigera)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Gram Pod Borer (Helicoverpa armigera) - Helicoverpa armigera</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 2.5
+                  <br>Author: Eric SYLVESTRE
+                </div>
+                <button class="mark-btn" id="btn-pod-borer-chickpea-0" onclick="toggleMark('pod-borer-chickpea', 0, '/problems/pod-borer-chickpea/helicoverpa_armigera_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-pod-borer-chickpea-1">
+              <img src="/problems/pod-borer-chickpea/helicoverpa_armigera_28212417541_jpg_2.webp" alt="Gram Pod Borer (Helicoverpa armigera)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Gram Pod Borer (Helicoverpa armigera) - France Trip - Las Descargues - 27/06/16 to 01/07/16 - Part One - Macro's
+Hello all.
+I recently got back from a really enjoyable 5 nights of Moth trapp</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 2.0
+                  <br>Author: Ben Sale from UK
+                </div>
+                <button class="mark-btn" id="btn-pod-borer-chickpea-1" onclick="toggleMark('pod-borer-chickpea', 1, '/problems/pod-borer-chickpea/helicoverpa_armigera_28212417541_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-pod-borer-chickpea-2">
+              <img src="/problems/pod-borer-chickpea/helicoverpa_armigera_-_cotton_bollworm_-_3.webp" alt="Gram Pod Borer (Helicoverpa armigera)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Gram Pod Borer (Helicoverpa armigera) - Exemplar found: Russia, Volgograd Oblast, Ilovlinsky District, near settlement Ilovlya, 24.07.2011, by light
+
+Волгоградская область, Иловлинский р-н, </div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 2.0
+                  <br>Author: Ilia Ustyantsev from Russia
+                </div>
+                <button class="mark-btn" id="btn-pod-borer-chickpea-2" onclick="toggleMark('pod-borer-chickpea', 2, '/problems/pod-borer-chickpea/helicoverpa_armigera_-_cotton_bollworm_-_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-onion-thrips" data-slug="onion-thrips" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Onion Thrips</div>
+            <div class="problem-sci">Thrips tabaci</div>
+            <div class="problem-crops">Affects: Garlic, Onion</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-onion-thrips-0">
+              <img src="/problems/onion-thrips/thrips_tabaci_frankliniella_occidentalis_1.webp" alt="Onion Thrips" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Onion Thrips - Smaller, tan thrips on left is the onion thrips (Thrips tabaci). Larger yellowish thrips on the right is the western flower thrips (Frankliniella occi</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Alton N. Sparks, Jr., University of Georgia, Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-onion-thrips-0" onclick="toggleMark('onion-thrips', 0, '/problems/onion-thrips/thrips_tabaci_frankliniella_occidentalis_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-onion-thrips-1">
+              <img src="/problems/onion-thrips/thrips_tabaci_-_drawing_jpg_2.webp" alt="Onion Thrips" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Onion Thrips - onion thrips (Thrips tabaci).</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Alton N. Sparks, Jr., University of Georgia, Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-onion-thrips-1" onclick="toggleMark('onion-thrips', 1, '/problems/onion-thrips/thrips_tabaci_-_drawing_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-onion-thrips-2">
+              <img src="/problems/onion-thrips/thrips_tabaci_jpg_3.webp" alt="Onion Thrips" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Onion Thrips - Onion thrips (Thrips tabaci).</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0
+                  <br>Author: Alton N. Sparks, Jr., University of Georgia, Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-onion-thrips-2" onclick="toggleMark('onion-thrips', 2, '/problems/onion-thrips/thrips_tabaci_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-pink-bollworm-cotton" data-slug="pink-bollworm-cotton" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Pink Bollworm of Cotton</div>
+            <div class="problem-sci">Pectinophora gossypiella</div>
+            <div class="problem-crops">Affects: Cotton</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-pink-bollworm-cotton-0">
+              <img src="/problems/pink-bollworm-cotton/pectinophora_gossypiella_1265079_jpg_1.webp" alt="Pink Bollworm of Cotton" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Pink Bollworm of Cotton - Pectinophora gossypiella</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 3.0 us
+                  <br>Author: Mississippi State University Archive, Mississippi State University, Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-pink-bollworm-cotton-0" onclick="toggleMark('pink-bollworm-cotton', 0, '/problems/pink-bollworm-cotton/pectinophora_gossypiella_1265079_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-pink-bollworm-cotton-1">
+              <img src="/problems/pink-bollworm-cotton/pectinophora_gossypiella_5006025_jpg_2.webp" alt="Pink Bollworm of Cotton" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Pink Bollworm of Cotton - Pectinophora gossypiella</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Art Cushman, USDA Systematics Entomology Laboratory, Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-pink-bollworm-cotton-1" onclick="toggleMark('pink-bollworm-cotton', 1, '/problems/pink-bollworm-cotton/pectinophora_gossypiella_5006025_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-pink-bollworm-cotton-2">
+              <img src="/problems/pink-bollworm-cotton/pectinophora_gossypiella_1321029_jpg_3.webp" alt="Pink Bollworm of Cotton" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Pink Bollworm of Cotton - Pectinophora gossypiella</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Peggy Greb, USDA Agricultural Research Service, Bugwood.org
+                </div>
+                <button class="mark-btn" id="btn-pink-bollworm-cotton-2" onclick="toggleMark('pink-bollworm-cotton', 2, '/problems/pink-bollworm-cotton/pectinophora_gossypiella_1321029_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-fruit-borer-pomegranate" data-slug="fruit-borer-pomegranate" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Pomegranate Fruit Borer (Anar Butterfly)</div>
+            <div class="problem-sci">Deudorix isocrates (Virachola isocrates)</div>
+            <div class="problem-crops">Affects: Pomegranate</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-fruit-borer-pomegranate-0">
+              <img src="/problems/fruit-borer-pomegranate/gauva_blue_deudorix_isocrates_in_bhongir_1.webp" alt="Pomegranate Fruit Borer (Anar Butterfly)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Pomegranate Fruit Borer (Anar Butterfly) - Gauva Blue Deudorix isocrates in Bhongir Fort, Andhra Pradesh, India.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: J.M.Garg
+                </div>
+                <button class="mark-btn" id="btn-fruit-borer-pomegranate-0" onclick="toggleMark('fruit-borer-pomegranate', 0, '/problems/fruit-borer-pomegranate/gauva_blue_deudorix_isocrates_in_bhongir_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-fruit-borer-pomegranate-1">
+              <img src="/problems/fruit-borer-pomegranate/guava_blue_deudorix_isocrates_in_bhongir_2.webp" alt="Pomegranate Fruit Borer (Anar Butterfly)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Pomegranate Fruit Borer (Anar Butterfly) - Guava Blue Deudorix isocrates in Bhongir Fort, Andhra Pradesh, India.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: J.M.Garg
+                </div>
+                <button class="mark-btn" id="btn-fruit-borer-pomegranate-1" onclick="toggleMark('fruit-borer-pomegranate', 1, '/problems/fruit-borer-pomegranate/guava_blue_deudorix_isocrates_in_bhongir_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-fruit-borer-pomegranate-2">
+              <img src="/problems/fruit-borer-pomegranate/isocratesmfupun_490_ac1_jpg_3.webp" alt="Pomegranate Fruit Borer (Anar Butterfly)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Pomegranate Fruit Borer (Anar Butterfly) - Deudorix (Virachola) isocrates, male, female, India, Karwar, Calcutta, Courvoisier collection NHM Basel, Alan Cassidy photo.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Accassidy
+                </div>
+                <button class="mark-btn" id="btn-fruit-borer-pomegranate-2" onclick="toggleMark('fruit-borer-pomegranate', 2, '/problems/fruit-borer-pomegranate/isocratesmfupun_490_ac1_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-rhinoceros-beetle-coconut" data-slug="rhinoceros-beetle-coconut" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Rhinoceros Beetle of Coconut</div>
+            <div class="problem-sci">Oryctes rhinoceros</div>
+            <div class="problem-crops">Affects: Areca nut (Betel Nut / Supari), Coconut (Kalpavriksha)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-rhinoceros-beetle-coconut-0">
+              <img src="/problems/rhinoceros-beetle-coconut/rhinoceros_bettle_ariel_view_7_jpg_1.webp" alt="Rhinoceros Beetle of Coconut" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Rhinoceros Beetle of Coconut - Female Asian rhinoceros beetle</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Irvin calicut
+                </div>
+                <button class="mark-btn" id="btn-rhinoceros-beetle-coconut-0" onclick="toggleMark('rhinoceros-beetle-coconut', 0, '/problems/rhinoceros-beetle-coconut/rhinoceros_bettle_ariel_view_7_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-rhinoceros-beetle-coconut-1">
+              <img src="/problems/rhinoceros-beetle-coconut/oryctes_nasicornis_male_2012_g1_jpg_2.webp" alt="Rhinoceros Beetle of Coconut" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Rhinoceros Beetle of Coconut - European Rhinoceros Beetle male. Ukraine.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: George Chernilevsky
+                </div>
+                <button class="mark-btn" id="btn-rhinoceros-beetle-coconut-1" onclick="toggleMark('rhinoceros-beetle-coconut', 1, '/problems/rhinoceros-beetle-coconut/oryctes_nasicornis_male_2012_g1_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-rhinoceros-beetle-coconut-2">
+              <img src="/problems/rhinoceros-beetle-coconut/oryctes_rhinoceros_197671744_jpg_3.webp" alt="Rhinoceros Beetle of Coconut" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Rhinoceros Beetle of Coconut - Coconut Rhinoceros Beetle (Oryctes rhinoceros)</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Philipp Hoenle
+                </div>
+                <button class="mark-btn" id="btn-rhinoceros-beetle-coconut-2" onclick="toggleMark('rhinoceros-beetle-coconut', 2, '/problems/rhinoceros-beetle-coconut/oryctes_rhinoceros_197671744_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-shoot-fruit-borer-okra" data-slug="shoot-fruit-borer-okra" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Shoot and Fruit Borer of Okra (Bhendi)</div>
+            <div class="problem-sci">Earias vittella & Earias insulana</div>
+            <div class="problem-crops">Affects: Cotton, Okra (Bhendi)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-shoot-fruit-borer-okra-0">
+              <img src="/problems/shoot-fruit-borer-okra/hong_kong_okra_aug_25_2012_jpg_1.webp" alt="Shoot and Fruit Borer of Okra (Bhendi)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Shoot and Fruit Borer of Okra (Bhendi) - Earth100's Okra Plant, growing in Hong Kong, on August 25, 2012</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Earth100
+                </div>
+                <button class="mark-btn" id="btn-shoot-fruit-borer-okra-0" onclick="toggleMark('shoot-fruit-borer-okra', 0, '/problems/shoot-fruit-borer-okra/hong_kong_okra_aug_25_2012_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-shoot-fruit-borer-okra-1">
+              <img src="/problems/shoot-fruit-borer-okra/cramerandstoll-uitlandsche_kapellen_vol__2.webp" alt="Shoot and Fruit Borer of Okra (Bhendi)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Shoot and Fruit Borer of Okra (Bhendi) - Plate CCCLV
+
+Warning: some taxa/names may be misidentified/misapplied or placed in a  different genus.
+
+
+A: "(Sphinx) Anceus" ( = Acosmeryx anceus (St</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Pieter Cramer (1721 - 1776) and Caspar Stoll (between  1725 and 1730 - 1791)
+                </div>
+                <button class="mark-btn" id="btn-shoot-fruit-borer-okra-1" onclick="toggleMark('shoot-fruit-borer-okra', 1, '/problems/shoot-fruit-borer-okra/cramerandstoll-uitlandsche_kapellen_vol__2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-shoot-fruit-borer-okra-2">
+              <img src="/problems/shoot-fruit-borer-okra/earias_vittella_10_3897-bdj_9_e73997_fig_3.webp" alt="Shoot and Fruit Borer of Okra (Bhendi)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Shoot and Fruit Borer of Okra (Bhendi) - Figure 26b.
+Earias vittella, adult.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 4.0
+                  <br>Author: Komal et al. (2021)
+                </div>
+                <button class="mark-btn" id="btn-shoot-fruit-borer-okra-2" onclick="toggleMark('shoot-fruit-borer-okra', 2, '/problems/shoot-fruit-borer-okra/earias_vittella_10_3897-bdj_9_e73997_fig_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-stem-borer-maize" data-slug="stem-borer-maize" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Spotted Stem Borer of Maize and Sorghum</div>
+            <div class="problem-sci">Chilo partellus</div>
+            <div class="problem-crops">Affects: Maize (Corn), Sorghum (Jowar)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-stem-borer-maize-0">
+              <img src="/problems/stem-borer-maize/comores_borer_ponctu_chilo_partellus_sur_1.webp" alt="Spotted Stem Borer of Maize and Sorghum" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Spotted Stem Borer of Maize and Sorghum - Sujet : Maïs
+Insectes nuisibles
+Comores
+Appartient à l’ensemble documentaire : NmBA001
+Appartient à l’ensemble documentaire : NmBA012
+Appartient à l’e</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Gzen92Bot
+                </div>
+                <button class="mark-btn" id="btn-stem-borer-maize-0" onclick="toggleMark('stem-borer-maize', 0, '/problems/stem-borer-maize/comores_borer_ponctu_chilo_partellus_sur_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-stem-borer-maize-1">
+              <img src="/problems/stem-borer-maize/comores_borer_ponctu_chilo_partellus_sur_2.webp" alt="Spotted Stem Borer of Maize and Sorghum" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Spotted Stem Borer of Maize and Sorghum - Sujet : Maïs
+Insectes nuisibles
+Comores
+Appartient à l’ensemble documentaire : NmBA001
+Appartient à l’ensemble documentaire : NmBA012
+Appartient à l’e</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | Public domain
+                  <br>Author: Gzen92Bot
+                </div>
+                <button class="mark-btn" id="btn-stem-borer-maize-1" onclick="toggleMark('stem-borer-maize', 1, '/problems/stem-borer-maize/comores_borer_ponctu_chilo_partellus_sur_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-stem-borer-maize-2">
+              <img src="/problems/stem-borer-maize/chilo_partellus_10_3897-bdj_9_e73997_fig_3.webp" alt="Spotted Stem Borer of Maize and Sorghum" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Spotted Stem Borer of Maize and Sorghum - Figure 27c.
+Chilo partellus, adult.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 4.0
+                  <br>Author: Komal et al. (2021)
+                </div>
+                <button class="mark-btn" id="btn-stem-borer-maize-2" onclick="toggleMark('stem-borer-maize', 2, '/problems/stem-borer-maize/chilo_partellus_10_3897-bdj_9_e73997_fig_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-woolly-aphid-sugarcane" data-slug="woolly-aphid-sugarcane" data-type="insect_pest" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Sugarcane Woolly Aphid</div>
+            <div class="problem-sci">Ceratovacuna lanigera</div>
+            <div class="problem-crops">Affects: Sugarcane</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">high severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-woolly-aphid-sugarcane-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Sugarcane Woolly Aphid" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sugarcane Woolly Aphid: Field photo not yet verified. Look for: Nymphs and wingless adults cluster densely along midribs on leaf undersides covered by thick white waxy woolly secretions; severe desapping ...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-woolly-aphid-sugarcane-0" onclick="toggleMark('woolly-aphid-sugarcane', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-fruit-borer-tomato" data-slug="fruit-borer-tomato" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Tomato Fruit Borer (Helicoverpa armigera)</div>
+            <div class="problem-sci">Helicoverpa armigera</div>
+            <div class="problem-crops">Affects: Chilli (Green / Dry), Tomato</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-fruit-borer-tomato-0">
+              <img src="/problems/fruit-borer-tomato/helicoverpa_armigera_jpg_1.webp" alt="Tomato Fruit Borer (Helicoverpa armigera)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Tomato Fruit Borer (Helicoverpa armigera) - Helicoverpa armigera</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 2.5
+                  <br>Author: Eric SYLVESTRE
+                </div>
+                <button class="mark-btn" id="btn-fruit-borer-tomato-0" onclick="toggleMark('fruit-borer-tomato', 0, '/problems/fruit-borer-tomato/helicoverpa_armigera_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-fruit-borer-tomato-1">
+              <img src="/problems/fruit-borer-tomato/helicoverpa_armigera_28212417541_jpg_2.webp" alt="Tomato Fruit Borer (Helicoverpa armigera)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Tomato Fruit Borer (Helicoverpa armigera) - France Trip - Las Descargues - 27/06/16 to 01/07/16 - Part One - Macro's
+Hello all.
+I recently got back from a really enjoyable 5 nights of Moth trapp</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 2.0
+                  <br>Author: Ben Sale from UK
+                </div>
+                <button class="mark-btn" id="btn-fruit-borer-tomato-1" onclick="toggleMark('fruit-borer-tomato', 1, '/problems/fruit-borer-tomato/helicoverpa_armigera_28212417541_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-fruit-borer-tomato-2">
+              <img src="/problems/fruit-borer-tomato/helicoverpa_armigera_-_cotton_bollworm_-_3.webp" alt="Tomato Fruit Borer (Helicoverpa armigera)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Tomato Fruit Borer (Helicoverpa armigera) - Exemplar found: Russia, Volgograd Oblast, Ilovlinsky District, near settlement Ilovlya, 24.07.2011, by light
+
+Волгоградская область, Иловлинский р-н, </div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 2.0
+                  <br>Author: Ilia Ustyantsev from Russia
+                </div>
+                <button class="mark-btn" id="btn-fruit-borer-tomato-2" onclick="toggleMark('fruit-borer-tomato', 2, '/problems/fruit-borer-tomato/helicoverpa_armigera_-_cotton_bollworm_-_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-yellow-stem-borer" data-slug="yellow-stem-borer" data-type="insect_pest" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Yellow Stem Borer</div>
+            <div class="problem-sci">Scirpophaga incertulas</div>
+            <div class="problem-crops">Affects: Maize (Corn), Paddy (Rice)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-insect_pest">insect pest</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-yellow-stem-borer-0">
+              <img src="/problems/yellow-stem-borer/scirpophaga_incertulas_female_moth_png_1.webp" alt="Yellow Stem Borer" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Yellow Stem Borer - തണ്ടുതുരപ്പൻ പുഴു: പെൺശലഭം</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | GFDL
+                  <br>Author: സർവ്വവിജ്ഞാനകോശം
+                </div>
+                <button class="mark-btn" id="btn-yellow-stem-borer-0" onclick="toggleMark('yellow-stem-borer', 0, '/problems/yellow-stem-borer/scirpophaga_incertulas_female_moth_png_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-yellow-stem-borer-1">
+              <img src="/problems/yellow-stem-borer/scirpophaga_incertulas_sketch_png_2.webp" alt="Yellow Stem Borer" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Yellow Stem Borer - തണ്ടുതുരപ്പൻ പുഴു</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | GFDL
+                  <br>Author: സർവ്വവിജ്ഞാനകോശം
+                </div>
+                <button class="mark-btn" id="btn-yellow-stem-borer-1" onclick="toggleMark('yellow-stem-borer', 1, '/problems/yellow-stem-borer/scirpophaga_incertulas_sketch_png_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-yellow-stem-borer-2">
+              <img src="/problems/yellow-stem-borer/scirpophaga_incertulas_jpg_3.webp" alt="Yellow Stem Borer" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Yellow Stem Borer - Scirpophaga incertulas (Walker, 1863), Yellow Stem Borer, Gachibowli Stadium, Hyderabad, India, 8 October 2012</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY 2.0
+                  <br>Author: Donald Hobern
+                </div>
+                <button class="mark-btn" id="btn-yellow-stem-borer-2" onclick="toggleMark('yellow-stem-borer', 2, '/problems/yellow-stem-borer/scirpophaga_incertulas_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-chilli-thrips-murda" data-slug="chilli-thrips-murda" data-type="mite" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Chilli Thrips and Mites Complex (Murda Disease)</div>
+            <div class="problem-sci">Scirtothrips dorsalis & Polyphagotarsonemus latus</div>
+            <div class="problem-crops">Affects: Chilli (Green / Dry)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-mite">mite</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-chilli-thrips-murda-0">
+              <img src="/problems/chilli-thrips-murda/sd_adult_spread_jpg_1.webp" alt="Chilli Thrips and Mites Complex (Murda Disease)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Chilli Thrips and Mites Complex (Murda Disease) - Dorsal view of spread Scirtothrips dorsalis female removed from Capsicum chinense floating in 70% etOH; taken on 6/1/07 at TREC, University of Florida</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: Aderksen at English Wikipedia
+                </div>
+                <button class="mark-btn" id="btn-chilli-thrips-murda-0" onclick="toggleMark('chilli-thrips-murda', 0, '/problems/chilli-thrips-murda/sd_adult_spread_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-chilli-thrips-murda-1">
+              <img src="/problems/chilli-thrips-murda/chilli_thrips_on_hydrangea_macrophylla_j_2.webp" alt="Chilli Thrips and Mites Complex (Murda Disease)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Chilli Thrips and Mites Complex (Murda Disease) - Sample 3LI, from Water Mill NY</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 2.0
+                  <br>Author: m.borden
+                </div>
+                <button class="mark-btn" id="btn-chilli-thrips-murda-1" onclick="toggleMark('chilli-thrips-murda', 1, '/problems/chilli-thrips-murda/chilli_thrips_on_hydrangea_macrophylla_j_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-chilli-thrips-murda-2">
+              <img src="/problems/chilli-thrips-murda/adult_chilli_thrips_on_hydrangea_jpg_3.webp" alt="Chilli Thrips and Mites Complex (Murda Disease)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Chilli Thrips and Mites Complex (Murda Disease) - Adult visible in the photo along with the scarring suspected to be from the thrips feeding. Sample 5BC.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 2.0
+                  <br>Author: m.borden
+                </div>
+                <button class="mark-btn" id="btn-chilli-thrips-murda-2" onclick="toggleMark('chilli-thrips-murda', 2, '/problems/chilli-thrips-murda/adult_chilli_thrips_on_hydrangea_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-blossom-end-rot-tomato" data-slug="blossom-end-rot-tomato" data-type="nutrient_deficiency" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Blossom End Rot of Tomato</div>
+            <div class="problem-sci">Physiological calcium and water deficiency</div>
+            <div class="problem-crops">Affects: Tomato, Watermelon</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-nutrient_deficiency">nutrient deficiency</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">medium severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-blossom-end-rot-tomato-0">
+              <img src="/problems/blossom-end-rot-tomato/blossom_end_rot_jpg_1.webp" alt="Blossom End Rot of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Blossom End Rot of Tomato - Blossom end rot (calcium deficiency) on a tomato</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 3.0
+                  <br>Author: A13ean
+                </div>
+                <button class="mark-btn" id="btn-blossom-end-rot-tomato-0" onclick="toggleMark('blossom-end-rot-tomato', 0, '/problems/blossom-end-rot-tomato/blossom_end_rot_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-blossom-end-rot-tomato-1">
+              <img src="/problems/blossom-end-rot-tomato/blossom_end_rot_tomatoes_2017_a_jpg_2.webp" alt="Blossom End Rot of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Blossom End Rot of Tomato - Blossom end rot tomatoes. Price: 2 kg for 1.50 Euro</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Fructibus
+                </div>
+                <button class="mark-btn" id="btn-blossom-end-rot-tomato-1" onclick="toggleMark('blossom-end-rot-tomato', 1, '/problems/blossom-end-rot-tomato/blossom_end_rot_tomatoes_2017_a_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-blossom-end-rot-tomato-2">
+              <img src="/problems/blossom-end-rot-tomato/3_x_blossom_end_rot_tomato_2017_a_jpg_3.webp" alt="Blossom End Rot of Tomato" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Blossom End Rot of Tomato - 3 x Blossom end rot tomato</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC0
+                  <br>Author: Fructibus
+                </div>
+                <button class="mark-btn" id="btn-blossom-end-rot-tomato-2" onclick="toggleMark('blossom-end-rot-tomato', 2, '/problems/blossom-end-rot-tomato/3_x_blossom_end_rot_tomato_2017_a_jpg_3.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-iron-chlorosis-groundnut" data-slug="iron-chlorosis-groundnut" data-type="nutrient_deficiency" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Iron Deficiency Chlorosis in Groundnut</div>
+            <div class="problem-sci">Abiotic physiological deficiency</div>
+            <div class="problem-crops">Affects: Chickpea (Bengal Gram), Groundnut (Peanut)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-nutrient_deficiency">nutrient deficiency</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">medium severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-iron-chlorosis-groundnut-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Iron Deficiency Chlorosis in Groundnut" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Iron Deficiency Chlorosis in Groundnut: Field photo not yet verified. Look for: Interveinal yellowing (chlorosis) of the youngest top leaves while veins remain green; in severe deficiency, entire young leaflets turn ivor...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-iron-chlorosis-groundnut-0" onclick="toggleMark('iron-chlorosis-groundnut', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-zinc-deficiency-maize" data-slug="zinc-deficiency-maize" data-type="nutrient_deficiency" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Zinc Deficiency in Maize (White Bud Disease)</div>
+            <div class="problem-sci">Nutritional Disorder (Zinc Deficiency)</div>
+            <div class="problem-crops">Affects: Maize (Corn), Paddy (Rice)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-nutrient_deficiency">nutrient deficiency</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">medium severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-zinc-deficiency-maize-0">
+              <img src="/problems/zinc-deficiency-maize/knollenfenchel_braune_r_nder-j-schlaghec_1.webp" alt="Zinc Deficiency in Maize (White Bud Disease)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Zinc Deficiency in Maize (White Bud Disease) - The brown edges are caused by a calcium deficiency.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Schlaghecken Josef
+                </div>
+                <button class="mark-btn" id="btn-zinc-deficiency-maize-0" onclick="toggleMark('zinc-deficiency-maize', 0, '/problems/zinc-deficiency-maize/knollenfenchel_braune_r_nder-j-schlaghec_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-zinc-deficiency-maize-1">
+              <img src="/problems/zinc-deficiency-maize/nigeria_porridge_cowpea_beans_jpg_2.webp" alt="Zinc Deficiency in Maize (White Bud Disease)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Zinc Deficiency in Maize (White Bud Disease) - This Food, as you can see Is the Nigeria Porridge Cowpeas (Beans) prepared and eaten by  most of the indigenous people of Nigeria and Africa at large.</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Vickyblue77
+                </div>
+                <button class="mark-btn" id="btn-zinc-deficiency-maize-1" onclick="toggleMark('zinc-deficiency-maize', 1, '/problems/zinc-deficiency-maize/nigeria_porridge_cowpea_beans_jpg_2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-chilli-leaf-curl-virus" data-slug="chilli-leaf-curl-virus" data-type="viral" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Chilli Leaf Curl Virus (Gemini Virus)</div>
+            <div class="problem-sci">Chilli Leaf Curl Virus (ChiLCV)</div>
+            <div class="problem-crops">Affects: Chilli (Green / Dry)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-viral">viral</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-chilli-leaf-curl-virus-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Chilli Leaf Curl Virus (Gemini Virus)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Chilli Leaf Curl Virus (Gemini Virus): Field photo not yet verified. Look for: Upward curling, puckering and severe crinkling of leaves; thickening of veins and shortening of petioles and internodes; plants show bushy, ...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-chilli-leaf-curl-virus-0" onclick="toggleMark('chilli-leaf-curl-virus', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-sterility-mosaic-pigeonpea" data-slug="sterility-mosaic-pigeonpea" data-type="viral" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Sterility Mosaic Disease of Pigeonpea (SMD)</div>
+            <div class="problem-sci">Pigeonpea sterility mosaic virus (PPSMV)</div>
+            <div class="problem-crops">Affects: Red Gram / Tur (Pigeonpea)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-viral">viral</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-sterility-mosaic-pigeonpea-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Sterility Mosaic Disease of Pigeonpea (SMD)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Sterility Mosaic Disease of Pigeonpea (SMD): Field photo not yet verified. Look for: Bushy stunted appearance with excessive vegetative tillering and clustering of pale green leaves; severe mosaic mottling and leaf size reduc...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-sterility-mosaic-pigeonpea-0" onclick="toggleMark('sterility-mosaic-pigeonpea', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-tomato-leaf-curl-virus" data-slug="tomato-leaf-curl-virus" data-type="viral" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Tomato Leaf Curl Virus (ToLCV)</div>
+            <div class="problem-sci">Tomato leaf curl New Delhi virus (ToLCNDV)</div>
+            <div class="problem-crops">Affects: Chilli (Green / Dry), Tomato</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-viral">viral</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-tomato-leaf-curl-virus-0">
+              <img src="/problems/tomato-leaf-curl-virus/tomato_leaf_curl_taiwan_virus_jpg_1.webp" alt="Tomato Leaf Curl Virus (ToLCV)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Tomato Leaf Curl Virus (ToLCV) - Tomato leaf curl Taiwan virus</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Cindyhsieh
+                </div>
+                <button class="mark-btn" id="btn-tomato-leaf-curl-virus-0" onclick="toggleMark('tomato-leaf-curl-virus', 0, '/problems/tomato-leaf-curl-virus/tomato_leaf_curl_taiwan_virus_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+            <div class="img-box" id="box-tomato-leaf-curl-virus-1">
+              <img src="/problems/tomato-leaf-curl-virus/viruses-09-00361-g002-cruciviruses-tree__2.webp" alt="Tomato Leaf Curl Virus (ToLCV)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Tomato Leaf Curl Virus (ToLCV) - Maximum likelihood phylogeny of Rep (A) and Cp (B) open reading frames. Phylogenies were constructed via smart model selection (Rep: LG+G+I, Cp: RtREV</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Kalia S. I. Bistolas, Ryan M. Besemer, Lars G. Rudstam, Ian Hewson
+                </div>
+                <button class="mark-btn" id="btn-tomato-leaf-curl-virus-1" onclick="toggleMark('tomato-leaf-curl-virus', 1, '/problems/tomato-leaf-curl-virus/viruses-09-00361-g002-cruciviruses-tree__2.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-yellow-mosaic-virus-greengram" data-slug="yellow-mosaic-virus-greengram" data-type="viral" data-has-photo="false">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Yellow Mosaic Disease of Green Gram (MYMV)</div>
+            <div class="problem-sci">Mungbean yellow mosaic virus (MYMV)</div>
+            <div class="problem-crops">Affects: Chickpea (Bengal Gram), Green Gram (Moong)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-viral">viral</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-yellow-mosaic-virus-greengram-0">
+              <img src="/problems/placeholder-crop-health.webp" alt="Yellow Mosaic Disease of Green Gram (MYMV)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Yellow Mosaic Disease of Green Gram (MYMV): Field photo not yet verified. Look for: Small irregular yellow specks on young leaves that enlarge and coalesce into bright golden-yellow mosaic patches interspersed with green isl...</div>
+                <div class="img-meta">
+                  Source: Krushi Sathi Visual Advisory | Educational Fair Use
+                  <br>Author: ICAR / KVK Verified Guidelines
+                </div>
+                <button class="mark-btn" id="btn-yellow-mosaic-virus-greengram-0" onclick="toggleMark('yellow-mosaic-virus-greengram', 0, '/problems/placeholder-crop-health.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+      <div class="problem-card" id="card-yellow-vein-mosaic-okra" data-slug="yellow-vein-mosaic-okra" data-type="viral" data-has-photo="true">
+        <div class="problem-header">
+          <div>
+            <div class="problem-title">Yellow Vein Mosaic Virus of Okra (YVMV)</div>
+            <div class="problem-sci">Bhendi yellow vein mosaic virus (BYVMV)</div>
+            <div class="problem-crops">Affects: Bhendi (Okra / Ladyfinger)</div>
+          </div>
+          <div class="badges">
+            <span class="badge badge-viral">viral</span>
+            <span class="badge" style="background:#f1f5f9; color:#475569;">critical severity</span>
+          </div>
+        </div>
+
+        <div class="images-grid">
+          
+            <div class="img-box" id="box-yellow-vein-mosaic-okra-0">
+              <img src="/problems/yellow-vein-mosaic-okra/bhendi_vein_clearingphoto-0028_jpg_1.webp" alt="Yellow Vein Mosaic Virus of Okra (YVMV)" loading="lazy" onerror="this.src='/problems/placeholder-crop-health.webp'">
+              <div class="img-info">
+                <div class="img-caption">Yellow Vein Mosaic Virus of Okra (YVMV) - leaf showing symptom of Bhendi vein clearing or Bhendi yellow vein mosaic</div>
+                <div class="img-meta">
+                  Source: Wikimedia Commons | CC BY-SA 4.0
+                  <br>Author: Srigayu1996
+                </div>
+                <button class="mark-btn" id="btn-yellow-vein-mosaic-okra-0" onclick="toggleMark('yellow-vein-mosaic-okra', 0, '/problems/yellow-vein-mosaic-okra/bhendi_vein_clearingphoto-0028_jpg_1.webp')">
+                  ⚠️ Mark as Wrong Photo
+                </button>
+              </div>
+            </div>
+          
+        </div>
+      </div>
+      
+  </div>
+
+  <script>
+    let currentFilter = 'all';
+    const flaggedImages = JSON.parse(localStorage.getItem('krushi_sathi_flagged_images') || '{}');
+
+    function updateFlaggedUI() {
+      let count = 0;
+      Object.keys(flaggedImages).forEach(key => {
+        if (flaggedImages[key]) {
+          count++;
+          const btn = document.getElementById('btn-' + key);
+          const card = document.getElementById('card-' + key.split('-').slice(0, -1).join('-'));
+          if (btn) {
+            btn.classList.add('wrong');
+            btn.innerText = '❌ Marked Wrong (Click to undo)';
+          }
+        }
+      });
+      document.getElementById('flaggedCount').innerText = count;
+    }
+
+    function toggleMark(slug, idx, path) {
+      const key = slug + '-' + idx;
+      if (flaggedImages[key]) {
+        delete flaggedImages[key];
+        const btn = document.getElementById('btn-' + key);
+        if (btn) {
+          btn.classList.remove('wrong');
+          btn.innerText = '⚠️ Mark as Wrong Photo';
+        }
+      } else {
+        flaggedImages[key] = { slug, idx, path, timestamp: new Date().toISOString() };
+        const btn = document.getElementById('btn-' + key);
+        if (btn) {
+          btn.classList.add('wrong');
+          btn.innerText = '❌ Marked Wrong (Click to undo)';
+        }
+      }
+      localStorage.setItem('krushi_sathi_flagged_images', JSON.stringify(flaggedImages));
+      updateFlaggedUI();
+    }
+
+    function setFilter(filter, el) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      el.classList.add('active');
+      filterCards();
+    }
+
+    function filterCards() {
+      const q = document.getElementById('searchBox').value.toLowerCase().trim();
+      const cards = document.querySelectorAll('.problem-card');
+
+      cards.forEach(card => {
+        const text = card.innerText.toLowerCase();
+        const hasPhoto = card.getAttribute('data-has-photo') === 'true';
+        const slug = card.getAttribute('data-slug');
+        const isFlagged = Object.keys(flaggedImages).some(k => k.startsWith(slug));
+
+        let matchesFilter = true;
+        if (currentFilter === 'photos' && !hasPhoto) matchesFilter = false;
+        if (currentFilter === 'placeholder' && hasPhoto) matchesFilter = false;
+        if (currentFilter === 'flagged' && !isFlagged) matchesFilter = false;
+
+        const matchesSearch = !q || text.includes(q);
+
+        if (matchesFilter && matchesSearch) {
+          card.style.display = 'flex';
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function exportWrongReport() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(flaggedImages, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "problems_image_review_flagged.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    document.addEventListener('DOMContentLoaded', updateFlaggedUI);
+  </script>
+</body>
+</html>

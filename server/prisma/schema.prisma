@@ -103,6 +103,7 @@ model Crop {
   createdAt           DateTime   @default(now())
 
   cropPlans           CropPlan[]
+  problemCrops        ProblemCrop[]
 }
 
 model CropRecommendation {
@@ -157,6 +158,127 @@ model CropTask {
   importantTipKn      String?
   importantTipTa      String?
   importantTipTe      String?
+}
+
+model Problem {
+  id                    String            @id @default(uuid())
+  slug                  String            @unique
+  name                  String
+  nameKn                String
+  nameTa                String
+  nameTe                String
+  scientificName        String?
+  type                  String            // insect_pest | fungal | bacterial | viral | nematode | mite | weed | nutrient_deficiency | abiotic_stress
+  severity              String            // low | medium | high | critical
+  symptoms              String
+  symptomsKn            String?
+  symptomsTa            String?
+  symptomsTe            String?
+  cause                 String?
+  favourableConditions  String?
+  favourableHumidity    String?           // e.g. ">85%"
+  favourableTemp        String?           // e.g. "25-30°C"
+  favourableSeasons     String?           // JSON array e.g. ["Kharif", "Rabi"]
+  affectedStages        String            // JSON array e.g. ["Vegetative Growth", "Flowering"]
+  spreadPattern         String?           // e.g. "Airborne spores", "Soil-borne", "Insect vector"
+  culturalControl       String?
+  culturalControlKn     String?
+  culturalControlTa     String?
+  culturalControlTe     String?
+  biologicalControl     String?
+  biologicalControlKn   String?
+  biologicalControlTa   String?
+  biologicalControlTe   String?
+  organicControl        String?
+  organicControlKn      String?
+  organicControlTa      String?
+  organicControlTe      String?
+  chemicalControl       String?           // Generic active ingredient names only + label note
+  chemicalControlKn     String?
+  chemicalControlTa     String?
+  chemicalControlTe     String?
+  preventionSteps       String            // JSON array of strings
+  preventionStepsKn     String?
+  preventionStepsTa     String?
+  preventionStepsTe     String?
+  ipmSteps              String            // JSON array of IPM ladder steps
+  ipmStepsKn            String?
+  ipmStepsTa            String?
+  ipmStepsTe            String?
+  safetyNotes           String?           // PPE, withholding period (PHI), pollinator safety
+  lookAlikes            String?           // JSON array of { name, difference, lookAlikeSlug? }
+  whenToCallExpert      String?           // ETL threshold or severe atypical advisory
+  whenToCallExpertKn    String?
+  whenToCallExpertTa    String?
+  whenToCallExpertTe    String?
+  confidence            String            @default("verified") // verified | review_needed | low
+  sources               String?           // ICAR, UAS Bangalore, TNAU, etc.
+  verified              Boolean           @default(true)
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  crops                 ProblemCrop[]
+  symptomTags           ProblemSymptom[]
+  images                ProblemImage[]
+}
+
+model SymptomTag {
+  id                    String            @id @default(uuid())
+  slug                  String            @unique
+  plantPart             String            // leaf, stem, root, fruit_grain, flower, whole_plant
+  pattern               String            // spots, streaks, yellowing, browning, wilting, holes, rolling_curling, powdery_mould, rot, galls, dead_heart, stunting, insects_visible
+  colour                String?           // yellow, brown, black, white, grey, red_purple, light_green
+  spread                String?           // few_plants, patches, whole_field
+  stage                 String?           // seedling, vegetative, flowering, maturity
+  labelEn               String
+  labelKn               String
+  labelTa               String
+  labelTe               String
+  icon                  String?
+
+  problems              ProblemSymptom[]
+}
+
+model ProblemSymptom {
+  id                    String            @id @default(uuid())
+  problemId             String
+  problem               Problem           @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  symptomTagId          String
+  symptomTag            SymptomTag        @relation(fields: [symptomTagId], references: [id], onDelete: Cascade)
+  weight                Float             @default(1.0)
+  isPrimary             Boolean           @default(false)
+
+  @@unique([problemId, symptomTagId])
+}
+
+model ProblemCrop {
+  id                    String            @id @default(uuid())
+  problemId             String
+  problem               Problem           @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  cropId                String?
+  crop                  Crop?             @relation(fields: [cropId], references: [id], onDelete: SetNull)
+  cropName              String            // e.g. "Paddy (Rice)"
+  cropSlug              String            // e.g. "paddy"
+  importance            String            @default("primary") // primary | secondary | minor
+
+  @@unique([problemId, cropSlug])
+}
+
+model ProblemImage {
+  id                    String            @id @default(uuid())
+  problemId             String
+  problem               Problem           @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  path                  String            // Local relative path e.g. "/problems/yellow-stem-borer/dead-heart.webp"
+  caption               String
+  captionKn             String?
+  captionTa             String?
+  captionTe             String?
+  kind                  String            // symptom_closeup | field_view | pest_or_pathogen | healthy_comparison
+  source                String?           // Wikimedia Commons, ICAR, etc.
+  author                String?
+  licence               String?           // CC BY 4.0, CC BY-SA 3.0, Public Domain, etc.
+  attribution           String?
+  isPrimary             Boolean           @default(false)
 }
 
 model DiseaseKnowledge {
@@ -231,3 +353,17 @@ model WeatherAlert {
   messageTe           String?
   validUntil          DateTime
 }
+
+model DiagnosisFeedback {
+  id                  String    @id @default(uuid())
+  problemSlug         String    // Predicted top candidate slug
+  confidence          String    // high | medium | low
+  crop                String    // Crop name or slug
+  rating              String    // correct | incorrect | not_sure
+  farmerCorrection    String?   // Correct problem slug if marked incorrect
+  notes               String?
+  hasConsent          Boolean   @default(false)
+  storedImagePath     String?   // Only populated if farmer explicitly consented to save photo
+  createdAt           DateTime  @default(now())
+}
+

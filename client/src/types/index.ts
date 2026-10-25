@@ -109,6 +109,17 @@ export interface RecommendationResult {
   fruitingTime?: string;
   suitableAgroZones?: string[];
   marketDemand?: string;
+  sowingWindowStatus?: {
+    status: 'open' | 'closing_soon' | 'closed' | 'opens_in_n_days';
+    label: string;
+    labelKn?: string;
+    labelTa?: string;
+    labelTe?: string;
+    daysRemaining?: number;
+    daysUntilOpen?: number;
+    favorableWeatherNote?: string;
+  };
+  detectedSeasonName?: string;
 }
 
 export interface CropCategory {
@@ -221,30 +232,121 @@ export interface CropPlan {
   crop?: any;
 }
 
-export interface Disease {
+export interface SymptomTag {
   id: string;
+  slug: string;
+  plantPart: string;
+  pattern: string;
+  colour?: string | null;
+  spread?: string | null;
+  stage?: string | null;
+  labelEn: string;
+  labelKn: string;
+  labelTa: string;
+  labelTe: string;
+  icon?: string | null;
+}
+
+export interface ProblemImage {
+  id?: string;
+  path: string;
+  caption: string;
+  captionKn?: string | null;
+  captionTa?: string | null;
+  captionTe?: string | null;
+  kind: 'symptom_closeup' | 'field_view' | 'pest_or_pathogen' | 'healthy_comparison';
+  source?: string | null;
+  author?: string | null;
+  licence?: string | null;
+  attribution?: string | null;
+  isPrimary?: boolean;
+}
+
+export interface ProblemCropRef {
+  id?: string;
+  cropId?: string | null;
+  cropName: string;
+  cropSlug: string;
+  importance: 'primary' | 'secondary' | 'minor';
+}
+
+export interface ProblemItem {
+  id: string;
+  slug: string;
   name: string;
-  nameKannada: string;
-  nameTamil: string;
-  nameTelugu: string;
-  affectedCrops: string[];
+  nameKn?: string;
+  nameTa?: string;
+  nameTe?: string;
+  scientificName?: string;
+  type: 'insect_pest' | 'fungal' | 'bacterial' | 'viral' | 'nematode' | 'mite' | 'weed' | 'nutrient_deficiency' | 'abiotic_stress';
+  severity: 'low' | 'medium' | 'high' | 'critical';
   symptoms: string;
   symptomsKn?: string;
   symptomsTa?: string;
   symptomsTe?: string;
-  conditions: string;
-  prevention: string;
-  preventionKn?: string;
-  preventionTa?: string;
-  preventionTe?: string;
-  ipmSteps: string[];
+  cause?: string;
+  favourableConditions?: string;
+  favourableHumidity?: string;
+  favourableTemp?: string;
+  favourableSeasons?: string[];
+  affectedStages?: string[];
+  spreadPattern?: string;
+  culturalControl?: string;
+  culturalControlKn?: string;
+  culturalControlTa?: string;
+  culturalControlTe?: string;
+  biologicalControl?: string;
+  biologicalControlKn?: string;
+  biologicalControlTa?: string;
+  biologicalControlTe?: string;
+  organicControl?: string;
+  organicControlKn?: string;
+  organicControlTa?: string;
+  organicControlTe?: string;
+  chemicalControl?: string;
+  chemicalControlKn?: string;
+  chemicalControlTa?: string;
+  chemicalControlTe?: string;
+  preventionSteps?: string[];
+  preventionStepsKn?: string[];
+  preventionStepsTa?: string[];
+  preventionStepsTe?: string[];
+  ipmSteps?: string[];
   ipmStepsKn?: string[];
   ipmStepsTa?: string[];
   ipmStepsTe?: string[];
-  expertAdvice: string;
-  severity: 'low' | 'medium' | 'high' | 'critical';
+  safetyNotes?: string;
+  lookAlikes?: Array<{ name: string; difference: string }>;
+  whenToCallExpert?: string;
+  whenToCallExpertKn?: string;
+  whenToCallExpertTa?: string;
+  whenToCallExpertTe?: string;
+  confidence?: string;
+  sources?: string;
+  verified?: boolean;
+  images: ProblemImage[];
+  crops: ProblemCropRef[];
+  symptomTags?: Array<{ symptomTag: SymptomTag; weight: number; isPrimary: boolean }>;
+
+  // Backward-compatible properties
+  nameKannada: string;
+  nameTamil: string;
+  nameTelugu: string;
+  affectedCrops: string[];
+  cropSlugs?: string[];
+  conditions?: string;
+  prevention?: string;
+  preventionKn?: string;
+  preventionTa?: string;
+  preventionTe?: string;
+  expertAdvice?: string;
+  expertAdviceKn?: string;
+  expertAdviceTa?: string;
+  expertAdviceTe?: string;
   imageUrl?: string;
 }
+
+export type Disease = ProblemItem;
 
 export interface ChatMessage {
   id?: string;

@@ -258,25 +258,35 @@ export const INDIA_LOCATIONS: StateLocation[] = [
   }
 ];
 
-// Helper to look up nearest location by lat/long coordinates
-export function findLocationByCoords(lat: number, lon: number): {
+export interface MatchedLocationInfo {
   state: string;
   district: string;
   taluk?: string;
+  latitude: number;
+  longitude: number;
   agroZone: string;
   agroZoneCode: string;
   agroZoneDescription: string;
   typicalSoils: string[];
-} {
+  rainfallMm?: string;
+  primaryCrops?: string[];
+}
+
+// Helper to look up nearest location by lat/long coordinates
+export function findLocationByCoords(lat: number, lon: number): MatchedLocationInfo {
   let closestDist = Infinity;
-  let match = {
+  let match: MatchedLocationInfo = {
     state: 'Karnataka',
     district: 'Mandya',
     taluk: 'Mandya',
+    latitude: 12.5244,
+    longitude: 76.8969,
     agroZone: 'Southern Dry Zone',
     agroZoneCode: 'ACZ-6',
     agroZoneDescription: 'Canal-irrigated Cauvery basin with high paddy, sugarcane and ragi productivity.',
     typicalSoils: ['red', 'loamy', 'alluvial'],
+    rainfallMm: '650 - 850 mm',
+    primaryCrops: ['Paddy', 'Sugarcane', 'Ragi'],
   };
 
   for (const s of INDIA_LOCATIONS) {
@@ -289,10 +299,14 @@ export function findLocationByCoords(lat: number, lon: number): {
             state: s.state,
             district: d.name,
             taluk: t.name,
+            latitude: t.latitude || d.latitude,
+            longitude: t.longitude || d.longitude,
             agroZone: d.agroZone,
             agroZoneCode: d.agroZoneCode,
             agroZoneDescription: d.agroZoneDescription,
             typicalSoils: t.typicalSoils || d.typicalSoils,
+            rainfallMm: d.rainfallMm,
+            primaryCrops: t.primaryCrops || [],
           };
         }
       }
@@ -303,18 +317,32 @@ export function findLocationByCoords(lat: number, lon: number): {
 }
 
 // Helper to look up location by state, district, and optional taluk
-export function findLocationByName(stateName: string, districtName: string, talukName?: string) {
-  const normState = (stateName || '').toLowerCase();
-  const normDistrict = (districtName || '').toLowerCase();
-  const normTaluk = (talukName || '').toLowerCase();
+export function findLocationByName(stateName?: string, districtName?: string, talukName?: string): MatchedLocationInfo | null {
+  const normState = (stateName || '').toLowerCase().trim();
+  const normDistrict = (districtName || '').toLowerCase().trim();
+  const normTaluk = (talukName || '').toLowerCase().trim();
 
-  const stateObj = INDIA_LOCATIONS.find(s => s.state.toLowerCase().includes(normState) || normState.includes(s.state.toLowerCase()));
-  if (!stateObj) {
-    return null;
+  let stateObj = normState
+    ? INDIA_LOCATIONS.find(s => s.state.toLowerCase().includes(normState) || normState.includes(s.state.toLowerCase()))
+    : undefined;
+
+  let distObj;
+  if (stateObj && normDistrict) {
+    distObj = stateObj.districts.find(d => d.name.toLowerCase().includes(normDistrict) || normDistrict.includes(d.name.toLowerCase()));
+  } else if (normDistrict) {
+    for (const s of INDIA_LOCATIONS) {
+      const foundDist = s.districts.find(d => d.name.toLowerCase().includes(normDistrict) || normDistrict.includes(d.name.toLowerCase()));
+      if (foundDist) {
+        stateObj = s;
+        distObj = foundDist;
+        break;
+      }
+    }
+  } else if (stateObj) {
+    distObj = stateObj.districts[0];
   }
 
-  const distObj = stateObj.districts.find(d => d.name.toLowerCase().includes(normDistrict) || normDistrict.includes(d.name.toLowerCase()));
-  if (!distObj) {
+  if (!distObj || !stateObj) {
     return null;
   }
 
@@ -334,3 +362,4 @@ export function findLocationByName(stateName: string, districtName: string, talu
     primaryCrops: talukObj?.primaryCrops || [],
   };
 }
+

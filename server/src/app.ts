@@ -10,6 +10,7 @@ import diseaseRoutes from './routes/diseaseRoutes';
 import chatRoutes from './routes/chatRoutes';
 import profileRoutes from './routes/profileRoutes';
 import locationRoutes from './routes/locationRoutes';
+import seasonRoutes from './routes/seasonRoutes';
 
 import path from 'path';
 import { config } from './config';
@@ -86,6 +87,7 @@ app.use('/api/diseases', diseaseRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/location', locationRoutes);
+app.use('/api/season', seasonRoutes);
 
 // 404 Route Handler
 app.use((_req: Request, res: Response) => {

@@ -12,6 +12,8 @@ export interface PromptParams {
   taluk?: string;
   agroZone?: string;
   currentSeason?: string;
+  localSeasonName?: string;
+  sowingWindowStatusSummary?: string;
   preferredCategory?: string;
   landSize?: string | number;
   soilInfo?: string;
@@ -28,6 +30,8 @@ export function buildSystemPrompt({
   taluk,
   agroZone,
   currentSeason,
+  localSeasonName,
+  sowingWindowStatusSummary,
   preferredCategory,
   landSize = '2',
   soilInfo,
@@ -48,6 +52,8 @@ export function buildSystemPrompt({
   contextParts.push(`- Known Location: ${loc}`);
   if (agroZone) contextParts.push(`- Agro-Climatic Zone: ${agroZone}`);
   if (currentSeason) contextParts.push(`- Current Agricultural Season: ${currentSeason}`);
+  if (localSeasonName) contextParts.push(`- Local Season Terminology: ${localSeasonName}`);
+  if (sowingWindowStatusSummary) contextParts.push(`- Real-Time Sowing Window Status: ${sowingWindowStatusSummary}`);
   if (preferredCategory) contextParts.push(`- Preferred Crop Category: ${preferredCategory}`);
   contextParts.push(`- Farm Size: ${size} acres`);
   if (soilInfo) contextParts.push(`- Verified Soil Assessment: ${soilInfo}`);

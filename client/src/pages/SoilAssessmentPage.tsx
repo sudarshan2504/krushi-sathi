@@ -66,6 +66,11 @@ export const SoilAssessmentPage: React.FC = () => {
   const [showHelpModal, setShowHelpModal] = useState(false);
   const [useMapPicker, setUseMapPicker] = useState(true);
 
+  // Season auto-detection state
+  const [detectedSeason, setDetectedSeason] = useState<any | null>(null);
+  const [isManualSeasonOverride, setIsManualSeasonOverride] = useState(false);
+  const [isDetectingSeason, setIsDetectingSeason] = useState(false);
+
   // Form State
   const [formData, setFormData] = useState({
     // Step 1: Soil Type & Cues
@@ -162,6 +167,47 @@ export const SoilAssessmentPage: React.FC = () => {
       isMounted = false;
     };
   }, [user]);
+
+  // Auto-detect season based on location and today's date
+  useEffect(() => {
+    let isMounted = true;
+    async function loadDetectedSeason() {
+      const locState = formData.state || user?.state || 'Karnataka';
+      const locDistrict = formData.district || user?.district;
+      const lat = formData.latitude ?? user?.latitude;
+      const lon = formData.longitude ?? user?.longitude;
+
+      if (!locDistrict && lat === undefined) return;
+
+      setIsDetectingSeason(true);
+      try {
+        const res = await api.season.detect({
+          state: locState,
+          district: locDistrict,
+          taluk: formData.taluk,
+          lat: lat !== null ? lat : undefined,
+          lon: lon !== null ? lon : undefined,
+        });
+
+        if (isMounted && res.success && res.data?.season) {
+          setDetectedSeason(res.data.season);
+          setFormData((prev) => ({
+            ...prev,
+            season: isManualSeasonOverride && prev.season ? prev.season : res.data.season.standardSeason,
+          }));
+        }
+      } catch (err) {
+        console.warn('Season detection fallback:', err);
+      } finally {
+        if (isMounted) setIsDetectingSeason(false);
+      }
+    }
+
+    loadDetectedSeason();
+    return () => {
+      isMounted = false;
+    };
+  }, [formData.state, formData.district, formData.latitude, formData.longitude, user]);
 
   const waterSources = [
     {
@@ -915,52 +961,120 @@ export const SoilAssessmentPage: React.FC = () => {
                 />
               </div>
 
-              {/* Sowing Season */}
+              {/* Auto-Detected Sowing Season from Location & Date */}
               <div className="pt-2 border-t border-earth-100">
-                <div className="flex items-center justify-between mb-1.5">
-                  <label className="text-xs font-bold text-earth-800">
-                    Sowing Season *
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, season: currentSeasonInfo.season });
-                      setStepError(null);
-                    }}
-                    className="text-[11px] text-forest-700 font-bold hover:underline"
-                  >
-                    Use Current Season ({currentSeasonInfo.season})
-                  </button>
-                </div>
-
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'Kharif', label: 'Kharif', sub: 'Jun - Oct (Monsoon)', icon: '🌧️' },
-                    { id: 'Rabi', label: 'Rabi', sub: 'Oct - Mar (Winter)', icon: '❄️' },
-                    { id: 'Zaid', label: 'Zaid', sub: 'Mar - Jun (Summer)', icon: '☀️' },
-                  ].map((s) => {
-                    const isSelected = formData.season === s.id;
-                    return (
+                {!formData.district && formData.latitude === undefined ? (
+                  <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
+                    <AlertCircle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <span className="text-xs font-extrabold block">Location Required for Sowing Season</span>
+                      <p className="text-xs text-amber-800 mt-0.5 leading-relaxed">
+                        Please set your farm location (Step 3) to automatically determine your agro-climatic sowing window, weather risks, and crop suitability.
+                      </p>
                       <button
-                        key={s.id}
                         type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, season: s.id });
-                          setStepError(null);
-                        }}
-                        className={`p-3 rounded-2xl border-2 text-center transition-all ${
-                          isSelected
-                            ? 'border-forest-600 bg-mint-50/80 font-extrabold text-forest-900 shadow-sm'
-                            : 'border-earth-200 bg-white text-earth-800 hover:border-earth-300'
-                        }`}
+                        onClick={() => setCurrentStep(3)}
+                        className="mt-2.5 px-3.5 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-amber-700 cursor-pointer inline-flex items-center gap-1.5"
                       >
-                        <span className="text-xl block mb-1">{s.icon}</span>
-                        <span className="text-xs block font-bold">{s.label}</span>
-                        <span className="text-[10px] text-earth-500 block">{s.sub}</span>
+                        <MapPin className="w-3.5 h-3.5" />
+                        <span>Set Farm Location (Step 3) →</span>
                       </button>
-                    );
-                  })}
-                </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-50 via-mint-50/70 to-cream-light/60 border border-forest-200 shadow-2xs">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-forest-600 text-white flex items-center justify-center shrink-0 shadow-xs mt-0.5">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-forest-100 text-forest-800 border border-forest-200/60 inline-block mb-1">
+                            {isDetectingSeason ? 'Detecting Regional Calendar...' : 'Auto-Detected Sowing Season'}
+                          </span>
+                          <p className="text-xs sm:text-sm font-bold text-dark-text leading-snug">
+                            {language === 'kn'
+                              ? detectedSeason?.confirmationLine?.kn
+                              : language === 'ta'
+                              ? detectedSeason?.confirmationLine?.ta
+                              : language === 'te'
+                              ? detectedSeason?.confirmationLine?.te
+                              : detectedSeason?.confirmationLine?.en ||
+                                `Detected: ${formData.season || 'Rabi'} sowing season in ${formData.district || 'your area'}.`}
+                          </p>
+                          <div className="flex flex-wrap items-center gap-2 mt-2 text-[11px] text-dark-muted font-medium">
+                            <span className="font-bold text-forest flex items-center gap-1">
+                              <span>Window:</span>
+                              <span className="text-dark-text">{detectedSeason?.sowingWindow || 'Active Sowing Window'}</span>
+                            </span>
+                            {detectedSeason?.sowingWindowStatus && (
+                              <span
+                                className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                                  detectedSeason.sowingWindowStatus === 'open'
+                                    ? 'bg-emerald-100 text-emerald-800'
+                                    : detectedSeason.sowingWindowStatus === 'closing_soon'
+                                    ? 'bg-amber-100 text-amber-800'
+                                    : 'bg-gray-100 text-gray-700'
+                                }`}
+                              >
+                                {detectedSeason.sowingWindowStatus === 'open'
+                                  ? 'Active Sowing Window'
+                                  : detectedSeason.sowingWindowStatus === 'closing_soon'
+                                  ? `Closing Soon (${detectedSeason.daysRemainingInWindow}d left)`
+                                  : 'Window Closed'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => setIsManualSeasonOverride(!isManualSeasonOverride)}
+                        className="text-xs font-bold text-forest-700 hover:text-forest-900 underline shrink-0 cursor-pointer px-1 py-0.5"
+                      >
+                        {isManualSeasonOverride ? 'Hide' : 'Change'}
+                      </button>
+                    </div>
+
+                    {/* Manual Season Override Expansion */}
+                    {isManualSeasonOverride && (
+                      <div className="mt-3.5 pt-3 border-t border-forest-200/60 space-y-2">
+                        <span className="text-xs font-bold text-dark-text block">
+                          Manual Season Override:
+                        </span>
+                        <div className="grid grid-cols-3 gap-2">
+                          {[
+                            { id: 'Kharif', label: 'Kharif', sub: 'Jun - Oct (Monsoon)', icon: '🌧️' },
+                            { id: 'Rabi', label: 'Rabi', sub: 'Oct - Mar (Winter)', icon: '❄️' },
+                            { id: 'Zaid', label: 'Zaid', sub: 'Mar - Jun (Summer)', icon: '☀️' },
+                          ].map((s) => {
+                            const isSelected = formData.season === s.id;
+                            return (
+                              <button
+                                key={s.id}
+                                type="button"
+                                onClick={() => {
+                                  setFormData({ ...formData, season: s.id });
+                                  setStepError(null);
+                                }}
+                                className={`p-2.5 rounded-xl border text-center transition-all cursor-pointer ${
+                                  isSelected
+                                    ? 'border-forest-600 bg-white font-extrabold text-forest-900 shadow-sm ring-2 ring-forest-400/30'
+                                    : 'border-earth-200 bg-white/70 text-earth-800 hover:bg-white'
+                                }`}
+                              >
+                                <span className="text-base block mb-0.5">{s.icon}</span>
+                                <span className="text-xs block font-bold">{s.label}</span>
+                                <span className="text-[10px] text-earth-500 block">{s.sub}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* Preceding Crop */}
