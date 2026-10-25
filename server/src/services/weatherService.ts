@@ -36,6 +36,12 @@ export interface WeatherData {
   lastUpdated: string;
   isDemoFallback: boolean;
   dataSource: string;
+  agroZone?: string;
+  agroZoneCode?: string;
+  agroZoneDescription?: string;
+  typicalSoils?: string[];
+  taluk?: string;
+  seasonInfo?: any;
 }
 
 // Map WMO codes to human labels and friendly icons
@@ -68,11 +74,14 @@ export const DISTRICT_COORDINATES: Record<string, { lat: number; lon: number; st
   'Pune': { lat: 18.520, lon: 73.856, state: 'Maharashtra' },
 };
 
+import { getLocationConditions } from './seasonService';
+
 export async function fetchWeatherData(districtName = 'Mandya', customLat?: number, customLon?: number): Promise<WeatherData> {
   const coord = DISTRICT_COORDINATES[districtName] || DISTRICT_COORDINATES['Mandya'];
   const lat = customLat ?? coord.lat;
   const lon = customLon ?? coord.lon;
   const state = coord.state || 'Karnataka';
+  const { location, season } = getLocationConditions(lat, lon, state, districtName);
 
   const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum&timezone=auto&forecast_days=14`;
 
@@ -159,6 +168,12 @@ export async function fetchWeatherData(districtName = 'Mandya', customLat?: numb
       lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       isDemoFallback: false,
       dataSource: 'Live Open-Meteo API',
+      agroZone: location.agroZone,
+      agroZoneCode: location.agroZoneCode,
+      agroZoneDescription: location.agroZoneDescription,
+      typicalSoils: location.typicalSoils,
+      taluk: location.taluk,
+      seasonInfo: season,
     };
   } catch (err) {
     // Return high-fidelity local demo fallback clearly labeled
@@ -216,5 +231,27 @@ function getDemoFallbackWeather(district: string, state: string, lat: number, lo
     lastUpdated: 'Updated 10 mins ago (Local Demo Data)',
     isDemoFallback: true,
     dataSource: 'Local Demo Fallback Data (Offline Simulation)',
+    agroZone: 'Southern Dry Zone',
+    agroZoneCode: 'ACZ-6',
+    agroZoneDescription: 'Canal-irrigated Cauvery basin with high paddy and sugarcane productivity, alongside red gravelly rainfed uplands.',
+    typicalSoils: ['red', 'loamy', 'alluvial'],
+    taluk: 'Mandya',
+    seasonInfo: {
+      season: 'Kharif',
+      name: 'Kharif (Monsoon Season)',
+      nameKannada: 'ಮುಂಗಾರು ಹಂಗಾಮು (ಖಾರೀಫ್)',
+      nameTamil: 'காரிப் பருவம் (தென்மேற்கு பருவமழை)',
+      nameTelugu: 'ఖరీఫ్ కాలం (వర్షాకాలం)',
+      monthsRange: 'June - October',
+      currentPhase: 'Vegetative Growth',
+      currentPhaseKn: 'ಸಸ್ಯ ಬೆಳವಣಿಗೆ ಹಂತ',
+      currentPhaseTa: 'தாவர வளர்ச்சி பருவம்',
+      currentPhaseTe: 'మొక్కల ఏపుగా పెరిగే దశ',
+      advice: 'Ensure adequate field drainage and apply top-dressing fertilizers.',
+      adviceKn: 'ಹೆಚ್ಚುವರಿ ನೀರು ಬಸಿದು ಹೋಗಲು ಕಾಲುವೆ ನಿರ್ಮಿಸಿ. ಯೂರಿಯಾ ಗೊಬ್ಬರ ನೀಡಿ.',
+      adviceTa: 'வயலில் தேங்கும் உபரி நீரை வடிக்கவும். உரம் இடவும்.',
+      adviceTe: 'మురుగునీరు నిలవకుండా కాలువలు తీయండి. ఎరువులు వేయండి.',
+      primarySeasonalCrops: ['Paddy', 'Ragi', 'Maize', 'Cotton', 'Red Gram']
+    }
   };
 }

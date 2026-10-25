@@ -22,6 +22,10 @@ export interface FarmerContext {
   state?: string;
   district?: string;
   village?: string;
+  taluk?: string;
+  agroZone?: string;
+  currentSeason?: string;
+  preferredCategory?: string;
   soilType?: string;
   soilInfo?: string;
   landSize?: string | number;
@@ -555,6 +559,10 @@ export async function generateChatResponse(
     language: effectiveLang,
     farmerName: context?.farmerName || 'Farmer',
     location: `${context?.district || 'Mandya'}, ${context?.state || 'South India'}`,
+    taluk: context?.taluk,
+    agroZone: context?.agroZone,
+    currentSeason: context?.currentSeason,
+    preferredCategory: context?.preferredCategory,
     landSize: context?.landSize || '2',
     soilInfo: context?.soilInfo,
     activeCrops: context?.currentCrops,

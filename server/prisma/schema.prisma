@@ -18,6 +18,11 @@ model User {
   farmSize            Float?               @default(2.5)
   farmUnit            String               @default("Acres") // Acres, Guntha, Bigha, Hectare
   avatar              String?
+  latitude            Float?
+  longitude           Float?
+  taluk               String?
+  locationAccuracy    Float?               // metres
+  locationSource      String?              // gps | ip | manual
   createdAt           DateTime             @default(now())
   updatedAt           DateTime             @updatedAt
 
@@ -37,11 +42,21 @@ model SoilAssessment {
   village             String?
   farmSize            Float
   farmUnit            String               @default("Acres")
-  soilType            String               // red, black, sandy, clay, loamy, unknown
+  soilType            String               // red, black, sandy, clay, loamy, alluvial, laterite, unknown
+  soilColour          String?              // red, dark_brown, black, yellowish, light_grey
+  soilTexture         String?              // fine_clayey, medium_loamy, coarse_sandy, silty
+  moistureLevel       String?              // dry, slightly_moist, optimal, wet_waterlogged
+  organicMatter       String?              // low, medium, high
+  taluk               String?
+  landSizeGuntas      Float?
+  category            String?              // preferred crop category
   ph                  Float?
   nitrogen            Float?
   phosphorus          Float?
   potassium           Float?
+  npkNitrogen         String?              // Low, Medium, High
+  npkPhosphorus       String?              // Low, Medium, High
+  npkPotassium        String?              // Low, Medium, High
   waterSource         String               // rainfed, borewell, canal, tank, other
   irrigationType      String?              // drip, sprinkler, flood, furrow, none
   season              String               // Kharif, Rabi, Zaid, Year-round

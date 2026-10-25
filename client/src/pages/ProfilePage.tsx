@@ -15,12 +15,20 @@ import {
   Save,
   ArrowRight,
   Edit2,
+  Navigation,
+  Loader2,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { UserAvatar } from '../components/ui/UserAvatar';
 import { api } from '../services/api';
+import {
+  INDIAN_STATES,
+  IndianState,
+  matchState,
+  matchDistrict,
+} from '../data/indianLocations';
 import {
   LAND_UNIT_OPTIONS,
   getLandConversionSummary,
@@ -37,14 +45,58 @@ export const ProfilePage: React.FC = () => {
 
   const [isEditing, setIsEditing] = useState(false);
   const [name, setName] = useState(user?.name || '');
+  const [state, setState] = useState(user?.state || 'Karnataka');
   const [village, setVillage] = useState(user?.village || '');
   const [district, setDistrict] = useState(user?.district || '');
   const [farmSize, setFarmSize] = useState<number | string>(user?.farmSize || 2.0);
   const [farmUnit, setFarmUnit] = useState(user?.farmUnit || 'Acres');
+  const [latitude, setLatitude] = useState<number | null>(user?.latitude || null);
+  const [longitude, setLongitude] = useState<number | null>(user?.longitude || null);
+  const [locationSource, setLocationSource] = useState<string>(user?.locationSource || 'manual');
+  const [isDetectingLoc, setIsDetectingLoc] = useState(false);
 
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  const selectedStateObj = INDIAN_STATES.find(s => s.name === state) || INDIAN_STATES[0];
+
+  const detectLocation = () => {
+    if (!navigator.geolocation) {
+      showToast(t('locationUnavailable'), 'error');
+      return;
+    }
+    setIsDetectingLoc(true);
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        try {
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          const acc = pos.coords.accuracy;
+          const geo = await api.location.reverseGeocode(lat, lon, acc);
+          const matchedState = matchState(geo.state || '') || INDIAN_STATES[0];
+          const distResult = matchDistrict(geo.district || geo.town || '', matchedState);
+
+          setState(matchedState.name);
+          setDistrict(distResult ? distResult.district : '');
+          if (geo.village) setVillage(geo.village);
+          setLatitude(lat);
+          setLongitude(lon);
+          setLocationSource('gps');
+          showToast(t('locationDetectedChip', { location: geo.village || distResult?.district || matchedState.name }), 'success');
+        } catch {
+          showToast(t('locationUnavailable'), 'error');
+        } finally {
+          setIsDetectingLoc(false);
+        }
+      },
+      () => {
+        setIsDetectingLoc(false);
+        showToast(t('locationPermissionDenied'), 'error');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -114,10 +166,14 @@ export const ProfilePage: React.FC = () => {
     try {
       const updated = await api.auth.updateProfile({
         name,
+        state,
         village,
         district,
         farmSize: typeof farmSize === 'string' ? parseFloat(farmSize) : farmSize,
         farmUnit,
+        latitude,
+        longitude,
+        locationSource,
       });
       updateUser(updated);
       setIsEditing(false);
@@ -194,10 +250,14 @@ export const ProfilePage: React.FC = () => {
                 type="button"
                 onClick={() => {
                   setName(user?.name || '');
+                  setState(user?.state || 'Karnataka');
                   setVillage(user?.village || '');
                   setDistrict(user?.district || '');
                   setFarmSize(user?.farmSize || 2.0);
                   setFarmUnit(user?.farmUnit || 'Acres');
+                  setLatitude(user?.latitude || null);
+                  setLongitude(user?.longitude || null);
+                  setLocationSource(user?.locationSource || 'manual');
                   setIsEditing(!isEditing);
                 }}
                 className="py-1.5 px-3.5 rounded-xl border border-gray-200 text-xs font-bold text-dark-text hover:bg-gray-50 flex items-center gap-1.5 transition"
@@ -233,8 +293,30 @@ export const ProfilePage: React.FC = () => {
           className="bg-white rounded-3xl p-5 border border-forest/30 shadow-card space-y-4"
         >
           <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-            <h2 className="text-sm font-extrabold text-forest">Edit Farmer Information</h2>
-            <span className="text-[11px] text-dark-muted">Saved to your personal account</span>
+            <div>
+              <h2 className="text-sm font-extrabold text-forest">Edit Farmer Information</h2>
+              <span className="text-[11px] text-dark-muted">Saved to your personal account</span>
+            </div>
+
+            {/* GPS Location Refresh button */}
+            <button
+              type="button"
+              onClick={detectLocation}
+              disabled={isDetectingLoc}
+              className="px-2.5 py-1.5 rounded-xl bg-forest/10 hover:bg-forest hover:text-white text-forest text-xs font-bold transition flex items-center gap-1.5 min-h-[32px] cursor-pointer disabled:opacity-50"
+            >
+              {isDetectingLoc ? (
+                <>
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                  <span>Detecting...</span>
+                </>
+              ) : (
+                <>
+                  <Navigation className="w-3 h-3" />
+                  <span>Detect Location</span>
+                </>
+              )}
+            </button>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -259,14 +341,44 @@ export const ProfilePage: React.FC = () => {
               />
             </div>
             <div>
+              <label className="block text-xs font-bold text-dark-text mb-1">State</label>
+              <select
+                value={state}
+                onChange={(e) => {
+                  const newState = e.target.value;
+                  setState(newState);
+                  const st = INDIAN_STATES.find(s => s.name === newState);
+                  if (st && !st.districts.includes(district)) {
+                    setDistrict(st.districts[0] || '');
+                  }
+                  setLocationSource('manual');
+                }}
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none bg-white"
+              >
+                {INDIAN_STATES.map((s) => (
+                  <option key={s.name} value={s.name}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="block text-xs font-bold text-dark-text mb-1">District</label>
-              <input
-                type="text"
+              <select
                 value={district}
-                onChange={(e) => setDistrict(e.target.value)}
-                placeholder="e.g. Mandya"
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none"
-              />
+                onChange={(e) => {
+                  setDistrict(e.target.value);
+                  setLocationSource('manual');
+                }}
+                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none bg-white"
+              >
+                <option value="">Select District</option>
+                {selectedStateObj.districts.map((d) => (
+                  <option key={d} value={d}>
+                    {d}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-bold text-dark-text mb-1">

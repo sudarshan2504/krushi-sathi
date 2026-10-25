@@ -84,7 +84,24 @@ router.get('/', authMiddleware, async (req: AuthRequest, res: Response) => {
 router.put('/', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user!;
-    const { name, state, district, village, farmSize, farmUnit, language, avatar } = req.body;
+    const {
+      name,
+      state,
+      district,
+      village,
+      taluk,
+      farmSize,
+      farmUnit,
+      language,
+      avatar,
+      latitude,
+      longitude,
+      locationAccuracy,
+      locationSource,
+    } = req.body;
+
+    const latVal = latitude !== undefined && latitude !== null ? parseFloat(latitude) : undefined;
+    const lonVal = longitude !== undefined && longitude !== null ? parseFloat(longitude) : undefined;
 
     const updated = await prisma.user.update({
       where: { id: user.id },
@@ -93,10 +110,15 @@ router.put('/', authMiddleware, async (req: AuthRequest, res: Response) => {
         state: state || user.state,
         district: district || user.district,
         village: village !== undefined ? village : user.village,
+        taluk: taluk !== undefined ? taluk : user.taluk,
         farmSize: farmSize ? parseFloat(farmSize) : user.farmSize,
         farmUnit: farmUnit || user.farmUnit,
         language: language || user.language,
         avatar: avatar !== undefined ? avatar : user.avatar,
+        latitude: latVal !== undefined && !isNaN(latVal) && latVal >= -90 && latVal <= 90 ? latVal : undefined,
+        longitude: lonVal !== undefined && !isNaN(lonVal) && lonVal >= -180 && lonVal <= 180 ? lonVal : undefined,
+        locationAccuracy: locationAccuracy !== undefined ? parseFloat(locationAccuracy) || null : undefined,
+        locationSource: locationSource !== undefined ? String(locationSource) : undefined,
       },
     });
 

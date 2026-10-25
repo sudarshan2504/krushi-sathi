@@ -228,8 +228,13 @@ export async function registerFarmer(data: {
   state: string;
   district: string;
   village?: string;
+  taluk?: string;
   farmSize?: number;
   farmUnit?: string;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationAccuracy?: number | null;
+  locationSource?: string;
 }) {
   const phone = cleanPhone(data.phone);
   if (!isValidIndianPhone(phone)) {
@@ -240,6 +245,27 @@ export async function registerFarmer(data: {
     throw new Error('Please enter farmer name (minimum 2 letters)');
   }
 
+  // Validate and sanitize location data
+  let validLat: number | null = null;
+  let validLon: number | null = null;
+  if (typeof data.latitude === 'number' && !isNaN(data.latitude) && data.latitude >= -90 && data.latitude <= 90) {
+    validLat = data.latitude;
+  }
+  if (typeof data.longitude === 'number' && !isNaN(data.longitude) && data.longitude >= -180 && data.longitude <= 180) {
+    validLon = data.longitude;
+  }
+
+  const validAccuracy = typeof data.locationAccuracy === 'number' && !isNaN(data.locationAccuracy) && data.locationAccuracy >= 0
+    ? Math.min(data.locationAccuracy, 100000)
+    : null;
+
+  const validSource = ['gps', 'ip', 'manual'].includes(String(data.locationSource || '').toLowerCase())
+    ? String(data.locationSource).toLowerCase()
+    : (validLat !== null ? 'gps' : 'manual');
+
+  const cleanTaluk = data.taluk ? String(data.taluk).trim().slice(0, 100) : null;
+  const cleanVillage = data.village !== undefined ? String(data.village).trim().slice(0, 100) : null;
+
   const existing = await prisma.user.findUnique({
     where: { phone },
   });
@@ -249,11 +275,16 @@ export async function registerFarmer(data: {
     user = await prisma.user.update({
       where: { phone },
       data: {
-        name: data.name.trim(),
+        name: data.name.trim().slice(0, 100),
         language: data.language || existing.language,
         state: data.state || existing.state,
         district: data.district || existing.district,
-        village: data.village !== undefined ? data.village : existing.village,
+        village: cleanVillage !== null ? cleanVillage : existing.village,
+        taluk: cleanTaluk !== null ? cleanTaluk : existing.taluk,
+        latitude: validLat !== null ? validLat : existing.latitude,
+        longitude: validLon !== null ? validLon : existing.longitude,
+        locationAccuracy: validAccuracy !== null ? validAccuracy : existing.locationAccuracy,
+        locationSource: validSource || existing.locationSource,
         farmSize: data.farmSize ?? existing.farmSize,
         farmUnit: data.farmUnit || existing.farmUnit,
       },
@@ -262,11 +293,16 @@ export async function registerFarmer(data: {
     user = await prisma.user.create({
       data: {
         phone,
-        name: data.name.trim(),
+        name: data.name.trim().slice(0, 100),
         language: data.language || 'en',
         state: data.state || 'Karnataka',
         district: data.district || 'Mandya',
-        village: data.village || '',
+        village: cleanVillage || '',
+        taluk: cleanTaluk || '',
+        latitude: validLat,
+        longitude: validLon,
+        locationAccuracy: validAccuracy,
+        locationSource: validSource,
         farmSize: data.farmSize || 2.5,
         farmUnit: data.farmUnit || 'Acres',
       },
@@ -287,5 +323,51 @@ export async function registerFarmer(data: {
   return {
     token,
     user,
+  };
+}
+
+/**
+ * Guest / One-Tap Demo Login or Direct Phone Login (No OTP required)
+ */
+export async function guestLogin(preferredPhone?: string, preferredName?: string) {
+  const phone = preferredPhone ? cleanPhone(preferredPhone) : '9876543210';
+  const name = preferredName || 'Ramesh Kumar (Farmer)';
+
+  // Find or create local user
+  let user = await prisma.user.findFirst({
+    where: { phone },
+  });
+
+  const isNewUser = !user;
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        phone,
+        name,
+        language: 'en',
+        state: 'Karnataka',
+        district: 'Mandya',
+        farmSize: 2.5,
+        farmUnit: 'Acres',
+      },
+    });
+  }
+
+  const token = jwt.sign(
+    {
+      userId: user.id,
+      phone: user.phone,
+      name: user.name,
+      language: user.language,
+    },
+    config.jwtSecret,
+    { expiresIn: '7d' }
+  );
+
+  return {
+    token,
+    user,
+    isNewUser,
   };
 }

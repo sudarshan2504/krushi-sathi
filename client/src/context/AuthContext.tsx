@@ -14,7 +14,10 @@ interface AuthContextType {
   isAuthenticated: boolean;
   isLoading: boolean;
   login: (phone: string, otp: string) => Promise<{ isNewUser: boolean }>;
-  setFirebaseSession: (fbUser: FirebaseUser, backendUser?: User) => void;
+  firebaseLogin: (idToken: string) => Promise<{ token: string; user: User; isNewUser: boolean }>;
+  guestLogin: (preferredPhone?: string, preferredName?: string) => Promise<{ token: string; user: User; isNewUser: boolean }>;
+  directLogin: (phone: string, name?: string) => Promise<{ token: string; user: User; isNewUser: boolean }>;
+  setFirebaseSession: (fbUser: FirebaseUser | null, backendUser?: User | null) => void;
   register: (formData: any) => Promise<void>;
   logout: () => Promise<void>;
   updateUser: (data: Partial<User>) => void;
@@ -41,9 +44,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       state: existing?.state || 'Karnataka',
       district: existing?.district || 'Mandya',
       village: existing?.village || null,
+      taluk: existing?.taluk || null,
       farmSize: existing?.farmSize || 2.5,
       farmUnit: existing?.farmUnit || 'Acres',
       avatar: existing?.avatar || fbUser.photoURL || null,
+      latitude: existing?.latitude || null,
+      longitude: existing?.longitude || null,
+      locationAccuracy: existing?.locationAccuracy || null,
+      locationSource: existing?.locationSource || null,
     };
   };
 
@@ -115,9 +123,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  const setFirebaseSession = (fbUser: FirebaseUser, backendUser?: User) => {
+  const setFirebaseSession = (fbUser: FirebaseUser | null, backendUser?: User | null) => {
     setFirebaseUser(fbUser);
-    setUser(backendUser || buildUserFromFirebase(fbUser, user));
+    if (backendUser) {
+      setUser(backendUser);
+    } else if (fbUser) {
+      setUser(buildUserFromFirebase(fbUser, user));
+    } else {
+      setUser(null);
+    }
+  };
+
+  const firebaseLogin = async (idToken: string) => {
+    const res = await api.auth.firebaseLogin(idToken);
+    setUser(res.user);
+    return res;
+  };
+
+  const guestLogin = async (preferredPhone?: string, preferredName?: string) => {
+    setIsLoading(true);
+    try {
+      const res = await api.auth.guestLogin(preferredPhone, preferredName);
+      setUser(res.user);
+      return res;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const directLogin = async (phone: string, name?: string) => {
+    setIsLoading(true);
+    try {
+      const res = await api.auth.directLogin(phone, name);
+      setUser(res.user);
+      return res;
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const login = async (phone: string, otp: string) => {
@@ -167,6 +209,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: Boolean(user || firebaseUser),
         isLoading,
         login,
+        firebaseLogin,
+        guestLogin,
+        directLogin,
         setFirebaseSession,
         register,
         logout,

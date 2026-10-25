@@ -28,6 +28,16 @@ export interface CropData {
   imageUrl: string;
   risks: string[];
   benefits: string[];
+  durationType?: 'short' | 'medium' | 'long' | 'perennial';
+  sowingMonths?: string[];
+  harvestMonths?: string[];
+  gestationYears?: number;
+  intercroppingOptions?: string[];
+  roiEstimate?: string;
+  isSeasonalFruit?: boolean;
+  isLongTerm?: boolean;
+  fruitingTime?: string;
+  suitableAgroZones?: string[];
   stages: {
     stage: string;
     stageOrder: number;
@@ -57,7 +67,9 @@ export interface CropData {
   }[];
 }
 
-export const CROPS_DATA: CropData[] = [
+import { EXTENDED_CROPS } from './cropDatasetExtended';
+
+const BASE_CROPS: CropData[] = [
   {
     id: 'crop-paddy-rice',
     name: 'Paddy (Rice)',
@@ -944,3 +956,5 @@ export const CROPS_DATA: CropData[] = [
     ]
   }
 ];
+
+export const CROPS_DATA: CropData[] = [...BASE_CROPS, ...EXTENDED_CROPS];

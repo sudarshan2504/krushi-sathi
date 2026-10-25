@@ -23,6 +23,8 @@ const StageDetailPage = lazy(() => import('./pages/StageDetailPage').then(m => (
 const DiseasePreventionPage = lazy(() => import('./pages/DiseasePreventionPage').then(m => ({ default: m.DiseasePreventionPage })));
 const ChatPage = lazy(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const ProfilePage = lazy(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
+const CropLibraryPage = lazy(() => import('./pages/CropLibraryPage').then(m => ({ default: m.CropLibraryPage })));
+const ImageCreditsPage = lazy(() => import('./pages/ImageCreditsPage').then(m => ({ default: m.ImageCreditsPage })));
 
 // Realistic layout skeleton fallback replacing full-page spinner
 const PageFallback: React.FC = () => (
@@ -86,6 +88,9 @@ const AppRoutes: React.FC = () => {
           
           {/* Crop Recommendation & Lifecycle Routes */}
           <Route path="/crops" element={<PageTransition><CropRecommendationsPage /></PageTransition>} />
+          <Route path="/crop-library" element={<PageTransition><CropLibraryPage /></PageTransition>} />
+          <Route path="/crop-library/:cropId" element={<PageTransition><CropDetailsPage /></PageTransition>} />
+          <Route path="/credits" element={<PageTransition><ImageCreditsPage /></PageTransition>} />
           <Route path="/crops/recommend" element={<PageTransition><CropRecommendationsPage /></PageTransition>} />
           <Route path="/crops/lifecycle" element={<PageTransition><CropLifecyclePage /></PageTransition>} />
           <Route path="/crops/lifecycle/:planId" element={<PageTransition><CropLifecyclePage /></PageTransition>} />

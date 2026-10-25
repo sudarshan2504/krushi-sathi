@@ -41,6 +41,47 @@ export const Header: React.FC = () => {
             </div>
           </Link>
 
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+            <Link
+              to="/home"
+              className="px-3 py-1.5 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition"
+            >
+              Home
+            </Link>
+            <Link
+              to="/soil"
+              className="px-3 py-1.5 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition"
+            >
+              Soil Test
+            </Link>
+            <Link
+              to="/crop-library"
+              className="px-3 py-1.5 rounded-full text-xs font-extrabold text-[#105C32] bg-[#E8F5E9] hover:bg-[#C8E6C9] transition flex items-center gap-1.5"
+            >
+              <Sprout className="w-3.5 h-3.5 text-[#105C32]" />
+              <span>Crop Library (A-Z)</span>
+            </Link>
+            <Link
+              to="/crops"
+              className="px-3 py-1.5 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition"
+            >
+              Recommend
+            </Link>
+            <Link
+              to="/diseases"
+              className="px-3 py-1.5 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition"
+            >
+              Diseases
+            </Link>
+            <Link
+              to="/chat"
+              className="px-3 py-1.5 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition"
+            >
+              AI Chat
+            </Link>
+          </nav>
+
           {/* Right Controls: Language Selector, Notification Bell, User Avatar, Logout */}
           <div className="flex items-center gap-2">
             {/* Rounded Language Selector Pill */}

@@ -15,6 +15,10 @@ import {
   Layers,
   AlertCircle,
   XCircle,
+  Compass,
+  FileText,
+  Activity,
+  Trees,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { useTranslation } from '../context/LanguageContext';
@@ -24,10 +28,21 @@ import { api } from '../services/api';
 import {
   LAND_UNIT_OPTIONS,
   getLandConversionSummary,
-  getLocalizedUnitLabel,
 } from '../utils/landUnits';
 
-// Determine the natural agricultural season based on current calendar month
+// Soil components
+import { SoilTypeSelector } from '../components/soil/SoilTypeSelector';
+import { SoilHelpModal } from '../components/soil/SoilHelpModal';
+import { PhSlider } from '../components/soil/PhSlider';
+import { NpkSelector } from '../components/soil/NpkSelector';
+
+// Location components
+import { GoogleMapPicker } from '../components/location/GoogleMapPicker';
+import { ManualLocationFallback } from '../components/location/ManualLocationFallback';
+
+// Crop components
+import { CategorySelector } from '../components/crops/CategorySelector';
+
 const getCalculatedCurrentSeason = (): { season: string; monthLabel: string } => {
   const month = new Date().getMonth() + 1; // 1-12
   if (month >= 6 && month <= 10) {
@@ -48,31 +63,57 @@ export const SoilAssessmentPage: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [stepError, setStepError] = useState<string | null>(null);
+  const [showHelpModal, setShowHelpModal] = useState(false);
+  const [useMapPicker, setUseMapPicker] = useState(true);
 
-  // NO arbitrary preselected defaults for new assessments
+  // Form State
   const [formData, setFormData] = useState({
-    soilType: '', // starts UNSELECTED
-    waterSource: '', // starts UNSELECTED
-    irrigationType: '', // starts UNSELECTED
+    // Step 1: Soil Type & Cues
+    soilType: '',
+    soilColour: '',
+    soilTexture: '',
+
+    // Step 2: Soil Moisture, Organic Matter & Drainage
+    moistureLevel: '',
+    organicMatter: '',
+    drainage: '',
+    soilIssues: [] as string[],
+
+    // Step 3: Location & Farm Size
     state: user?.state || 'Karnataka',
     district: user?.district || '',
+    taluk: '',
     village: user?.village || '',
+    latitude: undefined as number | undefined,
+    longitude: undefined as number | undefined,
+    agroZone: '',
     farmSize: user?.farmSize || '',
     farmUnit: user?.farmUnit || 'Acres',
-    season: '', // starts UNSELECTED
-    sowingMonth: '',
-    previousCrop: '', // starts UNSELECTED
+    guntas: '' as string | number,
+
+    // Step 4: Water & Irrigation
+    waterSource: '',
+    irrigationType: '',
+
+    // Step 5: Crop Category & Season
+    category: '',
+    season: '',
+    previousCrop: '',
+    budget: '',
+
+    // Step 6: Soil Health Card (pH & NPK)
     hasSoilReport: false,
     ph: '' as string | number,
+    isPhUnknown: true,
+    npkLevelN: 'medium' as 'low' | 'medium' | 'high',
+    npkLevelP: 'medium' as 'low' | 'medium' | 'high',
+    npkLevelK: 'medium' as 'low' | 'medium' | 'high',
     nitrogen: '' as string | number,
     phosphorus: '' as string | number,
     potassium: '' as string | number,
-    drainage: '', // starts UNSELECTED
-    budget: '', // starts UNSELECTED
-    soilIssues: '',
   });
 
-  // Only load previous assessment values if this farmer has actually saved one before
+  // Load previous assessment values if available
   useEffect(() => {
     let isMounted = true;
     async function loadPastAssessment() {
@@ -84,26 +125,36 @@ export const SoilAssessmentPage: React.FC = () => {
           setFormData((prev) => ({
             ...prev,
             soilType: latest.soilType || '',
+            soilColour: latest.soilColour || '',
+            soilTexture: latest.soilTexture || '',
+            moistureLevel: latest.moistureLevel || '',
+            organicMatter: latest.organicMatter || '',
+            drainage: latest.drainage || '',
             waterSource: latest.waterSource || '',
             irrigationType: latest.irrigationType || '',
             state: latest.state || user.state || 'Karnataka',
             district: latest.district || user.district || '',
+            taluk: latest.taluk || '',
             village: latest.village || user.village || '',
             farmSize: latest.farmSize || user.farmSize || '',
             farmUnit: latest.farmUnit || user.farmUnit || 'Acres',
             season: latest.season || '',
+            category: latest.category || '',
             previousCrop: latest.previousCrop || '',
-            drainage: latest.drainage || '',
             budget: latest.budget || '',
             ph: latest.ph !== null && latest.ph !== undefined ? latest.ph : '',
+            isPhUnknown: latest.ph === null || latest.ph === undefined,
             nitrogen: latest.nitrogen !== null && latest.nitrogen !== undefined ? latest.nitrogen : '',
             phosphorus: latest.phosphorus !== null && latest.phosphorus !== undefined ? latest.phosphorus : '',
             potassium: latest.potassium !== null && latest.potassium !== undefined ? latest.potassium : '',
+            npkLevelN: (latest.npkNitrogen as any) || 'medium',
+            npkLevelP: (latest.npkPhosphorus as any) || 'medium',
+            npkLevelK: (latest.npkPotassium as any) || 'medium',
             hasSoilReport: Boolean(latest.ph || latest.nitrogen),
           }));
         }
       } catch {
-        // Silently keep clean unselected state if past fetch fails
+        // Keep default state
       }
     }
     loadPastAssessment();
@@ -112,107 +163,119 @@ export const SoilAssessmentPage: React.FC = () => {
     };
   }, [user]);
 
-  const soilTypes = [
-    {
-      id: 'red',
-      name: t('soilRed') || 'Red Soil (ಕೆಂಪು ಮಣ್ಣು)',
-      desc: 'Porous, well-drained, rich in iron',
-      icon: '🧱',
-    },
-    {
-      id: 'black',
-      name: t('soilBlack') || 'Black Soil (ಕಪ್ಪು ಮಣ್ಣು)',
-      desc: 'High clay, moisture retentive (Cotton/Sugarcane)',
-      icon: '🌑',
-    },
-    {
-      id: 'loamy',
-      name: t('soilLoamy') || 'Loamy Soil (ಗೋಡು ಮಣ್ಣು)',
-      desc: 'Ideal balanced mix of sand, silt, and clay',
-      icon: '🌱',
-    },
-    {
-      id: 'clay',
-      name: t('soilClay') || 'Clay Soil (ಜೇಡಿ ಮಣ್ಣು)',
-      desc: 'Heavy, high water-holding capacity (Paddy)',
-      icon: '🏺',
-    },
-    {
-      id: 'sandy',
-      name: t('soilSandy') || 'Sandy Soil (ಮರಳು ಮಣ್ಣು)',
-      desc: 'Fast draining, requires frequent light watering',
-      icon: '🏖️',
-    },
-    {
-      id: 'unknown',
-      name: 'Not Sure / Mixed Soil',
-      desc: 'Standard district agronomy rules will apply',
-      icon: '❓',
-    },
-  ];
-
   const waterSources = [
-    {
-      id: 'rainfed',
-      name: t('waterRainfed') || 'Rainfed Only (ಮಳೆ ಆಶ್ರಿತ)',
-      icon: CloudRain,
-      desc: 'Dependent on seasonal monsoon rains',
-    },
     {
       id: 'borewell',
       name: t('waterBorewell') || 'Borewell / Tube Well (ಬೋರ್‌ವೆಲ್)',
       icon: Droplets,
-      desc: 'Underground pump with regular supply',
+      desc: 'Underground pumped water supply',
+    },
+    {
+      id: 'rainfed',
+      name: t('waterRainfed') || 'Rainfed Only (ಮಳೆ ಆಶ್ರಿತ)',
+      icon: CloudRain,
+      desc: 'Monsoon-dependent agriculture',
     },
     {
       id: 'canal',
       name: t('waterCanal') || 'Canal Irrigation (ಕಾಲುವೆ ನೀರು)',
       icon: Waves,
-      desc: 'Government irrigation canal system',
+      desc: 'River / reservoir canal network',
     },
     {
       id: 'tank',
       name: t('waterTank') || 'Farm Pond / Lake (ಕೆರೆ / ಹೊಂಡ)',
       icon: HelpCircle,
-      desc: 'Surface rainwater harvesting storage',
+      desc: 'Rainwater harvesting pond storage',
     },
     {
-      id: 'other',
-      name: 'Not Sure / Seasonal Water',
-      desc: 'General average water availability',
-      icon: Droplets,
+      id: 'river',
+      name: 'River / Stream Lift',
+      icon: Waves,
+      desc: 'Riverbank lift irrigation pump',
     },
   ];
 
-  // Validate step before advancing
+  const irrigationTypes = [
+    { id: 'drip', name: 'Drip Irrigation', desc: 'Saves 50% water, uniform delivery' },
+    { id: 'sprinkler', name: 'Sprinkler System', desc: 'Ideal for undulating terrain' },
+    { id: 'flood', name: 'Flood / Furrow', desc: 'Traditional gravity flow' },
+    { id: 'rainfed', name: 'Rainfed (No System)', desc: 'Dependent on seasonal showers' },
+  ];
+
+  const soilColours = [
+    { id: 'red', name: 'Red / Reddish Brown', color: 'bg-red-700' },
+    { id: 'black', name: 'Deep Black / Dark Grey', color: 'bg-stone-900' },
+    { id: 'brown', name: 'Medium Brown / Loam', color: 'bg-amber-900' },
+    { id: 'yellow', name: 'Yellowish / Light Ocre', color: 'bg-yellow-600' },
+    { id: 'grey', name: 'Light Grey / Alluvial', color: 'bg-stone-500' },
+  ];
+
+  const soilTextures = [
+    { id: 'clayey', name: 'Clayey / Sticky', desc: 'Forms tight ribbons, sticky when wet' },
+    { id: 'sandy', name: 'Sandy / Gritty', desc: 'Gritty feel, slips through fingers' },
+    { id: 'loamy', name: 'Loamy / Crumbly', desc: 'Soft, crumbly, holds together gently' },
+    { id: 'silty', name: 'Silty / Smooth', desc: 'Smooth floury feel when dry, slippery wet' },
+  ];
+
+  const moistureLevels = [
+    { id: 'dry', name: 'Dry / Arid', desc: 'Crumbly, low soil moisture' },
+    { id: 'moderate', name: 'Adequate / Moist', desc: 'Optimal moisture, cool to touch' },
+    { id: 'wet', name: 'Very Wet', desc: 'High water saturation' },
+    { id: 'waterlogged', name: 'Waterlogged', desc: 'Standing water / puddle risk' },
+  ];
+
+  const organicMatterLevels = [
+    { id: 'low', name: 'Low (<0.5%)', desc: 'Pale color, little earthworm activity' },
+    { id: 'medium', name: 'Medium (0.5% - 0.75%)', desc: 'Healthy soil with moderate compost' },
+    { id: 'high', name: 'High (>0.75%)', desc: 'Dark rich humus, frequent FYM application' },
+  ];
+
+  const drainageOptions = [
+    { id: 'good', label: 'Good / Well Drained', desc: 'Rainwater absorbs within a few hours' },
+    { id: 'moderate', label: 'Moderate Drainage', desc: 'Holds moisture, drains in 12-24 hours' },
+    { id: 'poor', label: 'Poor / Waterlogged', desc: 'Prone to stagnant water, clay compaction' },
+  ];
+
+  // Validation
   const validateCurrentStep = (): boolean => {
     setStepError(null);
 
     if (currentStep === 1) {
       if (!formData.soilType) {
-        setStepError('Please select your soil type. This is essential to find crops suited to your soil texture.');
-        return false;
-      }
-      if (!formData.waterSource) {
-        setStepError('Please select your water availability. Water source determines whether high or low-water crops will thrive.');
+        setStepError('Please select your soil type. Tap "Help me identify" if unsure.');
         return false;
       }
     }
 
     if (currentStep === 2) {
-      if (!formData.district || formData.district.trim() === '') {
-        setStepError('Please enter your District to match your agro-climatic zone and local rainfall.');
-        return false;
-      }
-      if (!formData.farmSize || Number(formData.farmSize) <= 0) {
-        setStepError('Please enter your land size (e.g. 1 Acre or 20 Guntas) to estimate seed cost and yield.');
+      if (!formData.drainage) {
+        setStepError('Please select your field drainage condition.');
         return false;
       }
     }
 
     if (currentStep === 3) {
+      if (!formData.district || formData.district.trim() === '') {
+        setStepError('Please select or enter your District.');
+        return false;
+      }
+      if (!formData.farmSize || Number(formData.farmSize) <= 0) {
+        setStepError('Please enter your farm land size.');
+        return false;
+      }
+    }
+
+    if (currentStep === 4) {
+      if (!formData.waterSource) {
+        setStepError('Please select your water source.');
+        return false;
+      }
+    }
+
+    if (currentStep === 5) {
       if (!formData.season) {
-        setStepError('Please select a sowing season or choose "Use Current Season".');
+        setStepError('Please select a sowing season or use current season.');
         return false;
       }
     }
@@ -222,7 +285,7 @@ export const SoilAssessmentPage: React.FC = () => {
 
   const handleNext = () => {
     if (!validateCurrentStep()) return;
-    if (currentStep < 5) {
+    if (currentStep < 7) {
       setCurrentStep((prev) => prev + 1);
     } else {
       handleSubmit();
@@ -244,23 +307,55 @@ export const SoilAssessmentPage: React.FC = () => {
     setStepError(null);
 
     try {
+      // Calculate total guntas: if farmUnit is Acres, Acres * 40 + additional guntas
+      let totalGuntas: number | undefined = undefined;
+      const acresVal = Number(formData.farmSize) || 0;
+      const additionalGuntas = Number(formData.guntas) || 0;
+      if (formData.farmUnit === 'Acres') {
+        totalGuntas = Math.round(acresVal * 40 + additionalGuntas);
+      } else if (formData.farmUnit === 'Guntas') {
+        totalGuntas = Math.round(acresVal);
+      }
+
       const payload = {
-        ...formData,
+        soilType: formData.soilType,
+        soilColour: formData.soilColour || undefined,
+        soilTexture: formData.soilTexture || undefined,
+        moistureLevel: formData.moistureLevel || undefined,
+        organicMatter: formData.organicMatter || undefined,
+        drainage: formData.drainage || 'good',
+        soilIssues: formData.soilIssues.join(', ') || undefined,
+
+        state: formData.state || 'Karnataka',
+        district: formData.district || 'Mandya',
+        taluk: formData.taluk || undefined,
+        village: formData.village || undefined,
+        latitude: formData.latitude,
+        longitude: formData.longitude,
         farmSize: Number(formData.farmSize) || 2.0,
-        ph: formData.ph !== '' ? Number(formData.ph) : null,
+        farmUnit: formData.farmUnit || 'Acres',
+        landSizeGuntas: totalGuntas,
+
+        waterSource: formData.waterSource || 'borewell',
+        irrigationType: formData.irrigationType || undefined,
+
+        category: formData.category || undefined,
+        season: formData.season || 'Kharif',
+        previousCrop: formData.previousCrop || 'None',
+        budget: formData.budget || 'medium',
+
+        ph: !formData.isPhUnknown && formData.ph !== '' ? Number(formData.ph) : null,
         nitrogen: formData.nitrogen !== '' ? Number(formData.nitrogen) : null,
         phosphorus: formData.phosphorus !== '' ? Number(formData.phosphorus) : null,
         potassium: formData.potassium !== '' ? Number(formData.potassium) : null,
-        season: formData.season || 'Kharif',
-        previousCrop: formData.previousCrop || 'None',
-        drainage: formData.drainage || 'good',
-        budget: formData.budget || 'medium',
+        npkNitrogen: formData.npkLevelN,
+        npkPhosphorus: formData.npkLevelP,
+        npkPotassium: formData.npkLevelK,
       };
 
       const res = await api.soil.submitAssessment(payload);
-      showToast(t('toastSuccess'), 'success');
+      showToast(t('toastSuccess') || 'Assessment saved successfully!', 'success');
 
-      // Navigate to /crops with the generated recommendations in state
       navigate('/crops', {
         state: {
           assessment: res.assessment,
@@ -274,54 +369,78 @@ export const SoilAssessmentPage: React.FC = () => {
   };
 
   const currentSeasonInfo = getCalculatedCurrentSeason();
-  const conversionSummary = getLandConversionSummary(formData.farmSize, formData.farmUnit, language);
+  const conversionSummary = getLandConversionSummary(
+    formData.farmSize,
+    formData.farmUnit,
+    language
+  );
 
   return (
-    <div className="max-w-xl mx-auto py-2">
-      {/* Top Header with Progress */}
+    <div className="max-w-2xl mx-auto py-2 px-3 sm:px-0">
+      {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <button
           onClick={handleBack}
-          className="min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-forest transition"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white border border-earth-200 text-earth-800 hover:bg-earth-50 transition"
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
         <div className="text-center">
-          <h1 className="text-sm font-extrabold text-dark-text">
-            {t('soilAssessmentTitle') || 'Field Assessment'}
+          <h1 className="text-sm font-extrabold text-earth-900">
+            {language === 'kn'
+              ? 'ವಿಸ್ತೃತ ಮಣ್ಣಿನ ಪರೀಕ್ಷೆ ಮತ್ತು ಜಮೀನು ವಿವರ'
+              : language === 'ta'
+              ? 'விரிவான மண் சோதனை & பண்ணை விவரம்'
+              : language === 'te'
+              ? 'వివరణాత్మక నేల పరీక్ష & వ్యవసాయ వివరాలు'
+              : 'Advanced Soil & Field Assessment'}
           </h1>
-          <span className="text-xs font-semibold text-forest">
-            Step {currentStep} of 5
+          <span className="text-xs font-bold text-forest-700">
+            Step {currentStep} of 7: {
+              currentStep === 1
+                ? 'Soil Type & Cues'
+                : currentStep === 2
+                ? 'Moisture & Drainage'
+                : currentStep === 3
+                ? 'Location & Land Size'
+                : currentStep === 4
+                ? 'Water & Irrigation'
+                : currentStep === 5
+                ? 'Crop Category & Season'
+                : currentStep === 6
+                ? 'Soil Health Card (pH & NPK)'
+                : 'Review & Generate Plan'
+            }
           </span>
         </div>
 
         <button
           onClick={() => navigate('/home')}
-          className="min-h-[48px] px-3 flex items-center justify-center text-xs text-dark-muted hover:text-dark-text font-bold focus-visible:ring-2 focus-visible:ring-forest rounded-xl"
+          className="text-xs text-earth-500 hover:text-earth-900 font-bold px-2 py-1 rounded-lg"
         >
           Cancel
         </button>
       </div>
 
-      {/* Progress Bar */}
+      {/* Progress Dots */}
       <div className="flex items-center gap-1.5 justify-center mb-4">
-        {[1, 2, 3, 4, 5].map((s) => (
+        {[1, 2, 3, 4, 5, 6, 7].map((s) => (
           <div
             key={s}
             className={`h-2 rounded-full transition-all duration-300 ${
               s === currentStep
-                ? 'w-10 bg-forest'
+                ? 'w-8 bg-forest-600'
                 : s < currentStep
-                ? 'w-4 bg-leaf'
-                : 'w-4 bg-gray-200'
+                ? 'w-3 bg-mint-500'
+                : 'w-3 bg-earth-200'
             }`}
           />
         ))}
       </div>
 
-      {/* Validation Error Alert */}
+      {/* Validation Alert */}
       {stepError && (
         <motion.div
           initial={{ opacity: 0, y: -8 }}
@@ -329,9 +448,7 @@ export const SoilAssessmentPage: React.FC = () => {
           className="p-3.5 mb-4 rounded-2xl bg-amber-50 border border-amber-300 text-xs font-bold text-amber-900 flex items-start gap-2.5 shadow-sm"
         >
           <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <span>{stepError}</span>
-          </div>
+          <span className="flex-1">{stepError}</span>
           <button onClick={() => setStepError(null)} className="text-amber-500 hover:text-amber-800">
             <XCircle className="w-4 h-4" />
           </button>
@@ -339,134 +456,90 @@ export const SoilAssessmentPage: React.FC = () => {
       )}
 
       {/* Step Container Card */}
-      <div className="bg-white rounded-3xl border border-gray-100 shadow-card p-5 sm:p-6 min-h-[460px] flex flex-col justify-between">
+      <div className="bg-white rounded-3xl border border-earth-200/80 shadow-md p-5 sm:p-6 min-h-[480px] flex flex-col justify-between">
         <AnimatePresence mode="wait">
-          {/* STEP 1: Soil Texture & Water Availability (UNSELECTED BY DEFAULT) */}
+          {/* STEP 1: Soil Type Selection (7 Types) + Visual Cues Modal */}
           {currentStep === 1 && (
             <motion.div
               key="step1"
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -20 }}
-              className="space-y-6"
+              className="space-y-5"
             >
               <div>
-                <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-base font-extrabold text-dark-text">
-                    1. What type of soil is on your field? *
-                  </h2>
-                  {formData.soilType && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, soilType: '' })}
-                      className="text-[11px] text-red-600 font-bold hover:underline"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <p className="text-xs text-dark-muted mb-3">
-                  Select the primary soil texture of your plot (nothing is preselected):
+                <h2 className="text-base font-extrabold text-earth-900 mb-1">
+                  1. What type of soil is on your land? *
+                </h2>
+                <p className="text-xs text-earth-500 mb-4">
+                  Select your soil type below. Tap "Help me identify" for tactile and squeeze tests.
                 </p>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                  {soilTypes.map((st) => {
-                    const isSelected = formData.soilType === st.id;
+                <SoilTypeSelector
+                  selectedType={formData.soilType}
+                  onSelectType={(st: string) => {
+                    setFormData({ ...formData, soilType: st });
+                    setStepError(null);
+                  }}
+                  onOpenHelp={() => setShowHelpModal(true)}
+                />
+              </div>
+
+              {/* Secondary Texture & Colour Cues */}
+              <div className="pt-2 border-t border-earth-100 space-y-3">
+                <label className="block text-xs font-bold text-earth-800">
+                  Soil Texture Feel (Optional)
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {soilTextures.map((st) => {
+                    const isSelected = formData.soilTexture === st.id;
                     return (
                       <button
                         key={st.id}
                         type="button"
-                        onClick={() => {
+                        onClick={() =>
                           setFormData({
                             ...formData,
-                            soilType: isSelected ? '' : st.id,
-                          });
-                          setStepError(null);
-                        }}
-                        className={`relative p-3 rounded-2xl border-2 flex flex-col items-center justify-center text-center transition-all ${
+                            soilTexture: isSelected ? '' : st.id,
+                          })
+                        }
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
                           isSelected
-                            ? 'border-forest bg-mint/80 shadow-md ring-2 ring-forest/20 scale-[1.02]'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
+                            ? 'bg-forest-50 border-forest-500 text-forest-800 ring-1 ring-forest-400'
+                            : 'bg-white border-earth-200 text-earth-700 hover:bg-earth-50'
                         }`}
                       >
-                        {isSelected && (
-                          <div className="absolute top-2 right-2 w-4 h-4 rounded-full bg-forest text-white flex items-center justify-center shadow-sm">
-                            <Check className="w-2.5 h-2.5 stroke-[3]" />
-                          </div>
-                        )}
-                        <span className="text-2xl mb-1">{st.icon}</span>
-                        <span className="text-xs font-extrabold text-dark-text leading-tight block">
-                          {st.name}
-                        </span>
-                        <span className="text-[10px] text-dark-muted leading-tight mt-1 line-clamp-2">
-                          {st.desc}
-                        </span>
+                        <span className="text-xs font-bold block">{st.name}</span>
+                        <span className="text-[10px] text-earth-400 block mt-0.5">{st.desc}</span>
                       </button>
                     );
                   })}
                 </div>
-              </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <h2 className="text-base font-extrabold text-dark-text">
-                    2. What is your water source? *
-                  </h2>
-                  {formData.waterSource && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, waterSource: '' })}
-                      className="text-[11px] text-red-600 font-bold hover:underline"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <p className="text-xs text-dark-muted mb-3">
-                  Water availability is required to ensure suitable crop hydration:
-                </p>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                  {waterSources.map((ws) => {
-                    const Icon = ws.icon;
-                    const isSelected = formData.waterSource === ws.id;
+                <label className="block text-xs font-bold text-earth-800 pt-1">
+                  Soil Colour Shade (Optional)
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {soilColours.map((sc) => {
+                    const isSelected = formData.soilColour === sc.id;
                     return (
                       <button
-                        key={ws.id}
+                        key={sc.id}
                         type="button"
-                        onClick={() => {
+                        onClick={() =>
                           setFormData({
                             ...formData,
-                            waterSource: isSelected ? '' : ws.id,
-                          });
-                          setStepError(null);
-                        }}
-                        className={`p-3 rounded-2xl border-2 flex items-center gap-3 text-left transition-all ${
+                            soilColour: isSelected ? '' : sc.id,
+                          })
+                        }
+                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
                           isSelected
-                            ? 'border-forest bg-mint/80 shadow-md ring-2 ring-forest/20'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
+                            ? 'bg-forest-600 text-white border-forest-600 shadow-sm'
+                            : 'bg-white text-earth-700 border-earth-200 hover:bg-earth-50'
                         }`}
                       >
-                        <div
-                          className={`p-2.5 rounded-xl flex-shrink-0 ${
-                            isSelected ? 'bg-forest text-white' : 'bg-gray-100 text-forest'
-                          }`}
-                        >
-                          <Icon className="w-4 h-4" />
-                        </div>
-                        <div className="flex-1">
-                          <span className="text-xs font-extrabold text-dark-text block leading-tight">
-                            {ws.name}
-                          </span>
-                          <span className="text-[10px] text-dark-muted block mt-0.5">
-                            {ws.desc}
-                          </span>
-                        </div>
-                        {isSelected && (
-                          <div className="w-4 h-4 rounded-full bg-forest text-white flex items-center justify-center flex-shrink-0 shadow-sm">
-                            <Check className="w-2.5 h-2.5 stroke-[3]" />
-                          </div>
-                        )}
+                        <span className={`w-3 h-3 rounded-full ${sc.color} border border-white`} />
+                        <span>{sc.name}</span>
                       </button>
                     );
                   })}
@@ -475,7 +548,7 @@ export const SoilAssessmentPage: React.FC = () => {
             </motion.div>
           )}
 
-          {/* STEP 2: Location & Land Measurements (Supports Indian Units) */}
+          {/* STEP 2: Soil Moisture, Organic Matter & Drainage */}
           {currentStep === 2 && (
             <motion.div
               key="step2"
@@ -485,105 +558,110 @@ export const SoilAssessmentPage: React.FC = () => {
               className="space-y-4"
             >
               <div>
-                <h2 className="text-base font-extrabold text-dark-text mb-1">
-                  Farm Location & Plot Size *
+                <h2 className="text-base font-extrabold text-earth-900 mb-1">
+                  2. Drainage, Moisture & Soil Health *
                 </h2>
-                <p className="text-xs text-dark-muted mb-3">
-                  Helps calibrate local weather, regional rainfall, and estimated yields:
+                <p className="text-xs text-earth-500 mb-3">
+                  These physical properties determine root aeration and crop waterlogging tolerance.
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold text-dark-text mb-1">
-                    State
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.state}
-                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none bg-gray-50"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-dark-text mb-1">
-                    District *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.district}
-                    onChange={(e) => {
-                      setFormData({ ...formData, district: e.target.value });
-                      setStepError(null);
-                    }}
-                    placeholder="e.g. Mandya / Mysore / Belagavi"
-                    className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none"
-                  />
-                </div>
-              </div>
-
+              {/* Drainage */}
               <div>
-                <label className="block text-xs font-bold text-dark-text mb-1">
-                  Village / Hobli (Optional)
+                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                  Field Drainage Condition *
                 </label>
-                <div className="relative flex items-center">
-                  <MapPin className="absolute left-3 w-4 h-4 text-forest" />
-                  <input
-                    type="text"
-                    value={formData.village}
-                    onChange={(e) => setFormData({ ...formData, village: e.target.value })}
-                    placeholder="Enter village or hobli name"
-                    className="w-full pl-9 pr-3 py-2.5 rounded-2xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none"
-                  />
+                <div className="space-y-2">
+                  {drainageOptions.map((d) => {
+                    const isSelected = formData.drainage === d.id;
+                    return (
+                      <button
+                        key={d.id}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, drainage: d.id });
+                          setStepError(null);
+                        }}
+                        className={`w-full p-3 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${
+                          isSelected
+                            ? 'border-forest-600 bg-mint-50/80 font-bold text-forest-900 shadow-sm'
+                            : 'border-earth-200 bg-white text-earth-800 hover:border-earth-300'
+                        }`}
+                      >
+                        <div>
+                          <span className="text-xs font-extrabold block">{d.label}</span>
+                          <span className="text-[10px] text-earth-500 block">{d.desc}</span>
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 text-forest-600 flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-cream-light border border-harvest/20">
-                <label className="block text-xs font-extrabold text-dark-text mb-1">
-                  Plot Size & Measurement Unit *
+              {/* Moisture Level */}
+              <div>
+                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                  Current Soil Moisture
                 </label>
-                <div className="flex gap-2.5">
-                  <input
-                    type="number"
-                    step="0.1"
-                    min="0.1"
-                    required
-                    value={formData.farmSize}
-                    onChange={(e) => {
-                      setFormData({ ...formData, farmSize: e.target.value });
-                      setStepError(null);
-                    }}
-                    placeholder="e.g. 2"
-                    className="w-28 px-3.5 py-2.5 rounded-xl border border-gray-200 text-sm font-extrabold focus:border-forest outline-none bg-white"
-                  />
-                  <select
-                    value={formData.farmUnit}
-                    onChange={(e) => setFormData({ ...formData, farmUnit: e.target.value })}
-                    className="flex-1 px-3 py-2.5 rounded-xl border border-gray-200 text-xs font-extrabold focus:border-forest outline-none bg-white"
-                  >
-                    {LAND_UNIT_OPTIONS.map((opt) => (
-                      <option key={opt.id} value={opt.id}>
-                        {language === 'kn' ? opt.labelKn : language === 'ta' ? opt.labelTa : language === 'te' ? opt.labelTe : opt.labelEn}
-                      </option>
-                    ))}
-                  </select>
+                <div className="grid grid-cols-2 gap-2">
+                  {moistureLevels.map((ml) => {
+                    const isSelected = formData.moistureLevel === ml.id;
+                    return (
+                      <button
+                        key={ml.id}
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, moistureLevel: isSelected ? '' : ml.id })
+                        }
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? 'bg-forest-50 border-forest-500 text-forest-800 font-bold ring-1 ring-forest-400'
+                            : 'bg-white border-earth-200 text-earth-700 hover:bg-earth-50'
+                        }`}
+                      >
+                        <span className="text-xs block">{ml.name}</span>
+                        <span className="text-[10px] text-earth-400 block">{ml.desc}</span>
+                      </button>
+                    );
+                  })}
                 </div>
+              </div>
 
-                {conversionSummary && (
-                  <p className="text-[11px] font-bold text-forest mt-2 flex items-center gap-1.5">
-                    <span>📐</span>
-                    <span>{conversionSummary}</span>
-                  </p>
-                )}
-                <span className="text-[10px] text-dark-muted block mt-1">
-                  Supports Acres, Guntas (1 Acre = 40 Guntas), Cents, and Hectares.
-                </span>
+              {/* Organic Matter Level */}
+              <div>
+                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                  Organic Matter / Humus Level
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {organicMatterLevels.map((om) => {
+                    const isSelected = formData.organicMatter === om.id;
+                    return (
+                      <button
+                        key={om.id}
+                        type="button"
+                        onClick={() =>
+                          setFormData({ ...formData, organicMatter: isSelected ? '' : om.id })
+                        }
+                        className={`p-2.5 rounded-xl border text-center transition-all ${
+                          isSelected
+                            ? 'bg-forest-600 text-white border-forest-600 font-bold shadow-xs'
+                            : 'bg-white border-earth-200 text-earth-700 hover:bg-earth-50'
+                        }`}
+                      >
+                        <span className="text-xs block">{om.name}</span>
+                        <span className={`text-[9px] block mt-0.5 ${isSelected ? 'text-mint-200' : 'text-earth-400'}`}>
+                          {om.desc}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </motion.div>
           )}
 
-          {/* STEP 3: Sowing Season & Crop History (UNSELECTED BY DEFAULT) */}
+          {/* STEP 3: Location with Google Maps & Land Size */}
           {currentStep === 3 && (
             <motion.div
               key="step3"
@@ -592,129 +670,131 @@ export const SoilAssessmentPage: React.FC = () => {
               exit={{ opacity: 0, x: -20 }}
               className="space-y-4"
             >
-              <div>
-                <h2 className="text-base font-extrabold text-dark-text mb-1">
-                  Sowing Season & Preceding Crop *
-                </h2>
-                <p className="text-xs text-dark-muted mb-2">
-                  Matching season ensures rainfall alignment. Crop rotation prevents soil nutrient depletion:
-                </p>
-
-                {/* Date-Derived Quick Shortcut */}
-                <div className="p-3 rounded-2xl bg-mint/50 border border-forest/20 flex items-center justify-between mb-3">
-                  <div>
-                    <span className="text-xs font-bold text-forest block">
-                      Current Natural Season: {currentSeasonInfo.season}
-                    </span>
-                    <span className="text-[10px] text-dark-muted">
-                      {currentSeasonInfo.monthLabel}
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormData({ ...formData, season: currentSeasonInfo.season });
-                      setStepError(null);
-                    }}
-                    className="py-1 px-3 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition"
-                  >
-                    Select {currentSeasonInfo.season}
-                  </button>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-base font-extrabold text-earth-900 mb-1">
+                    3. Exact Farm Location & Land Size *
+                  </h2>
+                  <p className="text-xs text-earth-500">
+                    Locate your farm on Google Maps to fetch local agro-climatic zone and live weather.
+                  </p>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => setUseMapPicker(!useMapPicker)}
+                  className="text-xs font-bold text-forest-700 hover:underline flex items-center gap-1"
+                >
+                  <Compass className="w-3.5 h-3.5" />
+                  <span>{useMapPicker ? 'Use Dropdowns' : 'Use Map'}</span>
+                </button>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-dark-text mb-2">
-                  Choose Planting Season *
+              {/* Location Picker: Map or Fallback Dropdowns */}
+              {useMapPicker ? (
+                <GoogleMapPicker
+                  initialLat={formData.latitude}
+                  initialLon={formData.longitude}
+                  initialDistrict={formData.district}
+                  onLocationSelected={(loc: any) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      latitude: loc.latitude || loc.lat,
+                      longitude: loc.longitude || loc.lon,
+                      district: loc.district || prev.district,
+                      taluk: loc.taluk || prev.taluk,
+                      state: loc.state || prev.state,
+                      agroZone: loc.agroZone || prev.agroZone,
+                    }));
+                    setStepError(null);
+                  }}
+                />
+              ) : (
+                <ManualLocationFallback
+                  selectedState={formData.state}
+                  selectedDistrict={formData.district}
+                  selectedTaluk={formData.taluk}
+                  onLocationChange={(loc: any) => {
+                    setFormData((prev) => ({
+                      ...prev,
+                      state: loc.state,
+                      district: loc.district,
+                      taluk: loc.taluk,
+                      agroZone: loc.agroZone || prev.agroZone,
+                      latitude: loc.latitude || loc.lat,
+                      longitude: loc.longitude || loc.lon,
+                    }));
+                    setStepError(null);
+                  }}
+                />
+              )}
+
+              {/* Land Size: Acres + Guntas */}
+              <div className="p-4 rounded-2xl bg-earth-50 border border-earth-200">
+                <label className="block text-xs font-extrabold text-earth-900 mb-1.5">
+                  Farm Land Size & Unit *
                 </label>
-                <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { id: 'Kharif', label: 'Kharif (ಖಾರೀಫ್)', icon: '🌧️', sub: 'Monsoon' },
-                    { id: 'Rabi', label: 'Rabi (ರಬಿ)', icon: '❄️', sub: 'Winter' },
-                    { id: 'Zaid', label: 'Zaid (ಜೈದ್)', icon: '☀️', sub: 'Summer' },
-                  ].map((s) => {
-                    const isSelected = formData.season === s.id;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => {
-                          setFormData({ ...formData, season: isSelected ? '' : s.id });
-                          setStepError(null);
-                        }}
-                        className={`p-3 rounded-2xl border-2 text-center transition-all ${
-                          isSelected
-                            ? 'border-forest bg-mint font-extrabold text-forest shadow-sm ring-2 ring-forest/20'
-                            : 'border-gray-200 bg-white text-dark-text hover:border-gray-300'
-                        }`}
-                      >
-                        <span className="text-xl block mb-1">{s.icon}</span>
-                        <span className="text-xs block font-bold">{s.label}</span>
-                        <span className="text-[10px] text-dark-muted block">{s.sub}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <span className="text-[10px] text-earth-500 block mb-0.5">Primary Measurement</span>
+                    <input
+                      type="number"
+                      step="0.1"
+                      min="0.1"
+                      value={formData.farmSize}
+                      onChange={(e) => {
+                        setFormData({ ...formData, farmSize: e.target.value });
+                        setStepError(null);
+                      }}
+                      placeholder="e.g. 2"
+                      className="w-full px-3 py-2 rounded-xl border border-earth-300 text-sm font-bold bg-white outline-none focus:border-forest-600"
+                    />
+                  </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-bold text-dark-text">
-                    What was grown here previously?
-                  </label>
-                  {formData.previousCrop && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, previousCrop: '' })}
-                      className="text-[11px] text-red-600 font-bold hover:underline"
+                  <div className="w-36">
+                    <span className="text-[10px] text-earth-500 block mb-0.5">Unit</span>
+                    <select
+                      value={formData.farmUnit}
+                      onChange={(e) => setFormData({ ...formData, farmUnit: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-earth-300 text-xs font-bold bg-white outline-none focus:border-forest-600"
                     >
-                      Clear
-                    </button>
+                      {LAND_UNIT_OPTIONS.map((opt) => (
+                        <option key={opt.id} value={opt.id}>
+                          {language === 'kn' ? opt.labelKn : opt.labelEn}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {formData.farmUnit === 'Acres' && (
+                    <div className="w-28">
+                      <span className="text-[10px] text-earth-500 block mb-0.5">+ Guntas</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="39"
+                        value={formData.guntas}
+                        onChange={(e) => setFormData({ ...formData, guntas: e.target.value })}
+                        placeholder="0 - 39"
+                        className="w-full px-3 py-2 rounded-xl border border-earth-300 text-sm font-bold bg-white outline-none focus:border-forest-600"
+                      />
+                    </div>
                   )}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {[
-                    'None / Fallow land',
-                    'Paddy (Rice)',
-                    'Maize',
-                    'Sugarcane',
-                    'Cotton',
-                    'Pulses / Gram',
-                    'Groundnut',
-                    'Tomato / Veg',
-                    'Not Sure / First Time',
-                  ].map((cropName) => {
-                    const isSelected = formData.previousCrop === cropName;
-                    return (
-                      <button
-                        key={cropName}
-                        type="button"
-                        onClick={() =>
-                          setFormData({
-                            ...formData,
-                            previousCrop: isSelected ? '' : cropName,
-                          })
-                        }
-                        className={`py-2 px-2.5 rounded-xl border text-xs text-left transition-all ${
-                          isSelected
-                            ? 'border-forest bg-mint text-forest font-bold shadow-sm'
-                            : 'border-gray-200 bg-white text-dark-text hover:bg-gray-50'
-                        }`}
-                      >
-                        {cropName}
-                      </button>
-                    );
-                  })}
-                </div>
-                <span className="text-[10px] text-dark-muted mt-1.5 block">
-                  💡 Legume crops like pulses leave natural nitrogen in the soil for the next crop.
+                {conversionSummary && (
+                  <p className="text-[11px] font-bold text-forest-700 mt-2 flex items-center gap-1.5">
+                    <span>📐</span>
+                    <span>{conversionSummary}</span>
+                  </p>
+                )}
+                <span className="text-[10px] text-earth-500 block mt-1">
+                  1 Acre = 40 Guntas = 43,560 sq.ft = 0.404 Hectares.
                 </span>
               </div>
             </motion.div>
           )}
 
-          {/* STEP 4: Optional Soil Testing Lab Values (EMPTY BY DEFAULT) */}
+          {/* STEP 4: Water Source & Irrigation Method */}
           {currentStep === 4 && (
             <motion.div
               key="step4"
@@ -724,108 +804,92 @@ export const SoilAssessmentPage: React.FC = () => {
               className="space-y-4"
             >
               <div>
-                <h2 className="text-base font-extrabold text-dark-text mb-1">
-                  Soil Health Card Laboratory Values (Optional)
+                <h2 className="text-base font-extrabold text-earth-900 mb-1">
+                  4. Water Availability & Irrigation Method *
                 </h2>
-                <p className="text-xs text-dark-muted mb-3">
-                  If you have tested your soil in a government Soil Health lab, enter values below. If not tested, simply skip this step:
+                <p className="text-xs text-earth-500 mb-3">
+                  Crop water requirements must match your pumping capacity and rainfall dependence.
                 </p>
               </div>
 
-              {/* Toggle Switch */}
-              <div
-                onClick={() =>
-                  setFormData({ ...formData, hasSoilReport: !formData.hasSoilReport })
-                }
-                className={`p-3.5 rounded-2xl border-2 cursor-pointer transition-colors flex items-center justify-between ${
-                  formData.hasSoilReport
-                    ? 'border-forest bg-mint/80 text-forest'
-                    : 'border-gray-200 bg-white text-dark-text hover:border-gray-300'
-                }`}
-              >
-                <div className="flex items-center gap-2.5">
-                  <Sparkles className="w-4 h-4 text-forest" />
-                  <span className="text-xs font-extrabold">
-                    {formData.hasSoilReport ? '✓ I have laboratory soil test values' : 'No soil test report (Skip this)'}
-                  </span>
-                </div>
-                <div
-                  className={`w-5 h-5 rounded-full border flex items-center justify-center ${
-                    formData.hasSoilReport ? 'bg-forest text-white' : 'border-gray-300'
-                  }`}
-                >
-                  {formData.hasSoilReport && <Check className="w-3 h-3 stroke-[3]" />}
+              {/* Water Source */}
+              <div>
+                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                  Primary Water Source *
+                </label>
+                <div className="space-y-2">
+                  {waterSources.map((ws) => {
+                    const Icon = ws.icon;
+                    const isSelected = formData.waterSource === ws.id;
+                    return (
+                      <button
+                        key={ws.id}
+                        type="button"
+                        onClick={() => {
+                          setFormData({ ...formData, waterSource: ws.id });
+                          setStepError(null);
+                        }}
+                        className={`w-full p-3 rounded-2xl border-2 flex items-center gap-3 text-left transition-all ${
+                          isSelected
+                            ? 'border-forest-600 bg-mint-50/80 shadow-xs ring-1 ring-forest-400'
+                            : 'border-earth-200 bg-white hover:border-earth-300'
+                        }`}
+                      >
+                        <div
+                          className={`p-2.5 rounded-xl flex-shrink-0 ${
+                            isSelected ? 'bg-forest-600 text-white' : 'bg-earth-100 text-forest-700'
+                          }`}
+                        >
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1">
+                          <span className="text-xs font-extrabold text-earth-900 block leading-tight">
+                            {ws.name}
+                          </span>
+                          <span className="text-[10px] text-earth-500 block mt-0.5">{ws.desc}</span>
+                        </div>
+                        {isSelected && <Check className="w-4 h-4 text-forest-600 flex-shrink-0" />}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
 
-              {formData.hasSoilReport ? (
-                <div className="space-y-3 pt-2">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-dark-text mb-1">
-                        Soil pH (e.g. 6.5 - 7.5)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.1"
-                        min="3"
-                        max="11"
-                        value={formData.ph}
-                        onChange={(e) => setFormData({ ...formData, ph: e.target.value })}
-                        placeholder="e.g. 6.8"
-                        className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold focus:border-forest outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-dark-text mb-1">
-                        Nitrogen (kg/ha)
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.nitrogen}
-                        onChange={(e) => setFormData({ ...formData, nitrogen: e.target.value })}
-                        placeholder="e.g. 280"
-                        className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold focus:border-forest outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-xs font-bold text-dark-text mb-1">
-                        Phosphorus (kg/ha)
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.phosphorus}
-                        onChange={(e) => setFormData({ ...formData, phosphorus: e.target.value })}
-                        placeholder="e.g. 24"
-                        className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold focus:border-forest outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-bold text-dark-text mb-1">
-                        Potassium (kg/ha)
-                      </label>
-                      <input
-                        type="number"
-                        value={formData.potassium}
-                        onChange={(e) => setFormData({ ...formData, potassium: e.target.value })}
-                        placeholder="e.g. 180"
-                        className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-xs font-bold focus:border-forest outline-none"
-                      />
-                    </div>
-                  </div>
+              {/* Irrigation Type */}
+              <div className="pt-2">
+                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                  Irrigation Delivery Method
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {irrigationTypes.map((it) => {
+                    const isSelected = formData.irrigationType === it.id;
+                    return (
+                      <button
+                        key={it.id}
+                        type="button"
+                        onClick={() =>
+                          setFormData({
+                            ...formData,
+                            irrigationType: isSelected ? '' : it.id,
+                          })
+                        }
+                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                          isSelected
+                            ? 'bg-forest-50 border-forest-500 text-forest-900 font-bold ring-1 ring-forest-400'
+                            : 'bg-white border-earth-200 text-earth-700 hover:bg-earth-50'
+                        }`}
+                      >
+                        <span className="text-xs block">{it.name}</span>
+                        <span className="text-[10px] text-earth-400 block">{it.desc}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              ) : (
-                <div className="p-4 rounded-2xl bg-cream-light border border-harvest/20 text-center text-xs text-dark-muted leading-relaxed">
-                  🌾 <strong>No testing card? No problem!</strong> Raitha Mitra uses established ICAR soil benchmarks for your district when laboratory reports are not available.
-                </div>
-              )}
+              </div>
             </motion.div>
           )}
 
-          {/* STEP 5: Drainage & Investment Budget (UNSELECTED BY DEFAULT) */}
+          {/* STEP 5: Crop Preferences, Season & Preceding Crop */}
           {currentStep === 5 && (
             <motion.div
               key="step5"
@@ -835,98 +899,99 @@ export const SoilAssessmentPage: React.FC = () => {
               className="space-y-4"
             >
               <div>
-                <h2 className="text-base font-extrabold text-dark-text mb-1">
-                  Drainage Condition & Budget
+                <h2 className="text-base font-extrabold text-earth-900 mb-1">
+                  5. Crop Category & Planting Season *
                 </h2>
-                <p className="text-xs text-dark-muted mb-3">
-                  Ensures recommendations align with your field safety and investment capacity:
+                <p className="text-xs text-earth-500 mb-3">
+                  Filter by desired category or let Krushi Sathi recommend across all options.
                 </p>
               </div>
 
+              {/* Category Selector */}
               <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-bold text-dark-text">
-                    Field Drainage Condition
+                <CategorySelector
+                  selectedCategory={formData.category}
+                  onSelectCategory={(cat) => setFormData({ ...formData, category: cat })}
+                />
+              </div>
+
+              {/* Sowing Season */}
+              <div className="pt-2 border-t border-earth-100">
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="text-xs font-bold text-earth-800">
+                    Sowing Season *
                   </label>
-                  {formData.drainage && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, drainage: '' })}
-                      className="text-[11px] text-red-600 font-bold hover:underline"
-                    >
-                      Clear
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, season: currentSeasonInfo.season });
+                      setStepError(null);
+                    }}
+                    className="text-[11px] text-forest-700 font-bold hover:underline"
+                  >
+                    Use Current Season ({currentSeasonInfo.season})
+                  </button>
                 </div>
-                <div className="space-y-2">
+
+                <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'good', label: 'Good Drainage', desc: 'Rainwater drains within 12 hours' },
-                    { id: 'moderate', label: 'Moderate Drainage', desc: 'Retains moisture, slow drainage' },
-                    { id: 'waterlogged', label: 'Waterlogged / Flood-Prone', desc: 'Standing water during rains (Paddy friendly)' },
-                    { id: 'not_sure', label: 'Not Sure / Normal', desc: 'Standard average drainage conditions' },
-                  ].map((d) => {
-                    const isSelected = formData.drainage === d.id;
+                    { id: 'Kharif', label: 'Kharif', sub: 'Jun - Oct (Monsoon)', icon: '🌧️' },
+                    { id: 'Rabi', label: 'Rabi', sub: 'Oct - Mar (Winter)', icon: '❄️' },
+                    { id: 'Zaid', label: 'Zaid', sub: 'Mar - Jun (Summer)', icon: '☀️' },
+                  ].map((s) => {
+                    const isSelected = formData.season === s.id;
                     return (
                       <button
-                        key={d.id}
+                        key={s.id}
                         type="button"
-                        onClick={() =>
-                          setFormData({ ...formData, drainage: isSelected ? '' : d.id })
-                        }
-                        className={`w-full p-3 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${
+                        onClick={() => {
+                          setFormData({ ...formData, season: s.id });
+                          setStepError(null);
+                        }}
+                        className={`p-3 rounded-2xl border-2 text-center transition-all ${
                           isSelected
-                            ? 'border-forest bg-mint font-bold text-forest shadow-sm'
-                            : 'border-gray-200 bg-white text-dark-text hover:border-gray-300'
+                            ? 'border-forest-600 bg-mint-50/80 font-extrabold text-forest-900 shadow-sm'
+                            : 'border-earth-200 bg-white text-earth-800 hover:border-earth-300'
                         }`}
                       >
-                        <div>
-                          <span className="text-xs font-extrabold block">{d.label}</span>
-                          <span className="text-[10px] text-dark-muted block">{d.desc}</span>
-                        </div>
-                        {isSelected && <Check className="w-4 h-4 text-forest flex-shrink-0" />}
+                        <span className="text-xl block mb-1">{s.icon}</span>
+                        <span className="text-xs block font-bold">{s.label}</span>
+                        <span className="text-[10px] text-earth-500 block">{s.sub}</span>
                       </button>
                     );
                   })}
                 </div>
               </div>
 
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <label className="block text-xs font-bold text-dark-text">
-                    Target Investment Budget
-                  </label>
-                  {formData.budget && (
-                    <button
-                      type="button"
-                      onClick={() => setFormData({ ...formData, budget: '' })}
-                      className="text-[11px] text-red-600 font-bold hover:underline"
-                    >
-                      Clear
-                    </button>
-                  )}
-                </div>
+              {/* Preceding Crop */}
+              <div className="pt-2">
+                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                  Preceding Crop (For Crop Rotation)
+                </label>
                 <div className="grid grid-cols-3 gap-2">
                   {[
-                    { id: 'low', label: 'Low', sub: '< ₹15,000/ac' },
-                    { id: 'medium', label: 'Medium', sub: '₹15k - 35k/ac' },
-                    { id: 'high', label: 'Commercial', sub: '> ₹35,000/ac' },
-                  ].map((b) => {
-                    const isSelected = formData.budget === b.id;
+                    'None / Fallow',
+                    'Paddy (Rice)',
+                    'Pulses / Gram',
+                    'Maize',
+                    'Sugarcane',
+                    'Vegetables',
+                  ].map((c) => {
+                    const isSelected = formData.previousCrop === c;
                     return (
                       <button
-                        key={b.id}
+                        key={c}
                         type="button"
                         onClick={() =>
-                          setFormData({ ...formData, budget: isSelected ? '' : b.id })
+                          setFormData({ ...formData, previousCrop: isSelected ? '' : c })
                         }
-                        className={`p-3 rounded-2xl border-2 text-center transition-all ${
+                        className={`py-2 px-2 rounded-xl border text-xs text-center transition-all ${
                           isSelected
-                            ? 'border-forest bg-mint font-extrabold text-forest shadow-sm'
-                            : 'border-gray-200 bg-white text-dark-text hover:border-gray-300'
+                            ? 'border-forest-600 bg-mint-50 text-forest-900 font-bold'
+                            : 'border-earth-200 bg-white text-earth-700 hover:bg-earth-50'
                         }`}
                       >
-                        <span className="text-xs font-extrabold block">{b.label}</span>
-                        <span className="text-[10px] text-dark-muted block">{b.sub}</span>
+                        {c}
                       </button>
                     );
                   })}
@@ -934,17 +999,162 @@ export const SoilAssessmentPage: React.FC = () => {
               </div>
             </motion.div>
           )}
+
+          {/* STEP 6: Soil Health Card (pH Slider + NPK Selector) */}
+          {currentStep === 6 && (
+            <motion.div
+              key="step6"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-5"
+            >
+              <div>
+                <h2 className="text-base font-extrabold text-earth-900 mb-1">
+                  6. Soil Health Card (pH & NPK Lab Values)
+                </h2>
+                <p className="text-xs text-earth-500 mb-3">
+                  Have laboratory soil test results? Enter them below for scientific precision.
+                </p>
+              </div>
+
+              {/* Soil pH Slider */}
+              <div className="bg-earth-50 p-4 rounded-2xl border border-earth-200">
+                <PhSlider
+                  value={formData.ph}
+                  isUnknown={formData.isPhUnknown}
+                  onChange={(val: string | number) => setFormData({ ...formData, ph: val })}
+                  onToggleUnknown={(unk: boolean) => setFormData({ ...formData, isPhUnknown: unk })}
+                />
+              </div>
+
+              {/* NPK Selector */}
+              <div className="bg-earth-50 p-4 rounded-2xl border border-earth-200">
+                <NpkSelector
+                  nitrogenLevel={formData.npkLevelN}
+                  phosphorusLevel={formData.npkLevelP}
+                  potassiumLevel={formData.npkLevelK}
+                  nitrogenExact={formData.nitrogen}
+                  phosphorusExact={formData.phosphorus}
+                  potassiumExact={formData.potassium}
+                  onNitrogenChange={(lvl: any, exact?: string | number) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      npkLevelN: lvl,
+                      nitrogen: exact !== undefined ? exact : prev.nitrogen,
+                    }))
+                  }
+                  onPhosphorusChange={(lvl: any, exact?: string | number) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      npkLevelP: lvl,
+                      phosphorus: exact !== undefined ? exact : prev.phosphorus,
+                    }))
+                  }
+                  onPotassiumChange={(lvl: any, exact?: string | number) =>
+                    setFormData((prev) => ({
+                      ...prev,
+                      npkLevelK: lvl,
+                      potassium: exact !== undefined ? exact : prev.potassium,
+                    }))
+                  }
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {/* STEP 7: Review & Submit */}
+          {currentStep === 7 && (
+            <motion.div
+              key="step7"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-4"
+            >
+              <div>
+                <h2 className="text-base font-extrabold text-earth-900 mb-1">
+                  7. Review & Generate Recommendations
+                </h2>
+                <p className="text-xs text-earth-500 mb-3">
+                  Review your farm assessment before generating tailored crop matches:
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-earth-50 to-cream-50 rounded-2xl p-4 border border-earth-200 space-y-3 text-xs">
+                <div className="grid grid-cols-2 gap-2 pb-2 border-b border-earth-200/80">
+                  <div>
+                    <span className="text-[10px] text-earth-400 block">Soil Type:</span>
+                    <span className="font-extrabold text-earth-900 capitalize">
+                      {formData.soilType || 'Not specified'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-earth-400 block">Drainage:</span>
+                    <span className="font-extrabold text-earth-900 capitalize">
+                      {formData.drainage || 'Good'}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pb-2 border-b border-earth-200/80">
+                  <div>
+                    <span className="text-[10px] text-earth-400 block">Location:</span>
+                    <span className="font-extrabold text-earth-900">
+                      {formData.district || 'Karnataka'}, {formData.taluk || formData.state}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-earth-400 block">Land Size:</span>
+                    <span className="font-extrabold text-earth-900">
+                      {formData.farmSize} {formData.farmUnit}
+                      {formData.guntas ? ` + ${formData.guntas} Guntas` : ''}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 pb-2 border-b border-earth-200/80">
+                  <div>
+                    <span className="text-[10px] text-earth-400 block">Water Source:</span>
+                    <span className="font-extrabold text-earth-900 capitalize">
+                      {formData.waterSource || 'Borewell'}
+                    </span>
+                  </div>
+                  <div>
+                    <span className="text-[10px] text-earth-400 block">Season & Category:</span>
+                    <span className="font-extrabold text-earth-900">
+                      {formData.season} ({formData.category ? formData.category : 'All Categories'})
+                    </span>
+                  </div>
+                </div>
+
+                <div>
+                  <span className="text-[10px] text-earth-400 block">Soil Chemistry:</span>
+                  <span className="font-semibold text-earth-800">
+                    pH: {formData.isPhUnknown ? 'Standard' : formData.ph} | N: {formData.npkLevelN} | P: {formData.npkLevelP} | K: {formData.npkLevelK}
+                  </span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-forest-50 border border-forest-200 flex items-center gap-3">
+                <Sparkles className="w-5 h-5 text-forest-700 flex-shrink-0" />
+                <p className="text-xs text-forest-900">
+                  Our Agronomic Engine will evaluate 30+ crops against your exact soil type, rainfall, agro-climatic zone, and market demand.
+                </p>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
 
         {/* Action Button Footer */}
-        <div className="pt-6 border-t border-gray-100 flex items-center gap-3">
+        <div className="pt-6 border-t border-earth-100 flex items-center gap-3">
           {currentStep > 1 && (
             <button
               type="button"
               onClick={handleBack}
-              className="min-h-[48px] py-3 px-5 rounded-2xl border border-gray-200 text-dark-text text-sm font-bold hover:bg-gray-50 transition cursor-pointer"
+              className="min-h-[46px] py-2.5 px-5 rounded-2xl border border-earth-200 text-earth-800 text-sm font-bold hover:bg-earth-50 transition"
             >
-              {t('navBack')}
+              {t('navBack') || 'Back'}
             </button>
           )}
           <Button
@@ -953,13 +1163,23 @@ export const SoilAssessmentPage: React.FC = () => {
             size="lg"
             fullWidth
             isLoading={isLoading}
-            className="shadow-xl shadow-forest/20 flex items-center justify-center gap-2"
+            className="shadow-lg shadow-forest-600/20 flex items-center justify-center gap-2"
           >
-            <span>{currentStep === 5 ? 'Get Crop Recommendations' : 'Next Step'}</span>
+            <span>{currentStep === 7 ? 'Generate Crop Recommendations' : 'Next Step'}</span>
             <ArrowRight className="w-5 h-5" />
           </Button>
         </div>
       </div>
+
+      {/* Squeeze Test Modal */}
+      <SoilHelpModal
+        isOpen={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
+        onSelectSoil={(st: string) => {
+          setFormData((prev) => ({ ...prev, soilType: st }));
+          setStepError(null);
+        }}
+      />
     </div>
   );
 };

@@ -6,9 +6,14 @@ export interface User {
   state: string;
   district: string;
   village?: string | null;
+  taluk?: string | null;
   farmSize?: number | null;
   farmUnit: string;
   avatar?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  locationAccuracy?: number | null;
+  locationSource?: 'gps' | 'ip' | 'manual' | string | null;
 }
 
 export interface WeatherDay {
@@ -49,6 +54,28 @@ export interface WeatherData {
   lastUpdated: string;
   isDemoFallback: boolean;
   dataSource: string;
+  agroZone?: string;
+  agroZoneCode?: string;
+  agroZoneDescription?: string;
+  typicalSoils?: string[];
+  taluk?: string;
+  seasonInfo?: {
+    season: 'Kharif' | 'Rabi' | 'Zaid';
+    name: string;
+    nameKannada: string;
+    nameTamil: string;
+    nameTelugu: string;
+    monthsRange: string;
+    currentPhase: string;
+    currentPhaseKn: string;
+    currentPhaseTa: string;
+    currentPhaseTe: string;
+    advice: string;
+    adviceKn: string;
+    adviceTa: string;
+    adviceTe: string;
+    primarySeasonalCrops: string[];
+  };
 }
 
 export interface RecommendationResult {
@@ -70,6 +97,71 @@ export interface RecommendationResult {
   risks: string[];
   benefits: string[];
   imageUrl: string;
+  scientificName?: string;
+  durationType?: 'short' | 'medium' | 'long' | 'perennial';
+  sowingMonths?: string[];
+  harvestMonths?: string[];
+  gestationYears?: number;
+  intercroppingOptions?: string[];
+  roiEstimate?: string;
+  isSeasonalFruit?: boolean;
+  isLongTerm?: boolean;
+  fruitingTime?: string;
+  suitableAgroZones?: string[];
+  marketDemand?: string;
+}
+
+export interface CropCategory {
+  id: string;
+  name: string;
+  nameKannada: string;
+  nameTamil: string;
+  nameTelugu: string;
+  icon: string;
+  count: number;
+}
+
+export interface CropItem {
+  id: string;
+  name: string;
+  scientificName?: string;
+  nameKannada: string;
+  nameTamil: string;
+  nameTelugu: string;
+  category: string;
+  idealSoilTypes: string[];
+  minPh: number;
+  maxPh: number;
+  waterRequirement: 'Low' | 'Moderate' | 'High';
+  waterMm?: string;
+  durationDays: string;
+  durationMin?: number;
+  durationMax?: number;
+  seasons: string[];
+  minTemp?: number;
+  maxTemp?: number;
+  rainfallMm?: string;
+  estimatedCostPerAcre: string;
+  potentialYieldPerAcre: string;
+  marketDemand: 'High' | 'Moderate' | 'Very High';
+  description: string;
+  descriptionKn: string;
+  descriptionTa: string;
+  descriptionTe: string;
+  imageUrl: string;
+  risks: string[];
+  benefits: string[];
+  durationType?: 'short' | 'medium' | 'long' | 'perennial';
+  sowingMonths?: string[];
+  harvestMonths?: string[];
+  gestationYears?: number;
+  intercroppingOptions?: string[];
+  roiEstimate?: string;
+  isSeasonalFruit?: boolean;
+  isLongTerm?: boolean;
+  fruitingTime?: string;
+  suitableAgroZones?: string[];
+  stages?: any[];
 }
 
 export interface CropTask {
@@ -165,3 +257,50 @@ export interface ChatMessage {
   sources?: string[];
   createdAt?: string;
 }
+
+export interface CropImage {
+  type: 'plant' | 'flower' | 'fruit' | 'produce' | 'grain' | 'seed' | 'leaf';
+  path: string;
+  source: string;
+  author: string;
+  license: string;
+  attributionUrl?: string;
+  originalUrl?: string;
+}
+
+export interface CropCatalogItem extends CropItem {
+  alphabeticalKey: string;
+  confidence: 'high' | 'medium' | 'low';
+  confidenceNote?: string;
+  images: CropImage[];
+  isRecommendedForFarmer?: boolean;
+}
+
+export interface CatalogPagination {
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface CatalogResponse {
+  success: boolean;
+  data: CropCatalogItem[];
+  pagination: CatalogPagination;
+}
+
+export interface ImageCreditItem {
+  cropId: string;
+  cropName: string;
+  scientificName: string;
+  category: string;
+  imagePath: string;
+  imageType: string;
+  source: string;
+  author: string;
+  license: string;
+  attributionUrl?: string;
+}
+

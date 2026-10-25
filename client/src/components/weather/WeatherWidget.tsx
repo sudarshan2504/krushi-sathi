@@ -11,11 +11,13 @@ import { LoadingState } from '../ui/LoadingState';
 export interface WeatherWidgetProps {
   initialDistrict?: string;
   onDistrictChange?: (district: string) => void;
+  onWeatherDataLoaded?: (data: WeatherData) => void;
 }
 
 export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
   initialDistrict = 'Mandya',
   onDistrictChange,
+  onWeatherDataLoaded,
 }) => {
   const { t, language } = useTranslation();
   const [district, setDistrict] = useState(initialDistrict);
@@ -29,6 +31,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
     try {
       const data = await api.weather.get(targetDistrict);
       setWeather(data);
+      if (onWeatherDataLoaded) onWeatherDataLoaded(data);
     } catch (err) {
       console.error('Weather load error:', err);
     } finally {

@@ -14,6 +14,9 @@ export interface AuthenticatedUser {
   farmSize?: number | null;
   farmUnit: string;
   avatar?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  taluk?: string | null;
 }
 
 export interface AuthRequest extends Request {

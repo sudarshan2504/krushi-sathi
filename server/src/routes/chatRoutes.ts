@@ -139,14 +139,17 @@ router.post('/messages', optionalAuthMiddleware, async (req: AuthRequest, res: R
       if (latestSoil) {
         const parts = [
           `Type: ${latestSoil.soilType}`,
+          latestSoil.soilColour ? `Colour: ${latestSoil.soilColour}` : null,
+          latestSoil.soilTexture ? `Texture: ${latestSoil.soilTexture}` : null,
+          latestSoil.organicMatter ? `Organic matter: ${latestSoil.organicMatter}` : null,
+          latestSoil.drainage ? `Drainage: ${latestSoil.drainage}` : null,
           latestSoil.ph ? `pH: ${latestSoil.ph}` : null,
+          latestSoil.npkNitrogen ? `Nitrogen: ${latestSoil.npkNitrogen}` : (latestSoil.nitrogen ? `Nitrogen: ${latestSoil.nitrogen} kg/ha` : null),
+          latestSoil.npkPhosphorus ? `Phosphorus: ${latestSoil.npkPhosphorus}` : (latestSoil.phosphorus ? `Phosphorus: ${latestSoil.phosphorus} kg/ha` : null),
+          latestSoil.npkPotassium ? `Potassium: ${latestSoil.npkPotassium}` : (latestSoil.potassium ? `Potassium: ${latestSoil.potassium} kg/ha` : null),
           latestSoil.waterSource ? `Water: ${latestSoil.waterSource}` : null,
           latestSoil.irrigationType ? `Irrigation: ${latestSoil.irrigationType}` : null,
-          latestSoil.drainage ? `Drainage: ${latestSoil.drainage}` : null,
           latestSoil.soilIssues ? `Soil issues: ${latestSoil.soilIssues}` : null,
-          latestSoil.nitrogen ? `Nitrogen: ${latestSoil.nitrogen} kg/ha` : null,
-          latestSoil.phosphorus ? `Phosphorus: ${latestSoil.phosphorus} kg/ha` : null,
-          latestSoil.potassium ? `Potassium: ${latestSoil.potassium} kg/ha` : null,
         ].filter(Boolean);
         soilInfo = parts.join(', ');
       }
@@ -171,10 +174,10 @@ router.post('/messages', optionalAuthMiddleware, async (req: AuthRequest, res: R
               .join('; ')
           : undefined;
 
-      // 3. Local weather
+      // 3. Local weather & Location Conditions
       let weatherSummary: string | undefined;
       try {
-        const w = await fetchWeatherData(user.district || 'Mandya');
+        const w = await fetchWeatherData(user.district || 'Mandya', user.latitude || undefined, user.longitude || undefined);
         if (w) {
           weatherSummary = `${w.temperature}°C, ${w.condition}, Humidity: ${w.humidity}%, Rain Chance: ${w.rainfallProbability}%. ${w.farmingAlert ? 'Alert: ' + w.farmingAlert : ''}`;
         }
@@ -182,11 +185,24 @@ router.post('/messages', optionalAuthMiddleware, async (req: AuthRequest, res: R
         // Weather fetch is best-effort
       }
 
+      const { getLocationConditions } = await import('../services/seasonService');
+      const locCond = getLocationConditions(
+        user.latitude || 12.5244,
+        user.longitude || 76.8969,
+        user.state,
+        user.district,
+        user.taluk || undefined
+      );
+
       farmerContext = {
         farmerName: user.name,
         state: user.state,
         district: user.district,
         village: user.village || undefined,
+        taluk: user.taluk || undefined,
+        agroZone: locCond.location.agroZone,
+        currentSeason: `${locCond.season.name} (${locCond.season.currentPhase})`,
+        preferredCategory: latestSoil?.category || undefined,
         landSize: user.farmSize || 2.5,
         soilInfo,
         currentCrops,

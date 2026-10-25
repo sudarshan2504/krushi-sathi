@@ -6,6 +6,7 @@ import {
   verifyOtp,
   registerFarmer,
   verifyFirebaseLogin,
+  guestLogin,
 } from '../services/authService';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { authRateLimiter } from '../middleware/rateLimiter';
@@ -16,6 +17,70 @@ const router = Router();
 
 // Apply simple rate limiting (10 requests per minute per IP) to all /api/auth routes
 router.use(authRateLimiter);
+
+/**
+ * POST /api/auth/guest-login
+ * - Instant one-tap demo login (no OTP, no phone number required).
+ * - Issues JWT in httpOnly cookie and returns { token, user, isNewUser }.
+ */
+router.post('/guest-login', async (req: Request, res: Response) => {
+  try {
+    const { preferredPhone, preferredName } = req.body || {};
+    const result = await guestLogin(preferredPhone, preferredName);
+
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Demo login successful! Welcome to Krishi Sathi.',
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message || 'Demo login failed',
+    });
+  }
+});
+
+/**
+ * POST /api/auth/direct-login
+ * - Instant phone login without OTP / SMS code.
+ * - Accepts { phone, name }
+ */
+router.post('/direct-login', async (req: Request, res: Response) => {
+  try {
+    const { phone, name } = req.body || {};
+    if (!phone) {
+      return res.status(400).json({ success: false, message: 'Mobile number is required' });
+    }
+
+    const result = await guestLogin(phone, name);
+
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Login successful! Welcome to Krishi Sathi.',
+    });
+  } catch (err: any) {
+    res.status(400).json({
+      success: false,
+      message: err.message || 'Direct login failed',
+    });
+  }
+});
 
 /**
  * POST /api/auth/firebase-login
@@ -128,7 +193,22 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
 // Register
 router.post('/register', async (req: Request, res: Response) => {
   try {
-    const { name, phone, language, state, district, village, farmSize, farmUnit } = req.body;
+    const {
+      name,
+      phone,
+      language,
+      state,
+      district,
+      village,
+      taluk,
+      farmSize,
+      farmUnit,
+      latitude,
+      longitude,
+      locationAccuracy,
+      locationSource,
+    } = req.body;
+
     const result = await registerFarmer({
       name,
       phone,
@@ -136,8 +216,13 @@ router.post('/register', async (req: Request, res: Response) => {
       state: state || 'Karnataka',
       district: district || 'Mandya',
       village,
+      taluk,
       farmSize: farmSize ? parseFloat(farmSize) : 2.5,
       farmUnit: farmUnit || 'Acres',
+      latitude: latitude !== undefined && latitude !== null ? parseFloat(latitude) : undefined,
+      longitude: longitude !== undefined && longitude !== null ? parseFloat(longitude) : undefined,
+      locationAccuracy: locationAccuracy !== undefined && locationAccuracy !== null ? parseFloat(locationAccuracy) : undefined,
+      locationSource,
     });
 
     res.cookie('token', result.token, {
@@ -177,7 +262,23 @@ router.get('/profile', authMiddleware, async (req: AuthRequest, res: Response) =
 router.patch('/profile', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user!;
-    const { name, village, district, state, farmSize, farmUnit, language } = req.body;
+    const {
+      name,
+      village,
+      district,
+      state,
+      taluk,
+      farmSize,
+      farmUnit,
+      language,
+      latitude,
+      longitude,
+      locationAccuracy,
+      locationSource,
+    } = req.body;
+
+    const latVal = latitude !== undefined ? parseFloat(latitude) : undefined;
+    const lonVal = longitude !== undefined ? parseFloat(longitude) : undefined;
 
     const updated = await prisma.user.update({
       where: { id: user.id },
@@ -186,9 +287,14 @@ router.patch('/profile', authMiddleware, async (req: AuthRequest, res: Response)
         village: village !== undefined ? String(village).trim() : undefined,
         district: district !== undefined ? String(district).trim() : undefined,
         state: state !== undefined ? String(state).trim() : undefined,
+        taluk: taluk !== undefined ? String(taluk).trim() : undefined,
         farmSize: farmSize !== undefined ? parseFloat(farmSize) || null : undefined,
         farmUnit: farmUnit !== undefined ? String(farmUnit).trim() : undefined,
         language: language !== undefined ? String(language).trim() : undefined,
+        latitude: latVal !== undefined && !isNaN(latVal) && latVal >= -90 && latVal <= 90 ? latVal : undefined,
+        longitude: lonVal !== undefined && !isNaN(lonVal) && lonVal >= -180 && lonVal <= 180 ? lonVal : undefined,
+        locationAccuracy: locationAccuracy !== undefined ? parseFloat(locationAccuracy) || null : undefined,
+        locationSource: locationSource !== undefined ? String(locationSource) : undefined,
       },
     });
 

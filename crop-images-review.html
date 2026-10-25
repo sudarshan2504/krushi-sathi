@@ -1,0 +1,3476 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Krushi Sathi — Crop Images Verification & Review Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --primary: #15803d;
+      --primary-dark: #166534;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --success: #10b981;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      padding: 32px 24px;
+    }
+    .header {
+      max-width: 1400px;
+      margin: 0 auto 32px;
+      background: white;
+      padding: 32px;
+      border-radius: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 4px 20px -2px rgba(0,0,0,0.05);
+    }
+    .title-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: #f1f5f9;
+      padding: 16px 20px;
+      border-radius: 16px;
+      border-left: 4px solid var(--primary);
+    }
+    .stat-card.warning { border-color: var(--warning); background: #fefce8; }
+    .stat-card.success { border-color: var(--success); background: #ecfdf5; }
+    .stat-card.danger { border-color: var(--danger); background: #fef2f2; }
+    .stat-val { font-size: 28px; font-weight: 800; }
+    .stat-lbl { font-size: 13px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+
+    .controls-row {
+      display: flex;
+      gap: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .search-input {
+      flex: 1;
+      min-width: 280px;
+      padding: 12px 18px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      font-size: 15px;
+      outline: none;
+      font-family: inherit;
+    }
+    .search-input:focus { border-color: var(--primary); }
+    .filter-btn {
+      padding: 10px 18px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: white;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+    .filter-btn:hover, .filter-btn.active {
+      background: var(--primary);
+      color: white;
+      border-color: var(--primary);
+    }
+    .export-btn {
+      margin-left: auto;
+      padding: 10px 20px;
+      background: #0f172a;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .crop-grid {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .crop-row-card {
+      background: white;
+      border-radius: 20px;
+      padding: 24px;
+      border: 1px solid var(--border);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+    }
+    .crop-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 18px;
+      padding-bottom: 14px;
+      border-bottom: 1px solid #f1f5f9;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .crop-name { font-size: 20px; font-weight: 800; color: #1e293b; }
+    .scientific { font-style: italic; color: #059669; font-weight: 600; font-size: 15px; margin-left: 8px; }
+    .local-names { font-size: 13.5px; color: var(--text-muted); margin-top: 4px; }
+    .category-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      background: #e0f2fe;
+      color: #0369a1;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .images-gallery {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .img-box {
+      border: 1.5px solid #e2e8f0;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #fafafa;
+      position: relative;
+      transition: all 0.2s;
+    }
+    .img-box.flagged {
+      border-color: var(--danger);
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.25);
+    }
+    .img-box.flagged::after {
+      content: 'FLAGGED AS WRONG IMAGE';
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: var(--danger);
+      color: white;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 8px;
+      border-radius: 6px;
+      z-index: 2;
+    }
+    .img-wrapper {
+      height: 180px;
+      width: 100%;
+      background: #f1f5f9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+    .img-wrapper img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+    .img-meta {
+      padding: 12px 14px;
+    }
+    .img-type-badge {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 6px;
+      background: #dcfce7;
+      color: #166534;
+      margin-bottom: 6px;
+    }
+    .img-author {
+      font-size: 12px;
+      font-weight: 600;
+      color: #334155;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .img-license {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+    .flag-btn {
+      width: 100%;
+      margin-top: 10px;
+      padding: 6px 12px;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      background: white;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .flag-btn:hover { background: #fee2e2; border-color: var(--danger); color: var(--danger); }
+    .flag-btn.active { background: var(--danger); color: white; border-color: var(--danger); }
+
+    .placeholder-alert {
+      padding: 24px;
+      border-radius: 16px;
+      background: #fffbeb;
+      border: 1.5px dashed #f59e0b;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      color: #92400e;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <div class="title-row">
+      <h1>🌾 Krushi Sathi — Crop Images Verification & Review Dashboard</h1>
+      <button class="export-btn" onclick="exportFlaggedJson()">⬇️ Export Flagged Bad Images</button>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-val">112</div>
+        <div class="stat-lbl">Total Master Crops</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-val">5</div>
+        <div class="stat-lbl">Crops with Downloaded Photos</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-val">20</div>
+        <div class="stat-lbl">Total Verified Local Photos</div>
+      </div>
+      <div class="stat-card success">
+        <div class="stat-val">0</div>
+        <div class="stat-lbl">Placeholder Only (Need Review)</div>
+      </div>
+    </div>
+
+    <div class="controls-row">
+      <input type="text" id="searchInput" class="search-input" placeholder="Search by crop name, scientific name or local names..." oninput="filterCrops()">
+      <button class="filter-btn active" onclick="setFilter('all', this)">All Crops (112)</button>
+      <button class="filter-btn" onclick="setFilter('has-images', this)">With Photos (5)</button>
+      <button class="filter-btn" onclick="setFilter('missing', this)">Placeholder Only (0)</button>
+      <button class="filter-btn" onclick="setFilter('flagged', this)">Flagged by You (<span id="flaggedCount">0</span>)</button>
+    </div>
+  </div>
+
+  <div class="crop-grid" id="cropContainer">
+    
+      <div class="crop-row-card" data-id="acid-lime-lemon" data-name="acid lime / lemon (kagzi nimboo)" data-sci="citrus aurantiifolia" data-has-images="true">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Acid Lime / Lemon (Kagzi Nimboo)</span>
+            <span class="scientific">(Citrus aurantiifolia)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ನಿಂಬೆಹಣ್ಣು (Lemon / Nimbe)</strong> | Tamil: <strong>எலுமிச்சம்பழம் (Elumichai)</strong> | Telugu: <strong>నిమ్మకాయ (Nimmakaya)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="images-gallery">
+            
+              <div class="img-box" id="box_acid-lime-lemon_0" data-crop="acid-lime-lemon" data-path="/crops/acid-lime-lemon/image-1.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/acid-lime-lemon/image-1.webp" alt="Acid Lime / Lemon (Kagzi Nimboo) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">plant</span>
+                  <div class="img-author" title="Averette at English Wikipedia">👤 Averette at English Wikipedia</div>
+                  <div class="img-license">📜 CC BY 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('acid-lime-lemon', '0', '/crops/acid-lime-lemon/image-1.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_acid-lime-lemon_1" data-crop="acid-lime-lemon" data-path="/crops/acid-lime-lemon/image-2.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/acid-lime-lemon/image-2.webp" alt="Acid Lime / Lemon (Kagzi Nimboo) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">fruit</span>
+                  <div class="img-author" title="Agnieszka Kwiecień, Nova">👤 Agnieszka Kwiecień, Nova</div>
+                  <div class="img-license">📜 CC BY-SA 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('acid-lime-lemon', '1', '/crops/acid-lime-lemon/image-2.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_acid-lime-lemon_2" data-crop="acid-lime-lemon" data-path="/crops/acid-lime-lemon/image-3.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/acid-lime-lemon/image-3.webp" alt="Acid Lime / Lemon (Kagzi Nimboo) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">fruit</span>
+                  <div class="img-author" title="Filo gèn'">👤 Filo gèn'</div>
+                  <div class="img-license">📜 CC BY-SA 4.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('acid-lime-lemon', '2', '/crops/acid-lime-lemon/image-3.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_acid-lime-lemon_3" data-crop="acid-lime-lemon" data-path="/crops/acid-lime-lemon/image-4.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/acid-lime-lemon/image-4.webp" alt="Acid Lime / Lemon (Kagzi Nimboo) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">seed</span>
+                  <div class="img-author" title="Bias Chakraborty">👤 Bias Chakraborty</div>
+                  <div class="img-license">📜 CC BY-SA 4.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('acid-lime-lemon', '3', '/crops/acid-lime-lemon/image-4.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="aloe-vera" data-name="aloe vera (ghritakumari)" data-sci="aloe barbadensis" data-has-images="true">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Aloe Vera (Ghritakumari)</span>
+            <span class="scientific">(Aloe barbadensis)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಲೋಳೆಸರ (Aloe Vera / Lolesara)</strong> | Tamil: <strong>சோற்றுக்கற்றாழை (Aloe Vera)</strong> | Telugu: <strong>కలబంద (Kalabanda)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">medicinal</span>
+          </div>
+        </div>
+
+        
+          <div class="images-gallery">
+            
+              <div class="img-box" id="box_aloe-vera_0" data-crop="aloe-vera" data-path="/crops/aloe-vera/image-1.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/aloe-vera/image-1.webp" alt="Aloe Vera (Ghritakumari) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">flower</span>
+                  <div class="img-author" title="Fir0002">👤 Fir0002</div>
+                  <div class="img-license">📜 GFDL 1.2 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('aloe-vera', '0', '/crops/aloe-vera/image-1.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_aloe-vera_1" data-crop="aloe-vera" data-path="/crops/aloe-vera/image-2.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/aloe-vera/image-2.webp" alt="Aloe Vera (Ghritakumari) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">flower</span>
+                  <div class="img-author" title="Luis Miguel Bugallo Sánchez (Lmbuga)">👤 Luis Miguel Bugallo Sánchez (Lmbuga)</div>
+                  <div class="img-license">📜 CC BY-SA 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('aloe-vera', '1', '/crops/aloe-vera/image-2.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_aloe-vera_2" data-crop="aloe-vera" data-path="/crops/aloe-vera/image-3.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/aloe-vera/image-3.webp" alt="Aloe Vera (Ghritakumari) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">fruit</span>
+                  <div class="img-author" title="H. Zell">👤 H. Zell</div>
+                  <div class="img-license">📜 CC BY-SA 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('aloe-vera', '2', '/crops/aloe-vera/image-3.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_aloe-vera_3" data-crop="aloe-vera" data-path="/crops/aloe-vera/image-4.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/aloe-vera/image-4.webp" alt="Aloe Vera (Ghritakumari) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">fruit</span>
+                  <div class="img-author" title="Roger Culos">👤 Roger Culos</div>
+                  <div class="img-license">📜 CC BY-SA 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('aloe-vera', '3', '/crops/aloe-vera/image-4.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="amaranthus-dantu-keerai" data-name="amaranthus greens (dantu / keerai)" data-sci="amaranthus tricolor" data-has-images="true">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Amaranthus Greens (Dantu / Keerai)</span>
+            <span class="scientific">(Amaranthus tricolor)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ದಂಟು ಸೊಪ್ಪು (Dantu Soppu)</strong> | Tamil: <strong>அரைக்கீரை / சிறுகீரை (Keerai)</strong> | Telugu: <strong>తోటకూర (Thotakura)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="images-gallery">
+            
+              <div class="img-box" id="box_amaranthus-dantu-keerai_0" data-crop="amaranthus-dantu-keerai" data-path="/crops/amaranthus-dantu-keerai/image-1.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/amaranthus-dantu-keerai/image-1.webp" alt="Amaranthus Greens (Dantu / Keerai) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">plant</span>
+                  <div class="img-author" title="Wikimedia Contributor">👤 Wikimedia Contributor</div>
+                  <div class="img-license">📜 CC BY-SA 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('amaranthus-dantu-keerai', '0', '/crops/amaranthus-dantu-keerai/image-1.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_amaranthus-dantu-keerai_1" data-crop="amaranthus-dantu-keerai" data-path="/crops/amaranthus-dantu-keerai/image-2.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/amaranthus-dantu-keerai/image-2.webp" alt="Amaranthus Greens (Dantu / Keerai) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">leaf</span>
+                  <div class="img-author" title="https://wellcomeimages.org/indexplus/obf_images/06/c5/45a2335f40ef15625d9e04c08476.jpg (hi-res image)
+
+Gallery: https://wellcomeimages.org/indexplus/image/L0039407.html
+Wellcome Collection gallery (2018-03-29): https://wellcomecollection.org/works/v79swgy8 CC-BY-4.0">👤 https://wellcomeimages.org/indexplus/obf_images/06/c5/45a2335f40ef15625d9e04c08476.jpg (hi-res image)
+
+Gallery: https://wellcomeimages.org/indexplus/image/L0039407.html
+Wellcome Collection gallery (2018-03-29): https://wellcomecollection.org/works/v79swgy8 CC-BY-4.0</div>
+                  <div class="img-license">📜 CC BY 4.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('amaranthus-dantu-keerai', '1', '/crops/amaranthus-dantu-keerai/image-2.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_amaranthus-dantu-keerai_2" data-crop="amaranthus-dantu-keerai" data-path="/crops/amaranthus-dantu-keerai/image-3.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/amaranthus-dantu-keerai/image-3.webp" alt="Amaranthus Greens (Dantu / Keerai) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">flower</span>
+                  <div class="img-author" title="https://wellcomeimages.org/indexplus/obf_images/2d/a6/af054716304fcf2763ea969809d9.jpg
+
+Gallery: https://wellcomeimages.org/indexplus/image/V0042679.html
+Wellcome Collection gallery (2018-03-30): https://wellcomecollection.org/works/y294def7 CC-BY-4.0">👤 https://wellcomeimages.org/indexplus/obf_images/2d/a6/af054716304fcf2763ea969809d9.jpg
+
+Gallery: https://wellcomeimages.org/indexplus/image/V0042679.html
+Wellcome Collection gallery (2018-03-30): https://wellcomecollection.org/works/y294def7 CC-BY-4.0</div>
+                  <div class="img-license">📜 CC BY 4.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('amaranthus-dantu-keerai', '2', '/crops/amaranthus-dantu-keerai/image-3.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_amaranthus-dantu-keerai_3" data-crop="amaranthus-dantu-keerai" data-path="/crops/amaranthus-dantu-keerai/image-4.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/amaranthus-dantu-keerai/image-4.webp" alt="Amaranthus Greens (Dantu / Keerai) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">plant</span>
+                  <div class="img-author" title="Photo by David J. Stang">👤 Photo by David J. Stang</div>
+                  <div class="img-license">📜 CC BY-SA 4.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('amaranthus-dantu-keerai', '3', '/crops/amaranthus-dantu-keerai/image-4.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="amla-gooseberry" data-name="amla / indian gooseberry" data-sci="phyllanthus emblica" data-has-images="true">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Amla / Indian Gooseberry</span>
+            <span class="scientific">(Phyllanthus emblica)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬೆಟ್ಟದ ನೆಲ್ಲಿಕಾಯಿ (Amla / Nellikayi)</strong> | Tamil: <strong>நெல்லிக்காய் (Nellikai)</strong> | Telugu: <strong>ఉసిరి (Usiri)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="images-gallery">
+            
+              <div class="img-box" id="box_amla-gooseberry_0" data-crop="amla-gooseberry" data-path="/crops/amla-gooseberry/image-1.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/amla-gooseberry/image-1.webp" alt="Amla / Indian Gooseberry photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">plant</span>
+                  <div class="img-author" title="L. Shyamal">👤 L. Shyamal</div>
+                  <div class="img-license">📜 CC BY 2.5 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('amla-gooseberry', '0', '/crops/amla-gooseberry/image-1.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_amla-gooseberry_1" data-crop="amla-gooseberry" data-path="/crops/amla-gooseberry/image-2.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/amla-gooseberry/image-2.webp" alt="Amla / Indian Gooseberry photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">fruit</span>
+                  <div class="img-author" title="J.M.Garg">👤 J.M.Garg</div>
+                  <div class="img-license">📜 CC BY-SA 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('amla-gooseberry', '1', '/crops/amla-gooseberry/image-2.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_amla-gooseberry_2" data-crop="amla-gooseberry" data-path="/crops/amla-gooseberry/image-3.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/amla-gooseberry/image-3.webp" alt="Amla / Indian Gooseberry photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">fruit</span>
+                  <div class="img-author" title="J.M.Garg">👤 J.M.Garg</div>
+                  <div class="img-license">📜 CC BY-SA 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('amla-gooseberry', '2', '/crops/amla-gooseberry/image-3.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_amla-gooseberry_3" data-crop="amla-gooseberry" data-path="/crops/amla-gooseberry/image-4.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/amla-gooseberry/image-4.webp" alt="Amla / Indian Gooseberry photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">leaf</span>
+                  <div class="img-author" title="Vinayaraj">👤 Vinayaraj</div>
+                  <div class="img-license">📜 CC BY-SA 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('amla-gooseberry', '3', '/crops/amla-gooseberry/image-4.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="arecanut-betelnut" data-name="areca nut (betel nut / supari)" data-sci="areca catechu" data-has-images="true">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Areca nut (Betel Nut / Supari)</span>
+            <span class="scientific">(Areca catechu)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಅಡಿಕೆ (Areca nut)</strong> | Tamil: <strong>பாக்கு (Areca nut)</strong> | Telugu: <strong>పోక చెక్క / వక్క (Areca nut)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">plantation</span>
+          </div>
+        </div>
+
+        
+          <div class="images-gallery">
+            
+              <div class="img-box" id="box_arecanut-betelnut_0" data-crop="arecanut-betelnut" data-path="/crops/arecanut-betelnut/image-1.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/arecanut-betelnut/image-1.webp" alt="Areca nut (Betel Nut / Supari) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">plant</span>
+                  <div class="img-author" title="Challiyan">👤 Challiyan</div>
+                  <div class="img-license">📜 CC BY 3.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('arecanut-betelnut', '0', '/crops/arecanut-betelnut/image-1.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_arecanut-betelnut_1" data-crop="arecanut-betelnut" data-path="/crops/arecanut-betelnut/image-2.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/arecanut-betelnut/image-2.webp" alt="Areca nut (Betel Nut / Supari) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">plant</span>
+                  <div class="img-author" title="T. R. Shankar Raman">👤 T. R. Shankar Raman</div>
+                  <div class="img-license">📜 CC BY-SA 4.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('arecanut-betelnut', '1', '/crops/arecanut-betelnut/image-2.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_arecanut-betelnut_2" data-crop="arecanut-betelnut" data-path="/crops/arecanut-betelnut/image-3.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/arecanut-betelnut/image-3.webp" alt="Areca nut (Betel Nut / Supari) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">fruit</span>
+                  <div class="img-author" title="This Photo was taken by Timothy A. Gonsalves.  Feel free to use my photos, but please mention me as the author.  I would much appreciate if you send me an email tagooty@yahoo.com or write on my talk page, for my information.  Please contact me before commercial use.
+
+
+
+Please do not upload an edited image here without consulting me.  I would like to make corrections only at my own source to ensure that the changes improve the image and are preserved.Otherwise you may upload an edited image with a new name. Please use one of the templates derivative or extract.">👤 This Photo was taken by Timothy A. Gonsalves.  Feel free to use my photos, but please mention me as the author.  I would much appreciate if you send me an email tagooty@yahoo.com or write on my talk page, for my information.  Please contact me before commercial use.
+
+
+
+Please do not upload an edited image here without consulting me.  I would like to make corrections only at my own source to ensure that the changes improve the image and are preserved.Otherwise you may upload an edited image with a new name. Please use one of the templates derivative or extract.</div>
+                  <div class="img-license">📜 CC BY-SA 4.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('arecanut-betelnut', '2', '/crops/arecanut-betelnut/image-3.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+              <div class="img-box" id="box_arecanut-betelnut_3" data-crop="arecanut-betelnut" data-path="/crops/arecanut-betelnut/image-4.webp">
+                <div class="img-wrapper">
+                  <img src="/crops/arecanut-betelnut/image-4.webp" alt="Areca nut (Betel Nut / Supari) photo" loading="lazy" onerror="this.src='/crops/placeholder.svg'">
+                </div>
+                <div class="img-meta">
+                  <span class="img-type-badge">flower</span>
+                  <div class="img-author" title="This Photo was taken by Timothy A. Gonsalves.  Feel free to use my photos, but please mention me as the author.  I would much appreciate if you send me an email tagooty@yahoo.com or write on my talk page, for my information.  Please contact me before commercial use.
+
+
+
+Please do not upload an edited image here without consulting me.  I would like to make corrections only at my own source to ensure that the changes improve the image and are preserved.Otherwise you may upload an edited image with a new name. Please use one of the templates derivative or extract.">👤 This Photo was taken by Timothy A. Gonsalves.  Feel free to use my photos, but please mention me as the author.  I would much appreciate if you send me an email tagooty@yahoo.com or write on my talk page, for my information.  Please contact me before commercial use.
+
+
+
+Please do not upload an edited image here without consulting me.  I would like to make corrections only at my own source to ensure that the changes improve the image and are preserved.Otherwise you may upload an edited image with a new name. Please use one of the templates derivative or extract.</div>
+                  <div class="img-license">📜 CC BY-SA 4.0 &bull; Wikimedia Commons</div>
+                  <button class="flag-btn" onclick="toggleFlag('arecanut-betelnut', '3', '/crops/arecanut-betelnut/image-4.webp', this)">
+                    ⚠️ Mark as Wrong Image
+                  </button>
+                </div>
+              </div>
+            
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="ash-gourd-boodu-kumbalakayi" data-name="ash gourd / winter melon (boodu kumbala)" data-sci="benincasa hispida" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Ash Gourd / Winter Melon (Boodu Kumbala)</span>
+            <span class="scientific">(Benincasa hispida)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬೂದುಗುಂಬಳಕಾಯಿ (Ash Gourd)</strong> | Tamil: <strong>சாம்பல் பூசணி (Ash Gourd)</strong> | Telugu: <strong>బూడిద గుమ్మడికాయ (Ash Gourd)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/ash-gourd-boodu-kumbalakayi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="ashwagandha" data-name="ashwagandha (indian ginseng)" data-sci="withania somnifera" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Ashwagandha (Indian Ginseng)</span>
+            <span class="scientific">(Withania somnifera)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಅಶ್ವಗಂಧ (Ashwagandha)</strong> | Tamil: <strong>அமுக்கிராங்கிழங்கு (Ashwagandha)</strong> | Telugu: <strong>అశ్వగంధ / పెన్నేరు (Ashwagandha)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">medicinal</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/ashwagandha/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="banana" data-name="banana (grand naine / yelakki)" data-sci="musa acuminata" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Banana (Grand Naine / Yelakki)</span>
+            <span class="scientific">(Musa acuminata)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬಾಳೆ (Banana / Yelakki)</strong> | Tamil: <strong>வாழை (Banana / Nendran)</strong> | Telugu: <strong>అరటి (Arati)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/banana/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="barley" data-name="barley" data-sci="hordeum vulgare" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Barley</span>
+            <span class="scientific">(Hordeum vulgare)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬಾರ್ಲಿ (Barley)</strong> | Tamil: <strong>பார்லி (Barley)</strong> | Telugu: <strong>బార్లీ (Barley)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/barley/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="barnyard-millet-oodalu" data-name="barnyard millet (oodalu / kuthiraivali)" data-sci="echinochloa frumentacea" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Barnyard Millet (Oodalu / Kuthiraivali)</span>
+            <span class="scientific">(Echinochloa frumentacea)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಊದಲು (Barnyard Millet)</strong> | Tamil: <strong>குதிரைவாலி (Kuthiraivali)</strong> | Telugu: <strong>ఊదలు (Udalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/barnyard-millet-oodalu/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="beetroot" data-name="beetroot" data-sci="beta vulgaris" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Beetroot</span>
+            <span class="scientific">(Beta vulgaris)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬೀಟ್‌ರೂಟ್ (Beetroot)</strong> | Tamil: <strong>பீட்ரூட் (Beetroot)</strong> | Telugu: <strong>బీట్‌రూట్ (Beetroot)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/beetroot/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="ber-indian-jujube" data-name="ber / indian jujube (apple ber)" data-sci="ziziphus mauritiana" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Ber / Indian Jujube (Apple Ber)</span>
+            <span class="scientific">(Ziziphus mauritiana)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬೋರೆ ಹಣ್ಣು / ಆಪಲ್ ಬೋರ್ (Ber)</strong> | Tamil: <strong>இலந்தை பழம் (Ilanthai)</strong> | Telugu: <strong>రేగు పండు / ఆపిల్ బేర్ (Regu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/ber-indian-jujube/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="betel-vine-paan" data-name="betel vine (paan / vilyadele)" data-sci="piper betle" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Betel Vine (Paan / Vilyadele)</span>
+            <span class="scientific">(Piper betle)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ವೀಳ್ಯದೆಲೆ (Betel Vine / Paan)</strong> | Tamil: <strong>வெற்றிலை (Vetrillai)</strong> | Telugu: <strong>తమలపాకు (Tamalapaaku)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">plantation</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/betel-vine-paan/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="bhendi-okra" data-name="bhendi (okra / ladyfinger)" data-sci="abelmoschus esculentus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Bhendi (Okra / Ladyfinger)</span>
+            <span class="scientific">(Abelmoschus esculentus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬೆಂಡೆಕಾಯಿ (Bhendi / Okra)</strong> | Tamil: <strong>வெண்டைக்காய் (Bhendi)</strong> | Telugu: <strong>బెండకాయ (Bhendi)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/bhendi-okra/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="bitter-gourd-hagalakayi" data-name="bitter gourd (hagalakayi)" data-sci="momordica charantia" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Bitter Gourd (Hagalakayi)</span>
+            <span class="scientific">(Momordica charantia)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹಾಗಲಕಾಯಿ (Bitter Gourd)</strong> | Tamil: <strong>பாகற்காய் (Pavakkai)</strong> | Telugu: <strong>కాకరకాయ (Kakarakaya)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/bitter-gourd-hagalakayi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="black-gram-urad" data-name="black gram (urad)" data-sci="vigna mungo" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Black Gram (Urad)</span>
+            <span class="scientific">(Vigna mungo)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಉದ್ದು (Black Gram / Urad)</strong> | Tamil: <strong>உளுந்து (Urad)</strong> | Telugu: <strong>మినుములు (Minumulu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/black-gram-urad/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="black-pepper" data-name="black pepper (king of spices)" data-sci="piper nigrum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Black Pepper (King of Spices)</span>
+            <span class="scientific">(Piper nigrum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕಾಳುಮೆಣಸು (Black Pepper)</strong> | Tamil: <strong>கருமிளகு (Black Pepper)</strong> | Telugu: <strong>మిరియాలు (Miriyalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">spice</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/black-pepper/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="bottle-gourd-sorekayi" data-name="bottle gourd (sorekayi)" data-sci="lagenaria siceraria" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Bottle Gourd (Sorekayi)</span>
+            <span class="scientific">(Lagenaria siceraria)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸೋರೆಕಾಯಿ (Bottle Gourd)</strong> | Tamil: <strong>சுரைக்காய் (Suraikkai)</strong> | Telugu: <strong>సొరకాయ / ఆనపకాయ (Sorakaya)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/bottle-gourd-sorekayi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="brinjal-eggplant" data-name="brinjal (eggplant / aubergine)" data-sci="solanum melongena" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Brinjal (Eggplant / Aubergine)</span>
+            <span class="scientific">(Solanum melongena)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬದನೆಕಾಯಿ (Brinjal / Eggplant)</strong> | Tamil: <strong>கத்தரிக்காய் (Brinjal)</strong> | Telugu: <strong>వంకాయ (Vankaya)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/brinjal-eggplant/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="cabbage" data-name="cabbage" data-sci="brassica oleracea var. capitata" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Cabbage</span>
+            <span class="scientific">(Brassica oleracea var. capitata)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಎಲೆಕೋಸು (Cabbage)</strong> | Tamil: <strong>முட்டைக்கோஸ் (Muttaikose)</strong> | Telugu: <strong>క్యాబేజీ (Cabbage)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/cabbage/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="cardamom" data-name="cardamom (queen of spices)" data-sci="elettaria cardamomum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Cardamom (Queen of Spices)</span>
+            <span class="scientific">(Elettaria cardamomum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಏಲಕ್ಕಿ (Cardamom)</strong> | Tamil: <strong>ஏலக்காய் (Cardamom)</strong> | Telugu: <strong>యాలకులు (Yalakulu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">spice</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/cardamom/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="carrot" data-name="carrot" data-sci="daucus carota" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Carrot</span>
+            <span class="scientific">(Daucus carota)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕ್ಯಾರೆಟ್ (Carrot)</strong> | Tamil: <strong>கேரட் (Carrot)</strong> | Telugu: <strong>క్యారెట్ (Carrot)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/carrot/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="cashew" data-name="cashew" data-sci="anacardium occidentale" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Cashew</span>
+            <span class="scientific">(Anacardium occidentale)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಗೇರು / ಗೋಡಂಬಿ (Cashew)</strong> | Tamil: <strong>முந்திரி (Cashew)</strong> | Telugu: <strong>జీడిమామిడి (Cashew)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">plantation</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/cashew/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="castor" data-name="castor (industrial oil)" data-sci="ricinus communis" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Castor (Industrial Oil)</span>
+            <span class="scientific">(Ricinus communis)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಔಡಲ / ಹರಳು (Castor)</strong> | Tamil: <strong>ஆமணக்கு (Amanakku / Castor)</strong> | Telugu: <strong>ఆముదం (Amudam)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">oilseed</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/castor/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="cauliflower" data-name="cauliflower" data-sci="brassica oleracea var. botrytis" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Cauliflower</span>
+            <span class="scientific">(Brassica oleracea var. botrytis)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹೂಕೋಸು (Cauliflower)</strong> | Tamil: <strong>காலிஃபிளவர் (Cauliflower)</strong> | Telugu: <strong>కాలీఫ్లవర్ (Cauliflower)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/cauliflower/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="chickpea-bengal-gram" data-name="chickpea (bengal gram / chana)" data-sci="cicer arietinum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Chickpea (Bengal Gram / Chana)</span>
+            <span class="scientific">(Cicer arietinum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕಡಲೆ (Bengal Gram / Chickpea)</strong> | Tamil: <strong>கொண்டைக்கடலை (Chana)</strong> | Telugu: <strong>శనగలు (Senagalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/chickpea-bengal-gram/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="chilli-green-dry" data-name="chilli (green / dry)" data-sci="capsicum annuum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Chilli (Green / Dry)</span>
+            <span class="scientific">(Capsicum annuum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮೆಣಸಿನಕಾಯಿ (Chilli)</strong> | Tamil: <strong>மிளகாய் (Chilli)</strong> | Telugu: <strong>మిరప (Mirapa)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/chilli-green-dry/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="chrysanthemum-sevanthige" data-name="chrysanthemum (sevanthige / samanthi)" data-sci="chrysanthemum morifolium" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Chrysanthemum (Sevanthige / Samanthi)</span>
+            <span class="scientific">(Chrysanthemum morifolium)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸೇವಂತಿಗೆ (Chrysanthemum)</strong> | Tamil: <strong>சாமந்தி (Samanthi)</strong> | Telugu: <strong>చామంతి (Chamanthi)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">flower</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/chrysanthemum-sevanthige/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="cluster-bean-gorikayi" data-name="cluster bean (gorikayi / kothavarai)" data-sci="cyamopsis tetragonoloba" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Cluster Bean (Gorikayi / Kothavarai)</span>
+            <span class="scientific">(Cyamopsis tetragonoloba)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಗೋರಿಕಾಯಿ (Cluster Bean)</strong> | Tamil: <strong>கொத்தவரங்காய் (Kothavarai)</strong> | Telugu: <strong>గోరుచిక్కుడు (Goruchikkudu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/cluster-bean-gorikayi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="coconut" data-name="coconut (kalpavriksha)" data-sci="cocos nucifera" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Coconut (Kalpavriksha)</span>
+            <span class="scientific">(Cocos nucifera)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ತೆಂಗು (Coconut / Kalpavriksha)</strong> | Tamil: <strong>தென்னை (Coconut)</strong> | Telugu: <strong>కొబ్బరి (Kobbari)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">plantation</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/coconut/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="coffee" data-name="coffee (arabica / robusta)" data-sci="coffea arabica" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Coffee (Arabica / Robusta)</span>
+            <span class="scientific">(Coffea arabica)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕಾಫಿ (Coffee)</strong> | Tamil: <strong>காபி (Coffee)</strong> | Telugu: <strong>కాఫీ (Coffee)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">plantation</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/coffee/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="coleus-forskohlii" data-name="coleus (makandi / forskolin)" data-sci="coleus forskohlii" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Coleus (Makandi / Forskolin)</span>
+            <span class="scientific">(Coleus forskohlii)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮಕಂದಿ / ಮಂಗನ ಬೇರು (Coleus)</strong> | Tamil: <strong>மருந்து கூர்க்கன் (Marunthu Koorkkan)</strong> | Telugu: <strong>కోలియస్ (Coleus)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">medicinal</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/coleus-forskohlii/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="colocasia-arbi-taro" data-name="colocasia / taro (arbi / keshavina gaddi)" data-sci="colocasia esculenta" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Colocasia / Taro (Arbi / Keshavina Gaddi)</span>
+            <span class="scientific">(Colocasia esculenta)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕೇಶವಿನ ಗಡ್ಡೆ (Colocasia / Taro)</strong> | Tamil: <strong>சேப்பங்கிழங்கு (Seppankizhangu)</strong> | Telugu: <strong>చామదుంప (Chamadumpa)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/colocasia-arbi-taro/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="coriander" data-name="coriander (dhania / kothambari)" data-sci="coriandrum sativum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Coriander (Dhania / Kothambari)</span>
+            <span class="scientific">(Coriandrum sativum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕೊತ್ತಂಬರಿ (Coriander / Dhania)</strong> | Tamil: <strong>கொத்தமல்லி (Kothamalli)</strong> | Telugu: <strong>ధనియాలు / కొత్తిమీర (Kothimeera)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">spice</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/coriander/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="cotton" data-name="cotton (white gold)" data-sci="gossypium hirsutum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Cotton (White Gold)</span>
+            <span class="scientific">(Gossypium hirsutum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹತ್ತಿ (Cotton / White Gold)</strong> | Tamil: <strong>பருத்தி (Cotton)</strong> | Telugu: <strong>ప్రత్తి (Pratti)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cash</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/cotton/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="cowpea-alasande" data-name="cowpea (alasande / karamani)" data-sci="vigna unguiculata" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Cowpea (Alasande / Karamani)</span>
+            <span class="scientific">(Vigna unguiculata)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಅಲಸಂದೆ (Cowpea / Lobia)</strong> | Tamil: <strong>காராமணி (Karamani)</strong> | Telugu: <strong>బొబ్బర్లు / అలసందలు (Alasandalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/cowpea-alasande/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="crossandra-kanakambaram" data-name="crossandra (kanakambaram)" data-sci="crossandra infundibuliformis" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Crossandra (Kanakambaram)</span>
+            <span class="scientific">(Crossandra infundibuliformis)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕನಕಾಂಬರ (Kanakambaram)</strong> | Tamil: <strong>கனகாம்பரம் (Kanakambaram)</strong> | Telugu: <strong>కనకాంబరాలు (Kanakambaralu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">flower</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/crossandra-kanakambaram/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="cucumber-southekayi" data-name="cucumber (southekayi)" data-sci="cucumis sativus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Cucumber (Southekayi)</span>
+            <span class="scientific">(Cucumis sativus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸೌತೆಕಾಯಿ (Cucumber)</strong> | Tamil: <strong>வெள்ளரிக்காய் (Vellarikkai)</strong> | Telugu: <strong>దోసకాయ (Dosakaya)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/cucumber-southekayi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="custard-apple-seethaphal" data-name="custard apple / seethaphal" data-sci="annona squamosa" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Custard Apple / Seethaphal</span>
+            <span class="scientific">(Annona squamosa)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸೀತಾಫಲ (Seethaphal / Custard Apple)</strong> | Tamil: <strong>சீத்தாப்பழம் (Seethapazham)</strong> | Telugu: <strong>సీతాఫలం (Seethaphalam)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/custard-apple-seethaphal/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="drumstick-moringa" data-name="drumstick (moringa)" data-sci="moringa oleifera" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Drumstick (Moringa)</span>
+            <span class="scientific">(Moringa oleifera)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ನುಗ್ಗೆಕಾಯಿ (Moringa / Drumstick)</strong> | Tamil: <strong>முருங்கை (Moringa)</strong> | Telugu: <strong>మునగ (Munaga)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/drumstick-moringa/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="elephant-foot-yam" data-name="elephant foot yam (suvarnagadde / senai)" data-sci="amorphophallus paeoniifolius" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Elephant Foot Yam (Suvarnagadde / Senai)</span>
+            <span class="scientific">(Amorphophallus paeoniifolius)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸುವರ್ಣಗಡ್ಡೆ (Elephant Foot Yam)</strong> | Tamil: <strong>சேனைக்கிழங்கு (Senai Kizhangu)</strong> | Telugu: <strong>కంద (Kanda)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/elephant-foot-yam/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="fenugreek-methi" data-name="fenugreek (methi / menthya)" data-sci="trigonella foenum-graecum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Fenugreek (Methi / Menthya)</span>
+            <span class="scientific">(Trigonella foenum-graecum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮೆಂತ್ಯ (Menthya / Methi)</strong> | Tamil: <strong>வெந்தயம் (Vendhayam)</strong> | Telugu: <strong>మెంతులు / మెంతికూర (Menthikura)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/fenugreek-methi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="field-bean-avare" data-name="field bean / hyacinth bean (avare)" data-sci="lablab purpureus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Field Bean / Hyacinth Bean (Avare)</span>
+            <span class="scientific">(Lablab purpureus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಅವರೆ (Avare / Hyacinth Bean)</strong> | Tamil: <strong>மொச்சை (Mochai)</strong> | Telugu: <strong>అనుములు (Anumulu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/field-bean-avare/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="finger-millet-ragi" data-name="finger millet (ragi)" data-sci="eleusine coracana" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Finger Millet (Ragi)</span>
+            <span class="scientific">(Eleusine coracana)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ರಾಗಿ (Finger Millet)</strong> | Tamil: <strong>கேழ்வரகு / ராகி (Ragi)</strong> | Telugu: <strong>రాగులు (Ragi)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/finger-millet-ragi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="fodder-sorghum-multicut" data-name="fodder sorghum (multicut co-fs-29)" data-sci="sorghum bicolor var. sudanense" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Fodder Sorghum (Multicut CO-FS-29)</span>
+            <span class="scientific">(Sorghum bicolor var. sudanense)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮೇವು ಜೋಳ (Multicut Fodder Sorghum)</strong> | Tamil: <strong>தீவன சோளம் (CO-FS-29)</strong> | Telugu: <strong>గడ్డి జొన్న (Fodder Sorghum)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fodder</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/fodder-sorghum-multicut/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="foxtail-millet-navane" data-name="foxtail millet (navane / thinai)" data-sci="setaria italica" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Foxtail Millet (Navane / Thinai)</span>
+            <span class="scientific">(Setaria italica)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ನವಣೆ (Foxtail Millet)</strong> | Tamil: <strong>தினை (Thinai)</strong> | Telugu: <strong>కొర్రలు (Korralu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/foxtail-millet-navane/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="french-bean-huralikayi" data-name="french bean (huralikayi)" data-sci="phaseolus vulgaris" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">French Bean (Huralikayi)</span>
+            <span class="scientific">(Phaseolus vulgaris)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹುರುಳಿಕಾಯಿ / ಬೀನ್ಸ್ (French Bean)</strong> | Tamil: <strong>பீன்ஸ் (French Bean)</strong> | Telugu: <strong>బీన్స్ (French Beans)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/french-bean-huralikayi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="garlic" data-name="garlic" data-sci="allium sativum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Garlic</span>
+            <span class="scientific">(Allium sativum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬೆಳ್ಳುಳ್ಳಿ (Garlic)</strong> | Tamil: <strong>பூண்டு (Garlic)</strong> | Telugu: <strong>వెల్లుల్లి (Vellulli)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/garlic/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="ginger" data-name="ginger (shunti / inji)" data-sci="zingiber officinale" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Ginger (Shunti / Inji)</span>
+            <span class="scientific">(Zingiber officinale)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಶುಂಠಿ (Ginger / Shunti)</strong> | Tamil: <strong>இஞ்சி (Inji)</strong> | Telugu: <strong>అల్లం (Allam)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">spice</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/ginger/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="green-gram-moong" data-name="green gram (moong)" data-sci="vigna radiata" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Green Gram (Moong)</span>
+            <span class="scientific">(Vigna radiata)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹೆಸರು ಕಾಳು (Green Gram / Moong)</strong> | Tamil: <strong>பாசிப்பயறு (Moong)</strong> | Telugu: <strong>పెసలు (Pesalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/green-gram-moong/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="groundnut-peanut" data-name="groundnut (peanut)" data-sci="arachis hypogaea" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Groundnut (Peanut)</span>
+            <span class="scientific">(Arachis hypogaea)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕಡಲೆಕಾಯಿ (Groundnut / Peanut)</strong> | Tamil: <strong>நிலக்கடலை (Groundnut)</strong> | Telugu: <strong>వేరుశనగ (Verusanaga)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">oilseed</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/groundnut-peanut/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="guava" data-name="guava (taiwan pink / lucknow 49)" data-sci="psidium guajava" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Guava (Taiwan Pink / Lucknow 49)</span>
+            <span class="scientific">(Psidium guajava)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸೀಬೆಹಣ್ಣು (Guava / Amrut)</strong> | Tamil: <strong>கொய்யா (Guava)</strong> | Telugu: <strong>జామ (Jama)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/guava/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="hedge-lucerne-velimasal" data-name="hedge lucerne / velimasal" data-sci="desmanthus virgatus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Hedge Lucerne / Velimasal</span>
+            <span class="scientific">(Desmanthus virgatus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ವೇಲಿ ಮಸಾಲ್ / ಹೆಡ್ಜ್ ಲೂಸರ್ನ್ (Velimasal)</strong> | Tamil: <strong>வேலிமசால் (Velimasal)</strong> | Telugu: <strong>వేలిమసాల్ (Velimasal)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fodder</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/hedge-lucerne-velimasal/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="horse-gram-hurali" data-name="horse gram (hurali / kollu)" data-sci="macrotyloma uniflorum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Horse Gram (Hurali / Kollu)</span>
+            <span class="scientific">(Macrotyloma uniflorum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹುರುಳಿ (Horse Gram)</strong> | Tamil: <strong>கொள்ளு (Kollu)</strong> | Telugu: <strong>ఉలవలు (Ulavalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/horse-gram-hurali/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="jackfruit" data-name="jackfruit (all season / tubagere)" data-sci="artocarpus heterophyllus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Jackfruit (All Season / Tubagere)</span>
+            <span class="scientific">(Artocarpus heterophyllus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹಲಸಿನ ಹಣ್ಣು (Jackfruit)</strong> | Tamil: <strong>பலாப்பழம் (Jackfruit)</strong> | Telugu: <strong>పనస (Panasa)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/jackfruit/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="jamun-java-plum" data-name="jamun (java plum / nerale)" data-sci="syzygium cumini" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Jamun (Java Plum / Nerale)</span>
+            <span class="scientific">(Syzygium cumini)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ನೇರಳೆ ಹಣ್ಣು (Nerale / Jamun)</strong> | Tamil: <strong>நாவல் பழம் (Naval Pazham)</strong> | Telugu: <strong>నేరేడు (Neredu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/jamun-java-plum/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="jasmine-mysore-mallige" data-name="jasmine (mysore mallige / gundu malli)" data-sci="jasminum sambac" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Jasmine (Mysore Mallige / Gundu Malli)</span>
+            <span class="scientific">(Jasminum sambac)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮೈಸೂರು ಮಲ್ಲಿಗೆ (Mysore Mallige / Jasmine)</strong> | Tamil: <strong>குண்டு மல்லி (Madurai Malli)</strong> | Telugu: <strong>మల్లె పూలు (Malle Poolu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">flower</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/jasmine-mysore-mallige/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="kodo-millet-haraka" data-name="kodo millet (haraka / varagu)" data-sci="paspalum scrobiculatum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Kodo Millet (Haraka / Varagu)</span>
+            <span class="scientific">(Paspalum scrobiculatum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹಾರಕ (Kodo Millet)</strong> | Tamil: <strong>வரகு (Varagu)</strong> | Telugu: <strong>అరికెలు (Arikelu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/kodo-millet-haraka/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="kokum-punarpuli" data-name="kokum (punarpuli / murugalu)" data-sci="garcinia indica" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Kokum (Punarpuli / Murugalu)</span>
+            <span class="scientific">(Garcinia indica)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಪುನರ್ಪುಳಿ / ಮುರುಗಲು (Kokum)</strong> | Tamil: <strong>கோக்கம் (Kokum / Murgal)</strong> | Telugu: <strong>కోకం (Kokum)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">spice</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/kokum-punarpuli/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="lemongrass" data-name="lemongrass (essential oil)" data-sci="cymbopogon citratus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Lemongrass (Essential Oil)</span>
+            <span class="scientific">(Cymbopogon citratus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ನಿಂಬೆ ಹುಲ್ಲು (Lemongrass)</strong> | Tamil: <strong>எலுமிச்சை புல் (Lemongrass)</strong> | Telugu: <strong>నిమ్మగడ్డి (Lemongrass)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">medicinal</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/lemongrass/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="lentil-masoor" data-name="lentil (masoor)" data-sci="lens culinaris" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Lentil (Masoor)</span>
+            <span class="scientific">(Lens culinaris)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮಸೂರ ಬೇಳೆ (Masoor / Lentil)</strong> | Tamil: <strong>மசூர் பருப்பு (Masoor)</strong> | Telugu: <strong>ఎర్ర కందులు / మసూర్ (Masoor)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/lentil-masoor/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="little-millet-saame" data-name="little millet (saame / samai)" data-sci="panicum sumatrense" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Little Millet (Saame / Samai)</span>
+            <span class="scientific">(Panicum sumatrense)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸಾಮೆ (Little Millet)</strong> | Tamil: <strong>சாமை (Samai)</strong> | Telugu: <strong>సామలు (Samalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/little-millet-saame/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="maize-corn" data-name="maize (corn)" data-sci="zea mays" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Maize (Corn)</span>
+            <span class="scientific">(Zea mays)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮೆಕ್ಕೆಜೋಳ (Maize / Corn)</strong> | Tamil: <strong>மக்காச்சோளம் (Maize)</strong> | Telugu: <strong>మొక్కజొన్న (Corn)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/maize-corn/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="mango" data-name="mango (alphonso / kesar / totapuri)" data-sci="mangifera indica" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Mango (Alphonso / Kesar / Totapuri)</span>
+            <span class="scientific">(Mangifera indica)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮಾವಿನ ಹಣ್ಣು (Mango)</strong> | Tamil: <strong>மாம்பழம் (Mango)</strong> | Telugu: <strong>మామిడి (Mango)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/mango/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="marigold" data-name="marigold (african / french)" data-sci="tagetes erecta" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Marigold (African / French)</span>
+            <span class="scientific">(Tagetes erecta)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಚೆಂಡು ಹೂ (Marigold)</strong> | Tamil: <strong>சாமந்தி / செண்டுமல்லி (Marigold)</strong> | Telugu: <strong>బంతి పూలు (Banthi Poolu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">flower</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/marigold/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="mint-pudina" data-name="mint (pudina)" data-sci="mentha arvensis" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Mint (Pudina)</span>
+            <span class="scientific">(Mentha arvensis)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಪುದೀನಾ (Pudina / Mint)</strong> | Tamil: <strong>புதினா (Pudina)</strong> | Telugu: <strong>పుదీనా (Pudina)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/mint-pudina/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="moth-bean-matki" data-name="moth bean (matki)" data-sci="vigna aconitifolia" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Moth Bean (Matki)</span>
+            <span class="scientific">(Vigna aconitifolia)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮಡಿಕೆ ಕಾಳು (Moth Bean)</strong> | Tamil: <strong>நரிப்பயறு (Moth Bean)</strong> | Telugu: <strong>వనపెసలు (Moth Bean)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/moth-bean-matki/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="mulberry-sericulture" data-name="mulberry (silk farming / reshme)" data-sci="morus alba" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Mulberry (Silk Farming / Reshme)</span>
+            <span class="scientific">(Morus alba)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹಿಪ್ಪುನೇರಳೆ / ರೇಷ್ಮೆ (Mulberry / Silk)</strong> | Tamil: <strong>மல்பெரி / பட்டு (Mulberry)</strong> | Telugu: <strong>మల్బరీ / పట్టు (Mulberry / Pattu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cash</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/mulberry-sericulture/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="muskmelon-kharbooja" data-name="muskmelon / cantaloupe (kharbooja)" data-sci="cucumis melo" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Muskmelon / Cantaloupe (Kharbooja)</span>
+            <span class="scientific">(Cucumis melo)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕರಬೂಜ (Kharbooja / Muskmelon)</strong> | Tamil: <strong>கிருணிப்பழம் (Kirini Pazham)</strong> | Telugu: <strong>ఖర్బూజ (Kharbuja)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/muskmelon-kharbooja/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="mustard-sasive" data-name="mustard (sasive / kadugu)" data-sci="brassica nigra" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Mustard (Sasive / Kadugu)</span>
+            <span class="scientific">(Brassica nigra)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸಾಸಿವೆ (Mustard / Sasive)</strong> | Tamil: <strong>கடுகு (Kadugu)</strong> | Telugu: <strong>ఆవాలు (Avalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">oilseed</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/mustard-sasive/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="niger-huchchellu" data-name="niger seed (huchchellu / uchellu)" data-sci="guizotia abyssinica" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Niger Seed (Huchchellu / Uchellu)</span>
+            <span class="scientific">(Guizotia abyssinica)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹುಚ್ಚೆಳ್ಳು (Niger / Huchchellu)</strong> | Tamil: <strong>பேயெள் (Niger / Peyellu)</strong> | Telugu: <strong>వలసలు / పిచ్చినువ్వులు (Valasalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">oilseed</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/niger-huchchellu/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="onion" data-name="onion" data-sci="allium cepa" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Onion</span>
+            <span class="scientific">(Allium cepa)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಈರುಳ್ಳಿ (Onion)</strong> | Tamil: <strong>வெங்காயம் (Onion)</strong> | Telugu: <strong>ఉల్లిపాయ (Ullipayalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/onion/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="paddy-rice" data-name="paddy (rice)" data-sci="oryza sativa" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Paddy (Rice)</span>
+            <span class="scientific">(Oryza sativa)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಭತ್ತ / ಅಕ್ಕಿ (Paddy)</strong> | Tamil: <strong>நெல் (Paddy)</strong> | Telugu: <strong>వరి (Paddy)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/paddy-rice/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="palak-spinach" data-name="palak / indian spinach" data-sci="spinacia oleracea" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Palak / Indian Spinach</span>
+            <span class="scientific">(Spinacia oleracea)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಪಾಲಕ್ ಸೊಪ್ಪು (Palak / Spinach)</strong> | Tamil: <strong>பசலைக்கீரை (Pasalai Keerai)</strong> | Telugu: <strong>పాలకూర (Palakura)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/palak-spinach/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="papaya" data-name="papaya (taiwan red lady 786)" data-sci="carica papaya" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Papaya (Taiwan Red Lady 786)</span>
+            <span class="scientific">(Carica papaya)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಪರಂಗಿ ಹಣ್ಣು (Papaya)</strong> | Tamil: <strong>பப்பாளி (Papaya)</strong> | Telugu: <strong>బొప్పాయి (Boppayi)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/papaya/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="passion-fruit" data-name="passion fruit (purple / yellow)" data-sci="passiflora edulis" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Passion Fruit (Purple / Yellow)</span>
+            <span class="scientific">(Passiflora edulis)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಪ್ಯಾಶನ್ ಹಣ್ಣು (Passion Fruit)</strong> | Tamil: <strong>கொடி தோடை (Passion Fruit)</strong> | Telugu: <strong>ప్యాషన్ ఫ్రూట్ (Passion Fruit)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/passion-fruit/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="pearl-millet-bajra" data-name="pearl millet (bajra)" data-sci="pennisetum glaucum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Pearl Millet (Bajra)</span>
+            <span class="scientific">(Pennisetum glaucum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸಜ್ಜೆ (Bajra / Pearl Millet)</strong> | Tamil: <strong>கம்பு (Kambu / Bajra)</strong> | Telugu: <strong>సజ్జలు (Sajjalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/pearl-millet-bajra/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="pineapple" data-name="pineapple (kew / queen)" data-sci="ananas comosus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Pineapple (Kew / Queen)</span>
+            <span class="scientific">(Ananas comosus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಅನಾನಸ್ (Pineapple)</strong> | Tamil: <strong>அன்னாசிப்பழம் (Annasi)</strong> | Telugu: <strong>అనాస పండు (Anasa)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/pineapple/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="pomegranate" data-name="pomegranate (bhagawa)" data-sci="punica granatum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Pomegranate (Bhagawa)</span>
+            <span class="scientific">(Punica granatum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ದಾಳಿಂಬೆ (Pomegranate)</strong> | Tamil: <strong>மாதுளை (Pomegranate)</strong> | Telugu: <strong>దానిమ్మ (Danimma)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/pomegranate/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="potato" data-name="potato" data-sci="solanum tuberosum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Potato</span>
+            <span class="scientific">(Solanum tuberosum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಆಲೂಗಡ್ಡೆ (Potato)</strong> | Tamil: <strong>உருளைக்கிழங்கு (Urulaikizhangu)</strong> | Telugu: <strong>బంగాళాదుంప (Bangaladumpa)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/potato/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="proso-millet-baragu" data-name="proso millet (baragu / panivaragu)" data-sci="panicum miliaceum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Proso Millet (Baragu / Panivaragu)</span>
+            <span class="scientific">(Panicum miliaceum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬರಗು (Proso Millet)</strong> | Tamil: <strong>பனிவரகு (Panivaragu)</strong> | Telugu: <strong>వరిగలు (Varigalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/proso-millet-baragu/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="pumpkin-sihi-kumbala" data-name="pumpkin (sihi kumbalakayi)" data-sci="cucurbita moschata" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Pumpkin (Sihi Kumbalakayi)</span>
+            <span class="scientific">(Cucurbita moschata)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸಿಹಿ ಕುಂಬಳಕಾಯಿ (Pumpkin)</strong> | Tamil: <strong>மஞ்சள் பூசணி (Parangikai)</strong> | Telugu: <strong>గుమ్మడికాయ (Gummadikaya)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/pumpkin-sihi-kumbala/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="radish-moolangi" data-name="radish (moolangi)" data-sci="raphanus sativus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Radish (Moolangi)</span>
+            <span class="scientific">(Raphanus sativus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮೂಲಂಗಿ (Radish)</strong> | Tamil: <strong>முள்ளங்கி (Mullangi)</strong> | Telugu: <strong>ముల్లంగి (Mullangi)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/radish-moolangi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="red-gram-pigeonpea" data-name="red gram / tur (pigeonpea)" data-sci="cajanus cajan" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Red Gram / Tur (Pigeonpea)</span>
+            <span class="scientific">(Cajanus cajan)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ತೊಗರಿ (Tur / Red Gram)</strong> | Tamil: <strong>துவரை (Red Gram)</strong> | Telugu: <strong>కందులు (Kandulu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/red-gram-pigeonpea/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="red-sanders-raktachandan" data-name="red sanders (raktachandan)" data-sci="pterocarpus santalinus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Red Sanders (Raktachandan)</span>
+            <span class="scientific">(Pterocarpus santalinus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ರಕ್ತಚಂದನ (Red Sanders)</strong> | Tamil: <strong>செஞ்சந்தனம் (Red Sanders)</strong> | Telugu: <strong>ఎర్రచందనం (Yerra Chandanam)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">plantation</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/red-sanders-raktachandan/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="ridge-gourd-heerekayi" data-name="ridge gourd (heerekayi)" data-sci="luffa acutangula" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Ridge Gourd (Heerekayi)</span>
+            <span class="scientific">(Luffa acutangula)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಹೀರೆಕಾಯಿ (Ridge Gourd)</strong> | Tamil: <strong>பீர்க்கங்காய் (Peerkangai)</strong> | Telugu: <strong>బీరకాయ (Beerakaya)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/ridge-gourd-heerekayi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="rubber-hevea" data-name="rubber (natural latex)" data-sci="hevea brasiliensis" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Rubber (Natural Latex)</span>
+            <span class="scientific">(Hevea brasiliensis)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ರಬ್ಬರ್ (Rubber)</strong> | Tamil: <strong>ரப்பர் (Rubber)</strong> | Telugu: <strong>రబ్బరు (Rubber)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">plantation</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/rubber-hevea/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="safflower-kusube" data-name="safflower (kusube / kardi)" data-sci="carthamus tinctorius" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Safflower (Kusube / Kardi)</span>
+            <span class="scientific">(Carthamus tinctorius)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕುಸುಬೆ (Safflower / Kusube)</strong> | Tamil: <strong>குசும்பப் பூ (Safflower)</strong> | Telugu: <strong>కుసుమలు (Kusumalu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">oilseed</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/safflower-kusube/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="sandalwood-srigandha" data-name="sandalwood (sri gandha)" data-sci="santalum album" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Sandalwood (Sri Gandha)</span>
+            <span class="scientific">(Santalum album)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಶ್ರೀಗಂಧ (Sandalwood / Sri Gandha)</strong> | Tamil: <strong>சந்தன மரம் (Sandalwood)</strong> | Telugu: <strong>శ్రీగంధం (Sandalwood)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">plantation</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/sandalwood-srigandha/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="sapota-chiku" data-name="sapota / chiku (cricket ball / pkm 1)" data-sci="manilkara zapota" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Sapota / Chiku (Cricket Ball / PKM 1)</span>
+            <span class="scientific">(Manilkara zapota)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಚಿಕ್ಕು / ಸಪೋಟ (Sapota / Chiku)</strong> | Tamil: <strong>சப்போட்டா (Sapota)</strong> | Telugu: <strong>సపోటా (Sapota)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/sapota-chiku/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="sesame-til" data-name="sesame (til / gingelly / ellu)" data-sci="sesamum indicum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Sesame (Til / Gingelly / Ellu)</span>
+            <span class="scientific">(Sesamum indicum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಎಳ್ಳು (Sesame / Til)</strong> | Tamil: <strong>எள் (Gingelly / Ellu)</strong> | Telugu: <strong>నువ్వులు (Nuvvulu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">oilseed</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/sesame-til/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="shatavari-wild-asparagus" data-name="shatavari (queen of herbs)" data-sci="asparagus racemosus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Shatavari (Queen of Herbs)</span>
+            <span class="scientific">(Asparagus racemosus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಶತಾವರಿ (Shatavari)</strong> | Tamil: <strong>தண்ணீர்விட்டான் கிழங்கு (Thanneer Vittan)</strong> | Telugu: <strong>పిల్లిపీచర / శతావరి (Shatavari)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">medicinal</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/shatavari-wild-asparagus/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="snake-gourd-padavalakayi" data-name="snake gourd (padavalakayi)" data-sci="trichosanthes cucumerina" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Snake Gourd (Padavalakayi)</span>
+            <span class="scientific">(Trichosanthes cucumerina)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಪಡವಲಕಾಯಿ (Snake Gourd)</strong> | Tamil: <strong>புடலங்காய் (Pudalangai)</strong> | Telugu: <strong>పొట్లకాయ (Potlakaya)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/snake-gourd-padavalakayi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="sorghum-jowar" data-name="sorghum (jowar)" data-sci="sorghum bicolor" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Sorghum (Jowar)</span>
+            <span class="scientific">(Sorghum bicolor)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಬಿಳಿ ಜೋಳ (Jowar / Sorghum)</strong> | Tamil: <strong>சோளம் (Sorghum)</strong> | Telugu: <strong>జొన్నలు (Jowar)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/sorghum-jowar/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="soybean" data-name="soybean" data-sci="glycine max" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Soybean</span>
+            <span class="scientific">(Glycine max)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸೋಯಾಬೀನ್ (Soybean)</strong> | Tamil: <strong>சோயாபீன் (Soybean)</strong> | Telugu: <strong>సోయాచిక్కుడు (Soybean)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">pulse</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/soybean/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="subabul-forage" data-name="subabul (miracle forage & pulp tree)" data-sci="leucaena leucocephala" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Subabul (Miracle Forage & Pulp Tree)</span>
+            <span class="scientific">(Leucaena leucocephala)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸುಬಾಬುಲ್ (Subabul)</strong> | Tamil: <strong>சவுண்டல் (Soundal / Subabul)</strong> | Telugu: <strong>సుబాబుల్ (Subabul)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fodder</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/subabul-forage/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="sugarcane" data-name="sugarcane" data-sci="saccharum officinarum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Sugarcane</span>
+            <span class="scientific">(Saccharum officinarum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕಬ್ಬು (Sugarcane)</strong> | Tamil: <strong>கரும்பு (Sugarcane)</strong> | Telugu: <strong>చెరకు (Cheraku)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cash</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/sugarcane/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="sunflower" data-name="sunflower" data-sci="helianthus annuus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Sunflower</span>
+            <span class="scientific">(Helianthus annuus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸೂರ್ಯಕಾಂತಿ (Sunflower)</strong> | Tamil: <strong>சூரியகாந்தி (Sunflower)</strong> | Telugu: <strong>పొద్దుతిరుగుడు (Sunflower)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">oilseed</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/sunflower/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="super-napier-co5" data-name="super napier grass (hybrid co-5)" data-sci="pennisetum purpureum x p. glaucum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Super Napier Grass (Hybrid CO-5)</span>
+            <span class="scientific">(Pennisetum purpureum x P. glaucum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸೂಪರ್ ನೇಪಿಯರ್ ಹುಲ್ಲು (Hybrid CO-5)</strong> | Tamil: <strong>சூப்பர் நேப்பியர் (Hybrid CO-5)</strong> | Telugu: <strong>సూపర్ నేపియర్ గడ్డి (CO-5)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fodder</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/super-napier-co5/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="sweet-orange-mosambi" data-name="sweet lime / orange (mosambi)" data-sci="citrus limetta" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Sweet Lime / Orange (Mosambi)</span>
+            <span class="scientific">(Citrus limetta)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮೂಸಂಬಿ (Mosambi / Sweet Orange)</strong> | Tamil: <strong>சாத்துக்குடி (Sathukudi)</strong> | Telugu: <strong>బత్తాయి (Batthayi)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/sweet-orange-mosambi/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="sweet-potato" data-name="sweet potato" data-sci="ipomoea batatas" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Sweet Potato</span>
+            <span class="scientific">(Ipomoea batatas)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸಿಹಿ ಗೆಣಸು (Sweet Potato)</strong> | Tamil: <strong>சர்க்கரைவள்ளிக்கிழங்கு (Sweet Potato)</strong> | Telugu: <strong>చిలగడదుంప (Chilagada Dumpa)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/sweet-potato/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="sorghum-sweet" data-name="sweet sorghum" data-sci="sorghum bicolor var. saccharatum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Sweet Sorghum</span>
+            <span class="scientific">(Sorghum bicolor var. saccharatum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸಿಹಿ ಜೋಳ (Sweet Sorghum)</strong> | Tamil: <strong>இனிப்பு சோளம் (Sweet Sorghum)</strong> | Telugu: <strong>తీపి జొన్న (Sweet Sorghum)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/sorghum-sweet/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="tapioca-cassava" data-name="tapioca / cassava" data-sci="manihot esculenta" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Tapioca / Cassava</span>
+            <span class="scientific">(Manihot esculenta)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಮರಗೆಣಸು (Tapioca / Cassava)</strong> | Tamil: <strong>மரவள்ளிக்கிழங்கு (Tapioca)</strong> | Telugu: <strong>కర్రపెండలం (Karrapendalam)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/tapioca-cassava/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="tea-nilgiris" data-name="tea (nilgiris fragrant tea)" data-sci="camellia sinensis" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Tea (Nilgiris Fragrant Tea)</span>
+            <span class="scientific">(Camellia sinensis)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಚಹಾ / ಟೀ (Tea)</strong> | Tamil: <strong>தேயிலை (Theeyilai / Tea)</strong> | Telugu: <strong>తేయాకు (Teyaku / Tea)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">plantation</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/tea-nilgiris/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="tomato" data-name="tomato" data-sci="solanum lycopersicum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Tomato</span>
+            <span class="scientific">(Solanum lycopersicum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಟೊಮ್ಯಾಟೋ (Tomato)</strong> | Tamil: <strong>தக்காளி (Tomato)</strong> | Telugu: <strong>టమోటా (Tomato)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">vegetable</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/tomato/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="tuberose-sugandharaja" data-name="tuberose (sugandharaja / nilasampangi)" data-sci="polianthes tuberosa" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Tuberose (Sugandharaja / Nilasampangi)</span>
+            <span class="scientific">(Polianthes tuberosa)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಸುಗಂಧರಾಜ (Tuberose)</strong> | Tamil: <strong>நிலச்சம்பங்கி (Tuberose)</strong> | Telugu: <strong>నిషిగంధ / సంపంగి (Tuberose)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">flower</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/tuberose-sugandharaja/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="tulsi-holy-basil" data-name="tulsi (holy basil / krishna tulsi)" data-sci="ocimum tenuiflorum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Tulsi (Holy Basil / Krishna Tulsi)</span>
+            <span class="scientific">(Ocimum tenuiflorum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ತುಳಸಿ (Tulsi / Krishna Tulsi)</strong> | Tamil: <strong>துளசி (Tulsi)</strong> | Telugu: <strong>తులసి (Tulasi)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">medicinal</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/tulsi-holy-basil/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="turmeric" data-name="turmeric (haldi / arisina)" data-sci="curcuma longa" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Turmeric (Haldi / Arisina)</span>
+            <span class="scientific">(Curcuma longa)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಅರಿಶಿನ (Turmeric)</strong> | Tamil: <strong>மஞ்சள் (Manjal / Turmeric)</strong> | Telugu: <strong>పసుపు (Pasupu)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">spice</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/turmeric/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="vanilla" data-name="vanilla" data-sci="vanilla planifolia" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Vanilla</span>
+            <span class="scientific">(Vanilla planifolia)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ವೆನಿಲ್ಲಾ (Vanilla)</strong> | Tamil: <strong>வெணிலா (Vanilla)</strong> | Telugu: <strong>వెనిల్లా (Vanilla)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">spice</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/vanilla/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="vetiver-lavancha" data-name="vetiver (lavancha / khus)" data-sci="chrysopogon zizanioides" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Vetiver (Lavancha / Khus)</span>
+            <span class="scientific">(Chrysopogon zizanioides)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಲಾವಂಚ (Lavancha / Vetiver)</strong> | Tamil: <strong>வெட்டிவேர் (Vettiver)</strong> | Telugu: <strong>వట్టివేరు (Vattiveru)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">medicinal</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/vetiver-lavancha/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="watermelon" data-name="watermelon" data-sci="citrullus lanatus" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Watermelon</span>
+            <span class="scientific">(Citrullus lanatus)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಕಲ್ಲಂಗಡಿ (Watermelon)</strong> | Tamil: <strong>தர்பூசணி (Watermelon)</strong> | Telugu: <strong>పుచ్చకాయ (Pucchakaya)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">fruit</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/watermelon/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+      <div class="crop-row-card" data-id="wheat-south-india" data-name="wheat (durum / bread wheat)" data-sci="triticum aestivum" data-has-images="false">
+        <div class="crop-header">
+          <div>
+            <span class="crop-name">Wheat (Durum / Bread Wheat)</span>
+            <span class="scientific">(Triticum aestivum)</span>
+            <div class="local-names">
+              🇮🇳 Kannada: <strong>ಗೋಧಿ (Wheat)</strong> | Tamil: <strong>கோதுமை (Wheat)</strong> | Telugu: <strong>గోధుమ (Wheat)</strong>
+            </div>
+          </div>
+          <div>
+            <span class="category-badge">cereal millet</span>
+          </div>
+        </div>
+
+        
+          <div class="placeholder-alert">
+            <img src="/crops/placeholder.svg" style="width: 120px; height: 80px; object-fit: contain;">
+            <div>
+              <h4 style="font-weight: 700; margin-bottom: 4px;">No Verified Botanical Photos Downloaded Yet</h4>
+              <p style="font-size: 13.5px;">A clean botanical placeholder badge is assigned. You can upload manual photos to <code>/public/crops/wheat-south-india/</code>.</p>
+            </div>
+          </div>
+        
+      </div>
+    
+  </div>
+
+  <script>
+    let flaggedItems = JSON.parse(localStorage.getItem('krushi_flagged_images') || '{}');
+    updateFlaggedUI();
+
+    function toggleFlag(cropId, idx, path, btn) {
+      const key = cropId + '_' + idx;
+      const box = document.getElementById('box_' + cropId + '_' + idx);
+      if (flaggedItems[key]) {
+        delete flaggedItems[key];
+        btn.classList.remove('active');
+        btn.innerText = '⚠️ Mark as Wrong Image';
+        if (box) box.classList.remove('flagged');
+      } else {
+        flaggedItems[key] = { cropId, idx, path, flaggedAt: new Date().toISOString() };
+        btn.classList.add('active');
+        btn.innerText = '❌ Flagged (Click to Unmark)';
+        if (box) box.classList.add('flagged');
+      }
+      localStorage.setItem('krushi_flagged_images', JSON.stringify(flaggedItems));
+      updateFlaggedCount();
+    }
+
+    function updateFlaggedUI() {
+      for (const key in flaggedItems) {
+        const item = flaggedItems[key];
+        const box = document.getElementById('box_' + item.cropId + '_' + item.idx);
+        if (box) {
+          box.classList.add('flagged');
+          const btn = box.querySelector('.flag-btn');
+          if (btn) {
+            btn.classList.add('active');
+            btn.innerText = '❌ Flagged (Click to Unmark)';
+          }
+        }
+      }
+      updateFlaggedCount();
+    }
+
+    function updateFlaggedCount() {
+      const count = Object.keys(flaggedItems).length;
+      document.getElementById('flaggedCount').innerText = count;
+    }
+
+    function exportFlaggedJson() {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(flaggedItems, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", "flagged-crop-images.json");
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
+    }
+
+    let currentFilter = 'all';
+    function setFilter(filter, btn) {
+      currentFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      filterCrops();
+    }
+
+    function filterCrops() {
+      const q = document.getElementById('searchInput').value.toLowerCase().trim();
+      const rows = document.querySelectorAll('.crop-row-card');
+
+      rows.forEach(row => {
+        const name = row.getAttribute('data-name');
+        const sci = row.getAttribute('data-sci');
+        const hasImages = row.getAttribute('data-has-images') === 'true';
+        const cropId = row.getAttribute('data-id');
+
+        let matchesSearch = !q || name.includes(q) || sci.includes(q);
+        let matchesFilter = true;
+
+        if (currentFilter === 'has-images') matchesFilter = hasImages;
+        if (currentFilter === 'missing') matchesFilter = !hasImages;
+        if (currentFilter === 'flagged') {
+          matchesFilter = Object.values(flaggedItems).some(f => f.cropId === cropId);
+        }
+
+        if (matchesSearch && matchesFilter) {
+          row.style.display = 'block';
+        } else {
+          row.style.display = 'none';
+        }
+      });
+    }
+  </script>
+</body>
+</html>

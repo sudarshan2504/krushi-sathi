@@ -1,13 +1,26 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion, Variants } from 'framer-motion';
-import { Layers, Sparkles, Bot, Sprout, ArrowRight, CheckCircle2, Circle, ShieldAlert } from 'lucide-react';
+import {
+  Layers,
+  Sparkles,
+  Bot,
+  Sprout,
+  ArrowRight,
+  CheckCircle2,
+  Circle,
+  ShieldAlert,
+  Sun,
+  Trees,
+  Compass,
+} from 'lucide-react';
 import { WeatherWidget } from '../components/weather/WeatherWidget';
+import { LocationCard } from '../components/location/LocationCard';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { api } from '../services/api';
-import { CropPlan, Disease } from '../types';
+import { CropPlan, Disease, WeatherData } from '../types';
 import { LoadingState } from '../components/ui/LoadingState';
 import { AnimatedCounter } from '../components/ui/AnimatedCounter';
 
@@ -20,6 +33,7 @@ export const HomePage: React.FC = () => {
 
   const [activePlan, setActivePlan] = useState<CropPlan | null>(null);
   const [diseases, setDiseases] = useState<Disease[]>([]);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Track if this is the first render to avoid re-animating on re-renders
@@ -153,9 +167,18 @@ export const HomePage: React.FC = () => {
         </div>
       </motion.div>
 
-      {/* 1. Weather Widget */}
-      <motion.section variants={itemVariants}>
-        <WeatherWidget initialDistrict={user?.district || 'Mandya'} />
+      {/* 1. Weather Widget & Agro-Climatic Location */}
+      <motion.section variants={itemVariants} className="space-y-3">
+        <WeatherWidget
+          initialDistrict={user?.district || 'Mandya'}
+          onWeatherDataLoaded={setWeatherData}
+        />
+        {weatherData && (
+          <LocationCard
+            weatherData={weatherData}
+            onEditLocation={() => navigate('/soil')}
+          />
+        )}
       </motion.section>
 
       {/* 2. Four Prominent Quick Action Cards */}
@@ -186,6 +209,115 @@ export const HomePage: React.FC = () => {
               </motion.button>
             );
           })}
+        </div>
+      </motion.section>
+
+      {/* 2.5 A-Z Crop Library Banner Card */}
+      <motion.section variants={itemVariants}>
+        <div
+          onClick={() => navigate('/crop-library')}
+          className="bg-gradient-to-r from-forest via-forest-dark to-forest-DEFAULT text-white rounded-3xl p-5 sm:p-6 shadow-card hover:shadow-lg transition-all cursor-pointer relative overflow-hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 group"
+        >
+          <div className="space-y-1.5 max-w-xl z-10">
+            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-[11px] font-extrabold text-mint-light">
+              <Sparkles className="w-3.5 h-3.5 text-goldenrod" />
+              <span>112 South Indian Crops • A-Z Catalog</span>
+            </div>
+            <h2 className="text-lg sm:text-xl font-extrabold tracking-tight">
+              {language === 'kn'
+                ? 'ದಕ್ಷಿಣ ಭಾರತ ಬೆಳೆ ಗ್ರಂಥಾಲಯ (A-Z)'
+                : language === 'ta'
+                ? 'தென்னிந்திய பயிர் நூலகம் (A-Z)'
+                : language === 'te'
+                ? 'దక్షిణ భారత పంటల గ్రంథాలయం (A-Z)'
+                : 'South India Crop Library & Botanical Catalog'}
+            </h2>
+            <p className="text-xs text-mint-light/90 leading-relaxed">
+              Explore 112 crops across cereals, millets, pulses, vegetables, seasonal fruits, spices, plantation & medicinal crops with offline local photography, Day 1 to harvest schedules, and ROI metrics.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-start sm:self-center shrink-0 z-10">
+            <span className="px-4 py-2.5 rounded-2xl bg-white text-forest font-extrabold text-xs shadow-sm group-hover:bg-mint group-hover:text-forest-dark transition flex items-center gap-1.5">
+              <span>Open Library</span>
+              <ArrowRight className="w-4 h-4" />
+            </span>
+          </div>
+        </div>
+      </motion.section>
+
+      {/* 3. Featured Crop Portfolios: Seasonal Fruits & Long-Term Plantation */}
+      <motion.section variants={itemVariants}>
+        <div className="flex items-center justify-between mb-3 px-1">
+          <h2 className="text-base font-extrabold text-dark-text tracking-tight">
+            {language === 'kn'
+              ? 'ವಿಶೇಷ ಬೆಳೆ ವಿಭಾಗಗಳು'
+              : language === 'ta'
+              ? 'சிறப்பு பயிர் வகைகள்'
+              : language === 'te'
+              ? 'ప్రత్యేక పంట వర్గాలు'
+              : 'Special Crop Portfolios'}
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+          {/* Seasonal Fruits Card */}
+          <motion.div
+            whileHover={shouldReduceMotion ? {} : { y: -3 }}
+            onClick={() => navigate('/crops', { state: { initialTab: 'seasonal' } })}
+            className="p-4 rounded-3xl bg-gradient-to-br from-amber-500/10 via-amber-50/50 to-orange-50 border border-amber-300/60 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500 text-white flex items-center justify-center shadow-sm flex-shrink-0">
+                <Sun className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold text-sm text-earth-900">
+                    {language === 'kn' ? 'ಋತುಮಾನದ ಹಣ್ಣುಗಳು' : 'Seasonal Fruits & Orchards'}
+                  </h3>
+                  <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-amber-200 text-amber-900">
+                    High Demand
+                  </span>
+                </div>
+                <p className="text-xs text-earth-600 mt-0.5">
+                  {language === 'kn'
+                    ? 'ಮಾವಿನಕಾಯಿ, ಸೀಬೆ, ದಾಳಿಂಬೆ, ಬಾಳೆ, ಕಲ್ಲಂಗಡಿ ವೇಳಾಪಟ್ಟಿ'
+                    : 'Mango, Guava, Pomegranate, Banana fruiting schedules'}
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="w-5 h-5 text-amber-700 flex-shrink-0" />
+          </motion.div>
+
+          {/* Long-Term Plantation Card */}
+          <motion.div
+            whileHover={shouldReduceMotion ? {} : { y: -3 }}
+            onClick={() => navigate('/crops', { state: { initialTab: 'long_term' } })}
+            className="p-4 rounded-3xl bg-gradient-to-br from-emerald-900/90 to-forest-900 text-white border border-forest-700 shadow-xs hover:shadow-md transition-all cursor-pointer flex items-center justify-between gap-3"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-2xl bg-mint-400 text-forest-950 flex items-center justify-center shadow-sm flex-shrink-0">
+                <Trees className="w-6 h-6" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-extrabold text-sm text-white">
+                    {language === 'kn' ? 'ದೀರ್ಘಾವಧಿ & ತೋಟಗಾರಿಕೆ' : 'Plantation & Long-Term'}
+                  </h3>
+                  <span className="text-[9px] uppercase font-bold px-1.5 py-0.5 rounded-full bg-mint-500/20 text-mint-300 border border-mint-400/30">
+                    Wealth
+                  </span>
+                </div>
+                <p className="text-xs text-forest-200 mt-0.5">
+                  {language === 'kn'
+                    ? 'ಅಡಿಕೆ, ತೆಂಗು, ಕಾಫಿ, ರಬ್ಬರ್, ಶ್ರೀಗಂಧ ಮತ್ತು ತೇಗ'
+                    : 'Arecanut, Coconut, Coffee, Sandalwood, Teak & Intercrops'}
+                </p>
+              </div>
+            </div>
+            <ArrowRight className="w-5 h-5 text-mint-300 flex-shrink-0" />
+          </motion.div>
         </div>
       </motion.section>
 

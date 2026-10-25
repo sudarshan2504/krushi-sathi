@@ -9,6 +9,10 @@ export interface PromptParams {
   language?: string;
   farmerName?: string;
   location?: string;
+  taluk?: string;
+  agroZone?: string;
+  currentSeason?: string;
+  preferredCategory?: string;
   landSize?: string | number;
   soilInfo?: string;
   activeCrops?: string[];
@@ -21,6 +25,10 @@ export function buildSystemPrompt({
   language = 'en',
   farmerName = 'Farmer',
   location = 'South India',
+  taluk,
+  agroZone,
+  currentSeason,
+  preferredCategory,
   landSize = '2',
   soilInfo,
   activeCrops,
@@ -31,13 +39,16 @@ export function buildSystemPrompt({
   const languageCode = ['en', 'kn', 'ta', 'te'].includes(language) ? language : 'en';
   const languageName = LANGUAGE_NAME_MAP[languageCode] || LANGUAGE_NAME_MAP.en;
   const name = farmerName || 'Farmer';
-  const loc = location || 'South India';
+  const loc = taluk ? `${taluk}, ${location}` : location || 'South India';
   const size = landSize !== undefined && landSize !== null && landSize !== '' ? landSize : '2';
 
   // Build structured contextual sections
   const contextParts: string[] = [];
   contextParts.push(`- Farmer Name: ${name}`);
   contextParts.push(`- Known Location: ${loc}`);
+  if (agroZone) contextParts.push(`- Agro-Climatic Zone: ${agroZone}`);
+  if (currentSeason) contextParts.push(`- Current Agricultural Season: ${currentSeason}`);
+  if (preferredCategory) contextParts.push(`- Preferred Crop Category: ${preferredCategory}`);
   contextParts.push(`- Farm Size: ${size} acres`);
   if (soilInfo) contextParts.push(`- Verified Soil Assessment: ${soilInfo}`);
   if (activeCrops && activeCrops.length > 0) contextParts.push(`- Active Crops in Field: ${activeCrops.join(', ')}`);

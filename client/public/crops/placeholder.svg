@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 400" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f0fdf4" />
+      <stop offset="100%" stop-color="#dcfce7" />
+    </linearGradient>
+    <linearGradient id="leafGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#16a34a" />
+      <stop offset="100%" stop-color="#15803d" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="600" height="400" fill="url(#bgGrad)" rx="16" />
+  
+  <!-- Subtle Grid Pattern -->
+  <g opacity="0.15" stroke="#16a34a" stroke-width="1">
+    <line x1="0" y1="100" x2="600" y2="100" />
+    <line x1="0" y1="200" x2="600" y2="200" />
+    <line x1="0" y1="300" x2="600" y2="300" />
+    <line x1="150" y1="0" x2="150" y2="400" />
+    <line x1="300" y1="0" x2="300" y2="400" />
+    <line x1="450" y1="0" x2="450" y2="400" />
+  </g>
+
+  <!-- Botanical Sprout Icon -->
+  <g transform="translate(250, 100)">
+    <circle cx="50" cy="50" r="48" fill="#bbf7d0" fill-opacity="0.6" stroke="#22c55e" stroke-width="2" stroke-dasharray="4 4" />
+    <!-- Stem -->
+    <path d="M50 82 C50 65, 52 48, 50 32" stroke="url(#leafGrad)" stroke-width="5" stroke-linecap="round" fill="none" />
+    <!-- Left Leaf -->
+    <path d="M50 56 C32 54, 20 40, 24 28 C36 28, 46 42, 50 56 Z" fill="url(#leafGrad)" />
+    <!-- Right Leaf -->
+    <path d="M50 44 C68 40, 80 26, 76 14 C64 14, 54 28, 50 44 Z" fill="#22c55e" />
+  </g>
+
+  <!-- Banner Container -->
+  <rect x="120" y="235" width="360" height="42" rx="21" fill="#ffffff" stroke="#86efac" stroke-width="1.5" filter="drop-shadow(0 4px 6px rgba(0,0,0,0.04))" />
+  
+  <!-- Status Badge -->
+  <circle cx="145" cy="256" r="6" fill="#eab308" />
+  <text x="165" y="262" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#166534">
+    Official Botanical Image Pending
+  </text>
+  
+  <text x="300" y="315" font-family="system-ui, -apple-system, sans-serif" font-size="13" font-weight="500" fill="#4b5563" text-anchor="middle">
+    Verified image will be downloaded by the catalog pipeline
+  </text>
+</svg>

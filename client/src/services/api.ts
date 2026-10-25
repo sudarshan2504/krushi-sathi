@@ -53,6 +53,34 @@ export const api = {
       return data;
     },
 
+    async guestLogin(preferredPhone?: string, preferredName?: string) {
+      const res = await fetch(`${API_BASE}/auth/guest-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ preferredPhone, preferredName }),
+      });
+      const data = await handleResponse<{ token: string; user: User; isNewUser: boolean }>(res);
+      if (data.token) {
+        localStorage.setItem('krishi_sathi_token', data.token);
+      }
+      return data;
+    },
+
+    async directLogin(phone: string, name?: string) {
+      const res = await fetch(`${API_BASE}/auth/direct-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ phone, name }),
+      });
+      const data = await handleResponse<{ token: string; user: User; isNewUser: boolean }>(res);
+      if (data.token) {
+        localStorage.setItem('krishi_sathi_token', data.token);
+      }
+      return data;
+    },
+
     async register(formData: {
       name: string;
       phone: string;
@@ -60,8 +88,13 @@ export const api = {
       state: string;
       district: string;
       village?: string;
+      taluk?: string;
       farmSize?: number;
       farmUnit?: string;
+      latitude?: number | null;
+      longitude?: number | null;
+      locationAccuracy?: number | null;
+      locationSource?: string;
     }) {
       const res = await fetch(`${API_BASE}/auth/register`, {
         method: 'POST',
@@ -142,6 +175,27 @@ export const api = {
       const res = await fetch(`${API_BASE}/weather/districts`);
       return handleResponse(res);
     },
+
+    async getLocations(): Promise<any> {
+      const res = await fetch(`${API_BASE}/weather/locations`);
+      return handleResponse(res);
+    },
+
+    async getLocationConditions(params: {
+      state?: string;
+      district?: string;
+      taluk?: string;
+      lat?: number;
+      lon?: number;
+    }): Promise<any> {
+      const q = new URLSearchParams(
+        Object.entries(params)
+          .filter(([_, v]) => v !== undefined && v !== null && v !== '')
+          .map(([k, v]) => [k, String(v)])
+      ).toString();
+      const res = await fetch(`${API_BASE}/weather/location-conditions?${q}`);
+      return handleResponse(res);
+    },
   },
 
   soil: {
@@ -173,14 +227,87 @@ export const api = {
   },
 
   crops: {
-    async getAll(params?: { category?: string; search?: string }): Promise<any[]> {
-      const q = new URLSearchParams(params as any).toString();
+    async getAll(params?: {
+      category?: string;
+      search?: string;
+      durationType?: string;
+      season?: string;
+      isSeasonalFruit?: boolean;
+      isLongTerm?: boolean;
+    }): Promise<any[]> {
+      const cleanedParams: Record<string, string> = {};
+      if (params) {
+        Object.entries(params).forEach(([k, v]) => {
+          if (v !== undefined && v !== null && v !== '') {
+            cleanedParams[k] = String(v);
+          }
+        });
+      }
+      const q = new URLSearchParams(cleanedParams).toString();
       const res = await fetch(`${API_BASE}/crops?${q}`);
       return handleResponse(res);
     },
 
     async getById(id: string): Promise<any> {
       const res = await fetch(`${API_BASE}/crops/${id}`);
+      return handleResponse(res);
+    },
+
+    async getCategories(): Promise<{ id: string; name: string; nameKannada: string; nameTamil: string; nameTelugu: string; icon: string; count: number }[]> {
+      const res = await fetch(`${API_BASE}/crops/categories`);
+      return handleResponse(res);
+    },
+
+    async getSeasonalFruits(): Promise<any[]> {
+      const res = await fetch(`${API_BASE}/crops/seasonal-fruits`);
+      return handleResponse(res);
+    },
+
+    async getLongTermCrops(): Promise<any[]> {
+      const res = await fetch(`${API_BASE}/crops/long-term`);
+      return handleResponse(res);
+    },
+
+    async getCatalog(params?: {
+      letter?: string;
+      category?: string;
+      season?: string;
+      duration?: string;
+      soilType?: string;
+      waterNeed?: string;
+      search?: string;
+      page?: number;
+      limit?: number;
+      farmerSoilType?: string;
+      farmerSeason?: string;
+      farmerTaluk?: string;
+      recommendedOnly?: boolean;
+    }): Promise<{ data: any[]; pagination: any }> {
+      const cleanedParams: Record<string, string> = {};
+      if (params) {
+        Object.entries(params).forEach(([k, v]) => {
+          if (v !== undefined && v !== null && v !== '') {
+            cleanedParams[k] = String(v);
+          }
+        });
+      }
+      const q = new URLSearchParams(cleanedParams).toString();
+      const res = await fetch(`${API_BASE}/crops/catalog?${q}`);
+      return handleResponse(res);
+    },
+
+    async getCatalogById(id: string): Promise<any> {
+      const res = await fetch(`${API_BASE}/crops/catalog/${id}`);
+      return handleResponse(res);
+    },
+
+    async getImageCredits(): Promise<{ totalImages: number; credits: any[] }> {
+      const res = await fetch(`${API_BASE}/crops/credits`);
+      return handleResponse(res);
+    },
+
+    async getConfidenceReport(): Promise<any> {
+      const res = await fetch(`${API_BASE}/crops/confidence-report`);
       return handleResponse(res);
     },
 
@@ -367,6 +494,46 @@ export const api = {
         body: JSON.stringify(data),
       });
       return handleResponse<User>(res);
+    },
+  },
+
+  location: {
+    async reverseGeocode(latitude: number, longitude: number, accuracy?: number) {
+      const res = await fetch(`${API_BASE}/location/reverse-geocode`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ latitude, longitude, accuracy }),
+      });
+      return handleResponse<{
+        village?: string;
+        town?: string;
+        taluk?: string;
+        district?: string;
+        state?: string;
+        country?: string;
+        formattedAddress?: string;
+        latitude: number;
+        longitude: number;
+        accuracy?: number;
+        source: 'gps' | 'ip' | 'manual';
+        isApproximate?: boolean;
+      }>(res);
+    },
+
+    async getIpLocation() {
+      const res = await fetch(`${API_BASE}/location/ip-location`);
+      return handleResponse<{
+        village?: string;
+        town?: string;
+        taluk?: string;
+        district?: string;
+        state?: string;
+        country?: string;
+        latitude: number;
+        longitude: number;
+        source: 'ip';
+        isApproximate: boolean;
+      }>(res);
     },
   },
 };
