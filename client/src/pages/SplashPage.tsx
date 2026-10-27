@@ -18,10 +18,13 @@ export const SplashPage: React.FC = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [speechNotice, setSpeechNotice] = useState<string | null>(null);
 
-  // Returning authenticated users are immediately redirected to the dashboard
+  // Returning authenticated users are redirected after brief splash display
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/home', { replace: true });
+      const timer = setTimeout(() => {
+        navigate('/home', { replace: true });
+      }, 1500);
+      return () => clearTimeout(timer);
     }
   }, [isAuthenticated, navigate]);
 
@@ -85,7 +88,7 @@ export const SplashPage: React.FC = () => {
   };
 
   return (
-    <div className="relative min-h-screen bg-gradient-to-b from-[#FFFDF7] via-[#FFF9EC] to-[#EBF5ED] flex flex-col justify-between p-4 sm:p-6 overflow-x-hidden selection:bg-mint selection:text-forest">
+    <main className="fixed inset-0 z-50 w-full h-full min-h-dvh bg-gradient-to-b from-[#FFFDF7] via-[#FFF9EC] to-[#EBF5ED] flex flex-col justify-between pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] px-4 sm:px-6 overflow-y-auto overflow-x-hidden selection:bg-mint selection:text-forest">
       {/* Ambient background glows for farm sunrise warmth */}
       <div className="absolute -top-16 -right-16 w-80 h-80 rounded-full bg-harvest/25 blur-3xl opacity-70 pointer-events-none" />
       <div className="absolute top-1/3 -left-20 w-80 h-80 rounded-full bg-mint/50 blur-3xl opacity-80 pointer-events-none" />
@@ -160,13 +163,18 @@ export const SplashPage: React.FC = () => {
             className="relative z-10 w-full flex justify-center"
           >
             {!imageError ? (
-              <img
-                src={krushiLogo}
-                alt="Krushi Sathi — Your Farming Companion"
-                className="w-full max-w-[310px] xs:max-w-[350px] sm:max-w-[410px] md:max-w-[450px] h-auto object-contain mx-auto filter drop-shadow-[0_12px_24px_rgba(23,107,58,0.12)] transition-transform duration-300 hover:scale-[1.01]"
-                loading="eager"
-                onError={() => setImageError(true)}
-              />
+              <picture className="w-full flex justify-center">
+                <source srcSet="/krushi-sathi-logo.webp" type="image/webp" />
+                <img
+                  src={krushiLogo}
+                  alt="Krushi Sathi — Your Farming Companion"
+                  width="360"
+                  height="160"
+                  className="w-auto h-auto max-w-[220px] xs:max-w-[260px] sm:max-w-[320px] max-h-[110px] sm:max-h-[140px] object-contain mx-auto filter drop-shadow-[0_12px_24px_rgba(23,107,58,0.12)] transition-transform duration-300 hover:scale-[1.01]"
+                  loading="eager"
+                  onError={() => setImageError(true)}
+                />
+              </picture>
             ) : (
               /* High quality graceful fallback */
               <div className="p-8 rounded-3xl bg-white border border-forest/15 shadow-card text-center max-w-sm mx-auto">
@@ -268,6 +276,6 @@ export const SplashPage: React.FC = () => {
           </motion.div>
         )}
       </motion.div>
-    </div>
+    </main>
   );
 };

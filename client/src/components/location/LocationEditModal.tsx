@@ -42,8 +42,13 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
     INDIAN_STATES.find((s) => s.name === state) || INDIAN_STATES[0];
 
   const handleDetectGPS = () => {
+    if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      setError('GPS requires a secure HTTPS connection. Please select your state and district manually.');
+      return;
+    }
+
     if (!navigator.geolocation) {
-      setError(t('locationUnavailable'));
+      setError(t('locationUnavailable') || 'Geolocation is not supported on this device. Please select manually.');
       return;
     }
 
@@ -76,16 +81,22 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
             'success'
           );
         } catch {
-          setError(t('locationUnavailable'));
+          setError(t('locationUnavailable') || 'Unable to resolve address from GPS. Please select your district manually.');
         } finally {
           setIsDetecting(false);
         }
       },
-      () => {
+      (geoErr) => {
         setIsDetecting(false);
-        setError(t('locationPermissionDenied'));
+        if (geoErr.code === 1) {
+          setError(t('locationPermissionDenied') || 'Location permission denied. Please allow location access in your browser settings or select manually.');
+        } else if (geoErr.code === 2) {
+          setError('GPS location unavailable. Please ensure device location is switched on.');
+        } else {
+          setError('Location request timed out. Please try again or select manually.');
+        }
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
     );
   };
 

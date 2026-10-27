@@ -21,6 +21,7 @@ import {
   Trees,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { StickyBottomBar } from '../components/ui/StickyBottomBar';
 import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -784,6 +785,7 @@ export const SoilAssessmentPage: React.FC = () => {
                     <span className="text-[10px] text-earth-500 block mb-0.5">Primary Measurement</span>
                     <input
                       type="number"
+                      inputMode="decimal"
                       step="0.1"
                       min="0.1"
                       value={formData.farmSize}
@@ -792,7 +794,7 @@ export const SoilAssessmentPage: React.FC = () => {
                         setStepError(null);
                       }}
                       placeholder="e.g. 2"
-                      className="w-full px-3 py-2 rounded-xl border border-earth-300 text-sm font-bold bg-white outline-none focus:border-forest-600"
+                      className="w-full px-3 py-2.5 rounded-xl border border-earth-300 text-base font-bold bg-white outline-none focus:border-forest-600 min-h-[44px]"
                     />
                   </div>
 
@@ -801,7 +803,7 @@ export const SoilAssessmentPage: React.FC = () => {
                     <select
                       value={formData.farmUnit}
                       onChange={(e) => setFormData({ ...formData, farmUnit: e.target.value })}
-                      className="w-full px-3 py-2 rounded-xl border border-earth-300 text-xs font-bold bg-white outline-none focus:border-forest-600"
+                      className="w-full px-3 py-2.5 rounded-xl border border-earth-300 text-sm font-bold bg-white outline-none focus:border-forest-600 min-h-[44px]"
                     >
                       {LAND_UNIT_OPTIONS.map((opt) => (
                         <option key={opt.id} value={opt.id}>
@@ -816,12 +818,13 @@ export const SoilAssessmentPage: React.FC = () => {
                       <span className="text-[10px] text-earth-500 block mb-0.5">+ Guntas</span>
                       <input
                         type="number"
+                        inputMode="numeric"
                         min="0"
                         max="39"
                         value={formData.guntas}
                         onChange={(e) => setFormData({ ...formData, guntas: e.target.value })}
                         placeholder="0 - 39"
-                        className="w-full px-3 py-2 rounded-xl border border-earth-300 text-sm font-bold bg-white outline-none focus:border-forest-600"
+                        className="w-full px-3 py-2.5 rounded-xl border border-earth-300 text-base font-bold bg-white outline-none focus:border-forest-600 min-h-[44px]"
                       />
                     </div>
                   )}
@@ -1260,13 +1263,13 @@ export const SoilAssessmentPage: React.FC = () => {
           )}
         </AnimatePresence>
 
-        {/* Action Button Footer */}
-        <div className="pt-6 border-t border-earth-100 flex items-center gap-3">
+        {/* Sticky Action Button Footer */}
+        <StickyBottomBar>
           {currentStep > 1 && (
             <button
               type="button"
               onClick={handleBack}
-              className="min-h-[46px] py-2.5 px-5 rounded-2xl border border-earth-200 text-earth-800 text-sm font-bold hover:bg-earth-50 transition"
+              className="min-h-[46px] min-w-[76px] py-2.5 px-4 rounded-2xl border border-earth-300 text-earth-800 text-sm font-bold hover:bg-earth-50 transition active:scale-95"
             >
               {t('navBack') || 'Back'}
             </button>
@@ -1277,12 +1280,12 @@ export const SoilAssessmentPage: React.FC = () => {
             size="lg"
             fullWidth
             isLoading={isLoading}
-            className="shadow-lg shadow-forest-600/20 flex items-center justify-center gap-2"
+            className="shadow-md shadow-forest-600/20 flex items-center justify-center gap-2 min-h-[46px]"
           >
             <span>{currentStep === 7 ? 'Generate Crop Recommendations' : 'Next Step'}</span>
             <ArrowRight className="w-5 h-5" />
           </Button>
-        </div>
+        </StickyBottomBar>
       </div>
 
       {/* Squeeze Test Modal */}

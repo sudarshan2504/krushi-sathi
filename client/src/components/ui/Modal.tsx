@@ -17,17 +17,31 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'md',
 }) => {
-  // Prevent body scrolling when modal is open
+  // Prevent body scrolling and handle Android back button when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
+
+      // Push history state so Android/browser back button closes the modal
+      window.history.pushState({ modalOpen: true }, '');
+
+      const handlePopState = () => {
+        onClose();
+      };
+
+      window.addEventListener('popstate', handlePopState);
+
+      return () => {
+        document.body.style.overflow = 'unset';
+        window.removeEventListener('popstate', handlePopState);
+        if (window.history.state?.modalOpen) {
+          window.history.back();
+        }
+      };
     } else {
       document.body.style.overflow = 'unset';
     }
-    return () => {
-      document.body.style.overflow = 'unset';
-    };
-  }, [isOpen]);
+  }, [isOpen, onClose]);
 
   const widths = {
     sm: 'max-w-sm',

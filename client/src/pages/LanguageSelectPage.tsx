@@ -16,28 +16,28 @@ export const LanguageSelectPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cream via-white to-mint-light flex flex-col justify-between p-6 max-w-md mx-auto">
+    <div className="min-h-dvh bg-gradient-to-b from-cream via-white to-mint-light flex flex-col justify-between pt-[max(1.25rem,env(safe-area-inset-top,0px))] pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] px-4 sm:px-6 max-w-md mx-auto">
       {/* Header */}
       <motion.div
         initial={shouldReduceMotion ? false : { opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
-        className="pt-6 text-center"
+        className="pt-4 text-center"
       >
-        <span className="w-12 h-1.5 rounded-full bg-forest/20 inline-block mb-6" />
+        <span className="w-12 h-1.5 rounded-full bg-forest/20 inline-block mb-4 sm:mb-6" />
         <h1 className="text-2xl sm:text-3xl font-extrabold text-dark-text leading-tight">
           {t('chooseLanguage')}
         </h1>
-        <p className="text-sm text-dark-muted font-medium mt-2 max-w-xs mx-auto">
+        <p className="text-sm text-dark-muted font-medium mt-1.5 sm:mt-2 max-w-xs mx-auto">
           {t('selectLanguageComfortable')}
         </p>
       </motion.div>
 
-      {/* 2x2 Language Cards Grid (Matching Screen 2) */}
+      {/* 2x2 Language Cards Grid */}
       <motion.div
         initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ delay: shouldReduceMotion ? 0 : 0.05, duration: 0.3 }}
-        className="grid grid-cols-2 gap-4 my-auto py-6"
+        className="grid grid-cols-2 gap-3 sm:gap-4 my-auto py-4 sm:py-6"
       >
         {languages.map((lang, index) => {
           const isSelected = language === lang.code;
@@ -50,7 +50,7 @@ export const LanguageSelectPage: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: shouldReduceMotion ? 0 : 0.04 * index }}
               onClick={() => setLanguage(lang.code as LanguageCode)}
-              className={`relative flex flex-col items-center justify-center p-6 min-h-[140px] rounded-3xl border-2 transition-all duration-200 select-none focus-visible:ring-2 focus-visible:ring-forest ${
+              className={`relative flex flex-col items-center justify-center p-3.5 sm:p-6 min-h-[110px] sm:min-h-[135px] rounded-2xl sm:rounded-3xl border-2 transition-all duration-200 select-none focus-visible:ring-2 focus-visible:ring-forest ${
                 isSelected
                   ? 'border-forest bg-mint/50 shadow-xl shadow-forest/15 ring-2 ring-forest/20'
                   : 'border-gray-100 bg-white hover:border-forest/30 shadow-card'

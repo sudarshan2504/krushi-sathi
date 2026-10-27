@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Krushi Sathi</string>
+    <string name="title_activity_main">Krushi Sathi</string>
+    <string name="package_name">com.krushisathi.app</string>
+    <string name="custom_url_scheme">com.krushisathi.app</string>
+</resources>

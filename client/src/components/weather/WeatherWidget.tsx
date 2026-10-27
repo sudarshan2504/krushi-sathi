@@ -171,7 +171,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
         </div>
 
         {/* 7-Day Forecast Pills */}
-        <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1 mb-3 scrollbar-none">
+        <div className="flex items-center justify-between gap-1 overflow-x-auto pb-1 mb-3 scrollbar-none touch-pan-x">
           {weather?.forecast7Days.map((day, idx) => (
             <div
               key={idx}

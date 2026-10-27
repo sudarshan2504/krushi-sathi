@@ -3,11 +3,13 @@ import { NavLink, useLocation } from 'react-router-dom';
 import { Home, Sprout, Bot, User } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useTranslation } from '../../context/LanguageContext';
+import { useVirtualKeyboard } from '../../hooks/useVirtualKeyboard';
 
 export const BottomNav: React.FC = () => {
   const { t } = useTranslation();
   const location = useLocation();
   const shouldReduceMotion = useReducedMotion();
+  const { isKeyboardOpen } = useVirtualKeyboard();
 
   const navItems = [
     { to: '/home', label: t('navHome'), icon: Home },
@@ -25,9 +27,13 @@ export const BottomNav: React.FC = () => {
   return (
     <nav
       aria-label="Bottom Navigation"
-      className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8EDE8] shadow-nav pb-safe md:hidden"
+      className={`fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-[#E8EDE8] shadow-nav transition-all duration-200 md:hidden ${
+        isKeyboardOpen
+          ? 'translate-y-full opacity-0 pointer-events-none'
+          : 'translate-y-0 opacity-100'
+      } pb-[max(0.5rem,env(safe-area-inset-bottom,0px))] pl-[max(0.5rem,env(safe-area-inset-left,0px))] pr-[max(0.5rem,env(safe-area-inset-right,0px))]`}
     >
-      <div className="max-w-md mx-auto grid grid-cols-4 px-2 py-1.5 items-center">
+      <div className="max-w-md mx-auto grid grid-cols-4 px-1 py-1 items-center">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = location.pathname.startsWith(item.to);
@@ -38,7 +44,7 @@ export const BottomNav: React.FC = () => {
               to={item.to}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
-              className={`relative flex flex-col items-center justify-center min-h-[48px] py-1.5 px-1 rounded-2xl transition-all duration-200 select-none ${
+              className={`relative flex flex-col items-center justify-center min-h-[48px] min-w-[48px] py-1 px-1 rounded-2xl transition-all duration-200 select-none active:scale-95 focus-visible:ring-2 focus-visible:ring-forest ${
                 isActive ? 'text-forest font-black' : 'text-dark-muted hover:text-dark-text font-bold'
               }`}
             >
@@ -61,7 +67,7 @@ export const BottomNav: React.FC = () => {
               />
 
               <span
-                className={`text-[11px] leading-tight mt-1 truncate max-w-[80px] text-center ${
+                className={`text-[11px] sm:text-xs leading-tight mt-0.5 truncate max-w-[85px] text-center ${
                   isActive ? 'text-forest font-black' : 'text-dark-muted'
                 }`}
               >
@@ -76,3 +82,4 @@ export const BottomNav: React.FC = () => {
 };
 
 export default BottomNav;
+

@@ -19,5 +19,6 @@ export const config = {
   geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
   groqApiKey: process.env.GROQ_API_KEY || '',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
+  allowedOrigins: process.env.ALLOWED_ORIGINS || '',
 };
 

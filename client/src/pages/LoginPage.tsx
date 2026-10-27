@@ -9,7 +9,7 @@ export const LoginPage: React.FC = () => {
   const { t } = useTranslation();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cream via-white to-mint-light flex flex-col justify-between p-6 max-w-md mx-auto">
+    <div className="min-h-dvh bg-gradient-to-b from-cream via-white to-mint-light flex flex-col justify-between pt-[max(1.25rem,env(safe-area-inset-top,0px))] pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] px-4 sm:px-6 max-w-md mx-auto">
       {/* Brand & Header */}
       <motion.div
         initial={{ opacity: 0, y: -15 }}
@@ -17,11 +17,16 @@ export const LoginPage: React.FC = () => {
         className="pt-4 text-center"
       >
         <Link to="/" className="inline-block group focus:outline-none">
-          <img
-            src={krushiLogo}
-            alt="Krushi Sathi — Your Farming Companion"
-            className="h-20 sm:h-24 w-auto object-contain mx-auto drop-shadow-sm transition-transform group-hover:scale-105"
-          />
+          <picture>
+            <source srcSet="/krushi-sathi-logo.webp" type="image/webp" />
+            <img
+              src={krushiLogo}
+              alt="Krushi Sathi — Your Farming Companion"
+              width="180"
+              height="90"
+              className="h-20 sm:h-24 w-auto object-contain mx-auto drop-shadow-sm transition-transform group-hover:scale-105"
+            />
+          </picture>
         </Link>
 
         <h2 className="text-xl sm:text-2xl font-black text-dark-text mt-3">

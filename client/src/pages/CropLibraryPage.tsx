@@ -245,7 +245,7 @@ export const CropLibraryPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-earth-light/40 py-6 px-3 sm:px-6 max-w-7xl mx-auto space-y-6">
+    <div className="min-h-dvh bg-earth-light/40 py-4 sm:py-6 px-2.5 sm:px-6 max-w-7xl mx-auto space-y-5 sm:space-y-6">
       {/* Hero Header */}
       <div className="bg-gradient-to-r from-forest via-forest-dark to-forest-DEFAULT text-white rounded-3xl p-6 sm:p-8 shadow-card relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
@@ -308,7 +308,7 @@ export const CropLibraryPage: React.FC = () => {
               <button
                 key={letter}
                 onClick={() => handleFilterChange(setSelectedLetter, letter)}
-                className={`min-w-[34px] h-[34px] px-2.5 rounded-xl text-xs font-extrabold transition shrink-0 flex items-center justify-center ${
+                className={`min-w-[44px] min-h-[44px] px-2.5 rounded-xl text-xs font-extrabold transition shrink-0 flex items-center justify-center touch-target active:scale-95 ${
                   isActive
                     ? 'bg-forest text-white shadow-sm ring-2 ring-forest/30 scale-105'
                     : 'text-gray-600 hover:bg-gray-100 hover:text-dark-text'

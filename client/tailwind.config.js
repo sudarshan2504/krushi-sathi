@@ -5,7 +5,23 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
+    screens: {
+      'xs': '360px',
+      'sm': '640px',
+      'md': '768px',
+      'lg': '1024px',
+      'xl': '1280px',
+    },
     extend: {
+      height: {
+        'dvh': '100dvh',
+      },
+      minHeight: {
+        'dvh': '100dvh',
+      },
+      maxHeight: {
+        'dvh': '100dvh',
+      },
       colors: {
         forest: {
           DEFAULT: '#176B3A',

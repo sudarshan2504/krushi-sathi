@@ -30,6 +30,7 @@ import { CropOption } from './CropSelector';
 import { ProblemItem } from '../../types';
 import { PhotoCaptureSection, CapturedPhoto } from './PhotoCaptureSection';
 import { PhotoAnalysisResultView } from './PhotoAnalysisResultView';
+import { StickyBottomBar } from '../ui/StickyBottomBar';
 
 interface SymptomCheckerWizardProps {
   crops: CropOption[];
@@ -562,38 +563,38 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
             />
           </div>
 
-          {/* Action CTAs */}
-          <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+          {/* Action CTAs inside StickyBottomBar */}
+          <StickyBottomBar>
             <button
               type="button"
               onClick={() => {
                 setActiveCheckMode('guided_mode');
                 setCurrentStep(1);
               }}
-              className="text-xs font-bold text-gray-600 hover:text-forest transition flex items-center gap-1"
+              className="text-xs sm:text-sm font-bold text-gray-700 hover:text-forest transition flex items-center gap-1 min-h-[44px] py-1 px-2 touch-target"
             >
-              <span>{language === 'kn' ? 'ಅಥವಾ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ' : 'Or use step-by-step questions'}</span>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <span>{language === 'kn' ? 'ಅಥವಾ ಪ್ರಶ್ನೆಗಳಿಗೆ ಉತ್ತರಿಸಿ' : 'Or step questions'}</span>
+              <ChevronRight className="w-4 h-4" />
             </button>
 
             <button
               type="button"
               onClick={handleRunDiagnosis}
               disabled={capturedPhotos.length === 0}
-              className="px-6 py-2.5 rounded-2xl bg-forest text-white text-xs sm:text-sm font-bold hover:bg-forest-dark transition flex items-center gap-2 min-h-[44px] cursor-pointer shadow-md disabled:opacity-50"
+              className="px-5 sm:px-6 py-2.5 rounded-2xl bg-forest text-white text-xs sm:text-sm font-bold hover:bg-forest-dark transition flex items-center justify-center gap-2 min-h-[44px] touch-target cursor-pointer shadow-md disabled:opacity-40 active:scale-95"
             >
               <Sparkles className="w-4 h-4 text-emerald-300" />
               <span>
                 {language === 'kn'
-                  ? 'ಫೋಟೋ ರೋಗನಿರ್ಣಯ ಪ್ರಾರಂಭಿಸಿ'
+                  ? 'ಫೋಟೋ ರೋಗನಿರ್ಣಯ'
                   : language === 'ta'
-                  ? 'பரிசோதனையைத் தொடங்கு'
+                  ? 'பரிசோதனை செய்'
                   : language === 'te'
-                  ? 'నిర్ధారణను ప్రారంభించండి'
-                  : 'Analyze Plant Photo'}
+                  ? 'నిర్ధారణ చేయండి'
+                  : 'Analyze Photo'}
               </span>
             </button>
-          </div>
+          </StickyBottomBar>
         </motion.div>
       )}
 

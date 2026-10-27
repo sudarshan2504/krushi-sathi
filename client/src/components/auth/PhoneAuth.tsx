@@ -198,12 +198,15 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
 
                   <input
                     type="tel"
+                    inputMode="tel"
+                    autoComplete="tel-national"
+                    pattern="[0-9]*"
                     required
                     maxLength={10}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                     placeholder="Enter 10-digit number"
-                    className="w-full pl-32 pr-4 py-3 rounded-2xl bg-gray-50/70 border border-gray-200 focus:bg-white focus:border-forest focus:ring-2 focus:ring-forest/15 outline-none font-bold text-sm tracking-wide transition-all"
+                    className="w-full pl-32 pr-4 py-3 rounded-2xl bg-gray-50/70 border border-gray-200 focus:bg-white focus:border-forest focus:ring-2 focus:ring-forest/15 outline-none font-bold text-base tracking-wide transition-all min-h-[48px]"
                   />
                 </div>
 

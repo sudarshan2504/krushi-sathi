@@ -30,8 +30,9 @@ import { api } from '../services/api';
 import { ChatMessage } from '../types';
 import { useVoiceAssistant } from '../hooks/useVoiceAssistant';
 import { SupportedLanguageCode } from '../services/speechService';
-import farmLandscapeImg from '../assets/farm_landscape.jpg';
-import farmerBannerImg from '../assets/farmer_banner.jpg';
+import farmLandscapeImg from '../assets/farm_landscape.webp';
+import farmerBannerImg from '../assets/farmer_banner.webp';
+import { StickyBottomBar } from '../components/ui/StickyBottomBar';
 
 interface SuggestedCard {
   text: string;
@@ -328,7 +329,10 @@ export const ChatPage: React.FC = () => {
         <img
           src={farmLandscapeImg}
           alt="Agricultural landscape"
+          width="800"
+          height="224"
           className="w-full h-full object-cover object-bottom"
+          loading="eager"
         />
         {/* Soft gradient wash */}
         <div className="absolute inset-0 bg-gradient-to-t from-[#FFFCF5] via-transparent to-black/5" />
@@ -761,8 +765,8 @@ export const ChatPage: React.FC = () => {
         </div>
       ) : (
         /* Classic Text Chat Mode */
-        <div className="flex-1 flex flex-col px-4 pt-3 pb-4">
-          <div className="flex-1 overflow-y-auto space-y-3 p-2 bg-white rounded-2xl border border-[#E8EDE8] shadow-sm mb-3 min-h-[300px] max-h-[500px]">
+        <div className="flex-1 flex flex-col px-3 sm:px-4 pt-2 pb-2">
+          <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-white rounded-2xl border border-[#E8EDE8] shadow-sm mb-2 h-[calc(100dvh-270px)] md:h-[calc(100dvh-320px)]">
             {messages.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center py-10 text-center">
                 <div className="w-14 h-14 rounded-2xl bg-[#E6F4E8] flex items-center justify-center text-2xl mb-2">
@@ -781,19 +785,19 @@ export const ChatPage: React.FC = () => {
                 return (
                   <div
                     key={m.id || Math.random()}
-                    className={`flex gap-2.5 max-w-[85%] ${
+                    className={`flex gap-2.5 max-w-[88%] sm:max-w-[85%] ${
                       isUser ? 'ml-auto flex-row-reverse' : 'mr-auto'
                     }`}
                   >
                     <div
-                      className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
+                      className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs font-bold ${
                         isUser ? 'bg-amber-400 text-[#18352B]' : 'bg-[#176B3A] text-white'
                       }`}
                     >
-                      {isUser ? <UserIcon className="w-3.5 h-3.5" /> : <Bot className="w-3.5 h-3.5" />}
+                      {isUser ? <UserIcon className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                     </div>
                     <div
-                      className={`p-3 rounded-2xl text-xs sm:text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
+                      className={`p-3 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${
                         isUser
                           ? 'bg-[#176B3A] text-white rounded-tr-none font-medium'
                           : 'bg-[#FFFCF5] text-[#18352B] border border-[#E8EDE8] rounded-tl-none'
@@ -808,8 +812,8 @@ export const ChatPage: React.FC = () => {
 
             {isLoading && (
               <div className="flex gap-2.5 mr-auto max-w-[85%] items-center">
-                <div className="w-7 h-7 rounded-full bg-[#176B3A] text-white flex items-center justify-center text-xs font-bold shrink-0">
-                  <Bot className="w-3.5 h-3.5" />
+                <div className="w-8 h-8 rounded-full bg-[#176B3A] text-white flex items-center justify-center text-xs font-bold shrink-0">
+                  <Bot className="w-4 h-4" />
                 </div>
                 <div className="bg-white p-3 rounded-2xl rounded-tl-none border border-[#E8EDE8] shadow-sm text-xs font-bold text-[#176B3A] flex items-center gap-1.5">
                   <span>Raitha Mitra is thinking...</span>
@@ -829,51 +833,54 @@ export const ChatPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleSendText(failedMessage)}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1 rounded-xl text-xs"
+                className="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs min-h-[36px]"
               >
                 Retry
               </button>
             </div>
           )}
 
-          {/* Input Form with Quick Mic Button */}
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleSendText();
-            }}
-            className="flex gap-2"
-          >
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask any farming question..."
-              className="flex-1 px-4 py-3 rounded-2xl bg-white border border-[#E8EDE8] focus:border-[#176B3A] outline-none text-xs sm:text-sm font-semibold shadow-sm"
-            />
-            <button
-              type="button"
-              onClick={() => {
-                setChatMode('voice');
-                startListening();
+          {/* Input Form with Quick Mic Button in StickyBottomBar */}
+          <StickyBottomBar>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendText();
               }}
-              title="Speak with Voice Assistant"
-              aria-label="Speak with Voice Assistant"
-              className={`p-3 min-w-[48px] min-h-[48px] rounded-2xl bg-[#E6F4E8] text-[#176B3A] hover:bg-mint font-bold transition shadow-sm active:scale-95 flex items-center justify-center cursor-pointer ${
-                isListening ? 'ring-2 ring-red-400 animate-pulse bg-red-50 text-red-600' : ''
-              }`}
+              className="flex items-center gap-2 w-full"
             >
-              <Mic className="w-5 h-5" />
-            </button>
-            <button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              aria-label="Send message"
-              className="bg-[#176B3A] hover:bg-[#105C32] text-white p-3 min-w-[48px] min-h-[48px] rounded-2xl font-bold flex items-center justify-center transition shadow-sm active:scale-95 disabled:opacity-40 cursor-pointer"
-            >
-              <Send className="w-5 h-5" />
-            </button>
-          </form>
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask any farming question..."
+                autoComplete="off"
+                className="flex-1 px-4 py-2.5 rounded-2xl bg-[#FFFCF5] border border-[#E8EDE8] focus:border-[#176B3A] outline-none text-sm font-semibold shadow-inner min-h-[44px]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setChatMode('voice');
+                  startListening();
+                }}
+                title="Speak with Voice Assistant"
+                aria-label="Speak with Voice Assistant"
+                className={`p-2.5 min-w-[44px] min-h-[44px] rounded-2xl bg-[#E6F4E8] text-[#176B3A] hover:bg-mint font-bold transition shadow-sm active:scale-95 flex items-center justify-center cursor-pointer shrink-0 touch-target ${
+                  isListening ? 'ring-2 ring-red-400 animate-pulse bg-red-50 text-red-600' : ''
+                }`}
+              >
+                <Mic className="w-5 h-5" />
+              </button>
+              <button
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                aria-label="Send message"
+                className="bg-[#176B3A] hover:bg-[#105C32] text-white p-2.5 min-w-[44px] min-h-[44px] rounded-2xl font-bold flex items-center justify-center transition shadow-sm active:scale-95 disabled:opacity-40 cursor-pointer shrink-0 touch-target"
+              >
+                <Send className="w-5 h-5" />
+              </button>
+            </form>
+          </StickyBottomBar>
         </div>
       )}
 

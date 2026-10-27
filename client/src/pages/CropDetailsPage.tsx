@@ -25,6 +25,7 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { StickyBottomBar } from '../components/ui/StickyBottomBar';
 import { useTranslation } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { CropImage } from '../types';
@@ -748,19 +749,19 @@ export const CropDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Select Crop Action CTA */}
-      <div className="pt-2">
+      {/* Select Crop Sticky Action CTA */}
+      <StickyBottomBar>
         <Button
           onClick={handleStartPlan}
           size="lg"
           fullWidth
           isLoading={isCreatingPlan}
-          className="shadow-xl shadow-forest/20 flex items-center justify-center gap-2"
+          className="shadow-md shadow-forest/20 flex items-center justify-center gap-2 min-h-[46px]"
         >
           <span>{t('selectCrop') || 'Select Crop & Start Plan'}</span>
           <ArrowRight className="w-5 h-5" />
         </Button>
-      </div>
+      </StickyBottomBar>
     </div>
   );
 };

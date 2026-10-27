@@ -310,7 +310,7 @@ export const HomePage: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsLocationModalOpen(true)}
-            className="inline-flex items-center gap-2 self-start sm:self-center px-3.5 py-2 rounded-2xl bg-forest/10 hover:bg-forest/15 active:scale-95 text-forest border border-forest/20 text-xs font-bold transition shadow-2xs group cursor-pointer"
+            className="inline-flex items-center gap-2 self-start sm:self-center px-3.5 py-2.5 rounded-2xl bg-forest/10 hover:bg-forest/15 active:scale-95 text-forest border border-forest/20 text-xs font-bold transition shadow-2xs group cursor-pointer min-h-[44px] touch-target"
             title={t('editLocationTitle')}
           >
             <MapPin className="w-4 h-4 text-forest shrink-0 group-hover:scale-110 transition-transform" />
@@ -386,7 +386,7 @@ export const HomePage: React.FC = () => {
           {currentPlan && (
             <button
               onClick={() => navigate(`/crops/lifecycle/${currentPlan.id}`)}
-              className="text-xs text-forest font-bold hover:underline flex items-center gap-1 min-h-[36px]"
+              className="text-xs text-forest font-bold hover:underline flex items-center gap-1 min-h-[44px] py-1 px-2 touch-target"
             >
               <span>{t('viewFullGuide')}</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -406,10 +406,11 @@ export const HomePage: React.FC = () => {
                       activePlanIndex > 0 ? activePlanIndex - 1 : plans.length - 1
                     )
                   }
-                  className="w-8 h-8 rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 transition cursor-pointer"
+                  className="min-w-[44px] min-h-[44px] rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 active:scale-95 transition cursor-pointer touch-target"
                   title="Previous plan"
+                  aria-label="Previous plan"
                 >
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="w-5 h-5" />
                 </button>
 
                 <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
@@ -418,7 +419,7 @@ export const HomePage: React.FC = () => {
                       key={p.id}
                       type="button"
                       onClick={() => handleSelectPlan(idx)}
-                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer ${
+                      className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer touch-target ${
                         idx === activePlanIndex
                           ? 'bg-forest text-white shadow-xs'
                           : 'bg-white text-dark-text border border-forest/15 hover:bg-forest/5'
@@ -436,18 +437,19 @@ export const HomePage: React.FC = () => {
                       activePlanIndex < plans.length - 1 ? activePlanIndex + 1 : 0
                     )
                   }
-                  className="w-8 h-8 rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 transition cursor-pointer"
+                  className="min-w-[44px] min-h-[44px] rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 active:scale-95 transition cursor-pointer touch-target"
                   title="Next plan"
+                  aria-label="Next plan"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
             )}
 
             {/* Plan Header: Crop Name, Stage, Progress */}
-            <div className="flex items-start justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-13 h-13 rounded-2xl overflow-hidden bg-mint shrink-0 border border-forest/15 shadow-2xs">
+            <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2.5 sm:gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
+                <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl overflow-hidden bg-mint shrink-0 border border-forest/15 shadow-2xs">
                   <img
                     src={
                       currentPlan.crop?.imageUrl ||
@@ -457,17 +459,17 @@ export const HomePage: React.FC = () => {
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div>
-                  <h3 className="font-black text-dark-text text-base sm:text-lg leading-snug">
+                <div className="min-w-0 flex-1">
+                  <h3 className="font-black text-dark-text text-base sm:text-lg leading-snug truncate">
                     {currentPlan.cropName}
                   </h3>
-                  <div className="flex items-center gap-2 mt-0.5">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                     <span className="text-xs text-dark-muted font-medium">
                       {currentPlan.fieldName || 'Main Field'} • {currentPlan.areaAcre || 1.5}{' '}
                       {t('acres')}
                     </span>
                     {currentPlan.currentStage && (
-                      <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-forest/10 text-forest border border-forest/20">
+                      <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-forest/10 text-forest border border-forest/20 whitespace-nowrap">
                         {t('stageLabel')}: {currentPlan.currentStage}
                       </span>
                     )}
@@ -475,7 +477,7 @@ export const HomePage: React.FC = () => {
                 </div>
               </div>
 
-              <span className="py-1 px-3 rounded-full bg-mint text-forest text-xs font-black border border-forest/20 shrink-0">
+              <span className="py-1 px-3 rounded-full bg-mint text-forest text-xs font-black border border-forest/20 shrink-0 self-start xs:self-center whitespace-nowrap">
                 <AnimatedCounter value={currentPlan.progressPercentage} suffix="%" />{' '}
                 {t('progress')}
               </span>
@@ -626,7 +628,7 @@ export const HomePage: React.FC = () => {
         </div>
 
         {rankedHealthAlerts.length > 0 ? (
-          <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1 scrollbar-none snap-x">
+          <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 scrollbar-none snap-x touch-pan-x">
             {rankedHealthAlerts.map(({ disease: d, riskLevel, primaryReason }) => {
               const badgeStyle =
                 riskLevel === 'high'
@@ -647,7 +649,7 @@ export const HomePage: React.FC = () => {
                   key={d.id}
                   whileHover={shouldReduceMotion ? {} : { y: -2 }}
                   onClick={() => navigate('/diseases', { state: { selectedProblemId: d.id } })}
-                  className="w-[280px] sm:w-[320px] shrink-0 p-4 rounded-3xl bg-white border border-forest/15 shadow-xs cursor-pointer hover:border-forest/40 transition-all flex flex-col justify-between min-h-[175px] snap-start"
+                  className="w-[260px] xs:w-[280px] sm:w-[320px] shrink-0 p-4 rounded-3xl bg-white border border-forest/15 shadow-xs cursor-pointer hover:border-forest/40 transition-all flex flex-col justify-between min-h-[175px] snap-start"
                 >
                   <div>
                     {/* Badges: Risk level + Primary trigger reason */}

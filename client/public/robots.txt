@@ -1,0 +1,5 @@
+# Robots.txt for Krushi Sathi
+User-agent: *
+Allow: /
+
+Sitemap: /sitemap.xml

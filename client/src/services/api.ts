@@ -1,10 +1,56 @@
 import { User, WeatherData, RecommendationResult, CropPlan, Disease, ChatMessage } from '../types';
 
-const API_BASE = '/api';
+export function getApiBaseUrl(): string {
+  if (typeof window !== 'undefined') {
+    const stored = localStorage.getItem('krishi_api_base');
+    if (stored) return stored.replace(/\/$/, '');
+  }
+  const envUrl = (import.meta as any).env?.VITE_API_BASE_URL;
+  if (envUrl) return envUrl.replace(/\/$/, '');
+  return '/api';
+}
+
+export const API_BASE = getApiBaseUrl();
 
 function getAuthHeader(): Record<string, string> {
   const token = localStorage.getItem('krishi_sathi_token');
   return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+interface CacheEntry<T> {
+  timestamp: number;
+  data: T;
+}
+
+const MEMORY_CACHE = new Map<string, CacheEntry<any>>();
+
+export function getCachedData<T>(key: string, maxAgeMs = 30 * 60 * 1000): T | null {
+  try {
+    const mem = MEMORY_CACHE.get(key);
+    if (mem && (Date.now() - mem.timestamp < maxAgeMs || !navigator.onLine)) {
+      return mem.data as T;
+    }
+    const raw = localStorage.getItem(`ks_cache_${key}`);
+    if (!raw) return null;
+    const entry: CacheEntry<T> = JSON.parse(raw);
+    if (Date.now() - entry.timestamp < maxAgeMs || !navigator.onLine) {
+      MEMORY_CACHE.set(key, entry);
+      return entry.data;
+    }
+  } catch {
+    // ignore cache parsing error
+  }
+  return null;
+}
+
+export function setCachedData<T>(key: string, data: T): void {
+  try {
+    const entry: CacheEntry<T> = { timestamp: Date.now(), data };
+    MEMORY_CACHE.set(key, entry);
+    localStorage.setItem(`ks_cache_${key}`, JSON.stringify(entry));
+  } catch {
+    // ignore storage quota errors
+  }
 }
 
 async function handleResponse<T>(res: Response): Promise<T> {
@@ -13,6 +59,53 @@ async function handleResponse<T>(res: Response): Promise<T> {
     throw new Error(data.message || `Request failed with status ${res.status}`);
   }
   return data.data;
+}
+
+export async function fetchWithRetry<T>(
+  url: string,
+  options: RequestInit = {},
+  retries = 2,
+  timeoutMs = 9000
+): Promise<T> {
+  const method = (options.method || 'GET').toUpperCase();
+  const isGet = method === 'GET';
+
+  if (!navigator.onLine && !isGet) {
+    throw new Error('You are currently offline. Please reconnect to the internet and try again.');
+  }
+
+  let lastError: any = null;
+  const attempts = isGet ? retries + 1 : 1;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      const res = await fetch(url, {
+        ...options,
+        signal: controller.signal,
+      });
+      clearTimeout(timer);
+      return await handleResponse<T>(res);
+    } catch (err: any) {
+      clearTimeout(timer);
+      lastError = err;
+      if (err.name === 'AbortError') {
+        lastError = new Error(`Network timeout: request exceeded ${timeoutMs / 1000}s.`);
+      }
+      // If server returned a 4xx or business error, do not retry
+      if (err.message && (err.message.includes('status 4') || err.message.includes('Invalid') || err.message.includes('not found'))) {
+        throw err;
+      }
+      if (attempt < attempts - 1) {
+        // Exponential backoff
+        await new Promise((r) => setTimeout(r, 400 * Math.pow(2, attempt)));
+      }
+    }
+  }
+
+  throw lastError;
 }
 
 export const api = {
@@ -162,23 +255,61 @@ export const api = {
 
   weather: {
     async get(district = 'Mandya', lat?: number, lon?: number): Promise<WeatherData> {
+      const cacheKey = `weather_${district}_${lat ?? 0}_${lon ?? 0}`;
+      const cached = getCachedData<WeatherData>(cacheKey, 30 * 60 * 1000); // 30 min freshness
+
+      if (!navigator.onLine && cached) {
+        return cached;
+      }
+
       const params = new URLSearchParams({ district });
       if (lat !== undefined && lon !== undefined) {
         params.append('lat', String(lat));
         params.append('lon', String(lon));
       }
-      const res = await fetch(`${API_BASE}/weather?${params.toString()}`);
-      return handleResponse<WeatherData>(res);
+
+      try {
+        const data = await fetchWithRetry<WeatherData>(`${API_BASE}/weather?${params.toString()}`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) {
+          return cached;
+        }
+        throw err;
+      }
     },
 
     async getDistricts(): Promise<{ name: string; state: string; lat: number; lon: number }[]> {
-      const res = await fetch(`${API_BASE}/weather/districts`);
-      return handleResponse(res);
+      const cacheKey = 'weather_districts';
+      const cached = getCachedData<{ name: string; state: string; lat: number; lon: number }[]>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (cached && (!navigator.onLine || Math.random() > 0.1)) {
+        return cached;
+      }
+      try {
+        const data = await fetchWithRetry<{ name: string; state: string; lat: number; lon: number }[]>(`${API_BASE}/weather/districts`);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getLocations(): Promise<any> {
-      const res = await fetch(`${API_BASE}/weather/locations`);
-      return handleResponse(res);
+      const cacheKey = 'weather_locations';
+      const cached = getCachedData<any>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (cached && (!navigator.onLine || Math.random() > 0.1)) {
+        return cached;
+      }
+      try {
+        const data = await fetchWithRetry<any>(`${API_BASE}/weather/locations`);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getLocationConditions(params: {
@@ -241,21 +372,47 @@ export const api = {
         },
         body: JSON.stringify(data),
       });
-      return handleResponse(res);
+      const result = await handleResponse<{ assessment: any; recommendations: RecommendationResult[] }>(res);
+      setCachedData('last_soil_assessment', result);
+      return result;
+    },
+
+    getLastCachedAssessment(): { assessment: any; recommendations: RecommendationResult[] } | null {
+      return getCachedData('last_soil_assessment', 30 * 24 * 60 * 60 * 1000);
     },
 
     async getAssessments(): Promise<any[]> {
-      const res = await fetch(`${API_BASE}/soil/assessments`, {
-        headers: { ...getAuthHeader() },
-      });
-      return handleResponse(res);
+      const cacheKey = 'user_soil_assessments';
+      const cached = getCachedData<any[]>(cacheKey, 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const res = await fetch(`${API_BASE}/soil/assessments`, {
+          headers: { ...getAuthHeader() },
+        });
+        const data = await handleResponse<any[]>(res);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getAssessment(id: string): Promise<any> {
-      const res = await fetch(`${API_BASE}/soil/assessments/${id}`, {
-        headers: { ...getAuthHeader() },
-      });
-      return handleResponse(res);
+      const cacheKey = `soil_assessment_${id}`;
+      const cached = getCachedData<any>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const res = await fetch(`${API_BASE}/soil/assessments/${id}`, {
+          headers: { ...getAuthHeader() },
+        });
+        const data = await handleResponse(res);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
   },
 
@@ -277,28 +434,74 @@ export const api = {
         });
       }
       const q = new URLSearchParams(cleanedParams).toString();
-      const res = await fetch(`${API_BASE}/crops?${q}`);
-      return handleResponse(res);
+      const cacheKey = `crops_all_${q}`;
+      const cached = getCachedData<any[]>(cacheKey, 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+
+      try {
+        const data = await fetchWithRetry<any[]>(`${API_BASE}/crops?${q}`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getById(id: string): Promise<any> {
-      const res = await fetch(`${API_BASE}/crops/${id}`);
-      return handleResponse(res);
+      const cacheKey = `crop_detail_${id}`;
+      const cached = getCachedData<any>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const data = await fetchWithRetry<any>(`${API_BASE}/crops/${id}`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getCategories(): Promise<{ id: string; name: string; nameKannada: string; nameTamil: string; nameTelugu: string; icon: string; count: number }[]> {
-      const res = await fetch(`${API_BASE}/crops/categories`);
-      return handleResponse(res);
+      const cacheKey = 'crops_categories';
+      const cached = getCachedData<any[]>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (cached && (!navigator.onLine || Math.random() > 0.2)) return cached;
+      try {
+        const data = await fetchWithRetry<any[]>(`${API_BASE}/crops/categories`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getSeasonalFruits(): Promise<any[]> {
-      const res = await fetch(`${API_BASE}/crops/seasonal-fruits`);
-      return handleResponse(res);
+      const cacheKey = 'crops_seasonal_fruits';
+      const cached = getCachedData<any[]>(cacheKey, 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const data = await fetchWithRetry<any[]>(`${API_BASE}/crops/seasonal-fruits`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getLongTermCrops(): Promise<any[]> {
-      const res = await fetch(`${API_BASE}/crops/long-term`);
-      return handleResponse(res);
+      const cacheKey = 'crops_long_term';
+      const cached = getCachedData<any[]>(cacheKey, 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const data = await fetchWithRetry<any[]>(`${API_BASE}/crops/long-term`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getCatalog(params?: {
@@ -359,10 +562,20 @@ export const api = {
 
   lifecycle: {
     async getPlans(): Promise<CropPlan[]> {
-      const res = await fetch(`${API_BASE}/lifecycle/plans`, {
-        headers: { ...getAuthHeader() },
-      });
-      return handleResponse<CropPlan[]>(res);
+      const cacheKey = 'user_crop_plans';
+      const cached = getCachedData<CropPlan[]>(cacheKey, 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const res = await fetch(`${API_BASE}/lifecycle/plans`, {
+          headers: { ...getAuthHeader() },
+        });
+        const data = await handleResponse<CropPlan[]>(res);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async createPlan(data: { cropId: string; fieldName?: string; areaAcre?: number }): Promise<CropPlan> {
@@ -374,14 +587,26 @@ export const api = {
         },
         body: JSON.stringify(data),
       });
-      return handleResponse<CropPlan>(res);
+      const plan = await handleResponse<CropPlan>(res);
+      setCachedData(`user_crop_plan_${plan.id}`, plan);
+      return plan;
     },
 
     async getPlan(id: string): Promise<CropPlan> {
-      const res = await fetch(`${API_BASE}/lifecycle/plans/${id}`, {
-        headers: { ...getAuthHeader() },
-      });
-      return handleResponse<CropPlan>(res);
+      const cacheKey = `user_crop_plan_${id}`;
+      const cached = getCachedData<CropPlan>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const res = await fetch(`${API_BASE}/lifecycle/plans/${id}`, {
+          headers: { ...getAuthHeader() },
+        });
+        const plan = await handleResponse<CropPlan>(res);
+        setCachedData(cacheKey, plan);
+        return plan;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async toggleTask(taskId: string, isCompleted: boolean): Promise<any> {
@@ -419,23 +644,60 @@ export const api = {
         return acc;
       }, {} as Record<string, string>);
       const q = new URLSearchParams(filteredParams).toString();
-      const res = await fetch(`${API_BASE}/diseases?${q}`);
-      return handleResponse<Disease[]>(res);
+      const cacheKey = `diseases_all_${q}`;
+      const cached = getCachedData<Disease[]>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+
+      try {
+        const data = await fetchWithRetry<Disease[]>(`${API_BASE}/diseases?${q}`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getById(id: string): Promise<Disease> {
-      const res = await fetch(`${API_BASE}/diseases/${id}`);
-      return handleResponse<Disease>(res);
+      const cacheKey = `disease_detail_${id}`;
+      const cached = getCachedData<Disease>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const data = await fetchWithRetry<Disease>(`${API_BASE}/diseases/${id}`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getCropsCatalog(): Promise<any[]> {
-      const res = await fetch(`${API_BASE}/diseases/crops/catalog`);
-      return handleResponse<any[]>(res);
+      const cacheKey = 'diseases_crops_catalog';
+      const cached = getCachedData<any[]>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (cached && (!navigator.onLine || Math.random() > 0.2)) return cached;
+      try {
+        const data = await fetchWithRetry<any[]>(`${API_BASE}/diseases/crops/catalog`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async getTags(): Promise<any[]> {
-      const res = await fetch(`${API_BASE}/diseases/tags/all`);
-      return handleResponse<any[]>(res);
+      const cacheKey = 'diseases_tags_all';
+      const cached = getCachedData<any[]>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (cached && (!navigator.onLine || Math.random() > 0.2)) return cached;
+      try {
+        const data = await fetchWithRetry<any[]>(`${API_BASE}/diseases/tags/all`, {}, 2, 8000);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
     },
 
     async diagnose(data: any) {
@@ -474,6 +736,9 @@ export const api = {
       consentToStore?: boolean;
       language?: string;
     }) {
+      if (!navigator.onLine) {
+        throw new Error('You are currently offline. Leaf photo diagnosis requires an active internet connection to analyze crop images.');
+      }
       const res = await fetch(`${API_BASE}/diseases/analyze-photo`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -503,6 +768,9 @@ export const api = {
 
   chat: {
     async sendMessage(message: string, language: string, conversationId?: string) {
+      if (!navigator.onLine) {
+        throw new Error('You are currently offline. Raitha Mitra AI chat requires an active internet connection to reply.');
+      }
       const res = await fetch(`${API_BASE}/chat/messages`, {
         method: 'POST',
         headers: {

@@ -3,16 +3,46 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/png" href="/krushi-sathi-logo.png" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#176B3A" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Krushi Sathi" />
+    <meta name="format-detection" content="telephone=no" />
+    <link rel="apple-touch-icon" href="/krushi-sathi-logo.png" />
     <meta name="description" content="Krushi Sathi — Your Farming Companion. AI-powered farming assistant for Indian farmers with crop recommendations, lifecycle timelines, disease diagnosis, and multilingual voice chat." />
     <title>Krushi Sathi — Your Farming Companion</title>
-    <!-- Indic and Latin Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Kannada:wght@400;500;600;700&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Sans+Telugu:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Self-hosted Indic and Latin WOFF2 Fonts with font-display: swap -->
+    <link rel="preload" href="/fonts/font-13.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="/fonts/fonts.css" />
   </head>
   <body class="bg-cream-light text-dark-text antialiased selection:bg-mint selection:text-forest">
-    <div id="root"></div>
+    <noscript>
+      <div style="padding:2rem;max-width:480px;margin:2rem auto;font-family:system-ui,-apple-system,sans-serif;background:#fff;border-radius:1.5rem;border:1px solid #c8e6ce;box-shadow:0 10px 25px rgba(0,0,0,0.05);text-align:center;">
+        <h2 style="color:#176b3a;margin-top:0;">JavaScript Required</h2>
+        <p style="color:#4a5568;font-size:14px;line-height:1.6;">
+          Krushi Sathi requires JavaScript to provide crop recommendations, disease diagnosis, and offline advisories. Please enable JavaScript in your browser settings and reload.
+        </p>
+      </div>
+    </noscript>
+    <div id="root">
+      <div id="initial-app-loader" style="min-height:100vh;min-height:100dvh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;font-family:system-ui,-apple-system,sans-serif;background-color:#FFFCF5;color:#176B3A;text-align:center;">
+        <div style="width:48px;height:48px;border-radius:50%;border:3px solid #EBF5ED;border-top-color:#176B3A;animation:ks-spin 1s linear infinite;margin-bottom:1rem;"></div>
+        <div style="font-size:16px;font-weight:700;letter-spacing:-0.01em;">Krushi Sathi</div>
+        <div style="font-size:12px;color:#4A5568;margin-top:4px;">Loading your farming companion...</div>
+        <div id="js-load-failed-msg" style="display:none;margin-top:1.5rem;max-width:320px;padding:1rem;background:#FFF;border-radius:1rem;border:1px solid #FECACA;font-size:12px;color:#991B1B;">
+          <p style="margin:0 0 0.75rem 0;line-height:1.5;">Taking longer than expected. If your browser cached an older version, click below.</p>
+          <button onclick="window.location.href=window.location.origin+window.location.pathname+'?reset-cache=1'" style="padding:8px 16px;background:#176B3A;color:#FFF;border:none;border-radius:12px;font-size:12px;font-weight:700;cursor:pointer;">Clear Cache & Reload</button>
+        </div>
+        <style>@keyframes ks-spin{to{transform:rotate(360deg)}}</style>
+        <script>
+          setTimeout(function() {
+            var el = document.getElementById('js-load-failed-msg');
+            if (el) el.style.display = 'block';
+          }, 8000);
+        </script>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

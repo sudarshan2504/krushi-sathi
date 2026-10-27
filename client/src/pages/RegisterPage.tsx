@@ -319,7 +319,7 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-cream via-white to-mint-light flex flex-col justify-between p-4 sm:p-6 max-w-lg mx-auto">
+    <div className="min-h-dvh bg-gradient-to-b from-cream via-white to-mint-light flex flex-col justify-between pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] px-3 sm:px-6 max-w-lg mx-auto">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -15 }}
@@ -327,11 +327,16 @@ export const RegisterPage: React.FC = () => {
         className="pt-2 text-center"
       >
         <Link to="/" className="inline-block group focus:outline-none mb-1">
-          <img
-            src="/krushi-sathi-logo.png"
-            alt="Krushi Sathi Logo"
-            className="h-16 sm:h-20 w-auto object-contain mx-auto drop-shadow-sm transition-transform group-hover:scale-105"
-          />
+          <picture>
+            <source srcSet="/krushi-sathi-logo.webp" type="image/webp" />
+            <img
+              src="/krushi-sathi-logo.png"
+              alt="Krushi Sathi Logo"
+              width="160"
+              height="80"
+              className="h-16 sm:h-20 w-auto object-contain mx-auto drop-shadow-sm transition-transform group-hover:scale-105"
+            />
+          </picture>
         </Link>
         <h1 className="text-2xl font-extrabold text-dark-text">{t('createAccount')}</h1>
         <p className="text-xs text-dark-muted font-medium">
@@ -514,10 +519,11 @@ export const RegisterPage: React.FC = () => {
             <input
               type="text"
               required
+              autoComplete="name"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               placeholder={t('namePlaceholder')}
-              className="w-full pl-10 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-semibold"
+              className="w-full pl-10 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-base font-semibold"
             />
           </div>
         </div>
@@ -534,6 +540,9 @@ export const RegisterPage: React.FC = () => {
             </div>
             <input
               type="tel"
+              inputMode="tel"
+              autoComplete="tel-national"
+              pattern="[0-9]*"
               required
               maxLength={10}
               value={formData.phone}
@@ -541,7 +550,7 @@ export const RegisterPage: React.FC = () => {
                 setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })
               }
               placeholder="98765 43210"
-              className="w-full pl-20 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-sm font-bold tracking-wide"
+              className="w-full pl-20 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-base font-bold tracking-wide"
             />
           </div>
         </div>
