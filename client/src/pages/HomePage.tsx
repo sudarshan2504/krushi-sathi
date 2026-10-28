@@ -25,6 +25,7 @@ import { api } from '../services/api';
 import { CropPlan, Disease, WeatherData } from '../types';
 import { LoadingState } from '../components/ui/LoadingState';
 import { AnimatedCounter } from '../components/ui/AnimatedCounter';
+import { CropImage } from '../components/ui/CropImage';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,6 +46,19 @@ export const HomePage: React.FC = () => {
 
   // Avoid re-animating on re-renders
   const isInitialMount = useRef(true);
+
+  // Active chip scroll into view ref
+  const planButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
+
+  useEffect(() => {
+    if (planButtonRefs.current[activePlanIndex]) {
+      planButtonRefs.current[activePlanIndex]?.scrollIntoView({
+        behavior: 'smooth',
+        inline: 'center',
+        block: 'nearest',
+      });
+    }
+  }, [activePlanIndex]);
 
   // Load dashboard data
   useEffect(() => {
@@ -289,7 +303,7 @@ export const HomePage: React.FC = () => {
       variants={containerVariants}
       initial={isInitialMount.current ? 'hidden' : 'visible'}
       animate="visible"
-      className="space-y-5 pb-6 max-w-4xl mx-auto"
+      className="space-y-5 pb-[calc(3rem+env(safe-area-inset-bottom,0px))] max-w-4xl mx-auto"
     >
       {/* =========================================================================
           SECTION 1: GREETING + LOCATION CHIP + WEATHER WIDGET
