@@ -2,6 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Check, Sprout } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
+import { CropImage } from '../ui/CropImage';
 
 export interface CropOption {
   id: string;
@@ -107,20 +108,13 @@ export const CropSelector: React.FC<CropSelectorProps> = ({
               )}
 
               {/* Crop Photo / Thumbnail */}
-              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden mb-2 bg-gray-100 flex items-center justify-center border border-gray-100 shadow-inner">
-                {crop.imageUrl ? (
-                  <img
-                    src={crop.imageUrl}
-                    alt={crop.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                  />
-                ) : (
-                  <Sprout className="w-8 h-8 text-forest/40" />
-                )}
+              <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden mb-2 bg-mint/30 flex items-center justify-center border border-gray-100 shadow-inner">
+                <CropImage
+                  src={crop.imageUrl}
+                  alt={crop.name}
+                  cropName={crop.name}
+                  className="w-full h-full object-cover"
+                />
               </div>
 
               {/* Localized Name */}

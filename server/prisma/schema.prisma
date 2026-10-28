@@ -98,6 +98,10 @@ model Crop {
   descriptionTa       String?
   descriptionTe       String?
   imageUrl            String?
+  imageSource         String?
+  imageAuthor         String?
+  imageLicence        String?
+  imageAttribution    String?
   risks               String     // JSON array of strings
   benefits            String     // JSON array of strings
   createdAt           DateTime   @default(now())
@@ -304,6 +308,10 @@ model DiseaseKnowledge {
   expertAdvice        String
   severity            String   // low, medium, high, critical
   imageUrl            String?
+  imageSource         String?
+  imageAuthor         String?
+  imageLicence        String?
+  imageAttribution    String?
 }
 
 model ChatConversation {

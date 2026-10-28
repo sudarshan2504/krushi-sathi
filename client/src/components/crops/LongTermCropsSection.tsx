@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
 import { api } from '../../services/api';
+import { CropImage } from '../ui/CropImage';
 
 interface LongTermCropsSectionProps {
   onSelectCrop?: (cropId: string) => void;
@@ -123,23 +124,21 @@ export const LongTermCropsSection: React.FC<LongTermCropsSectionProps> = ({
           >
             <div>
               {/* Header with image */}
-              <div className="flex items-start justify-between gap-3 mb-3">
-                <div className="flex items-center gap-3">
-                  <img
+              <div className="flex items-start justify-between gap-2.5 mb-3">
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <CropImage
                     src={crop.imageUrl}
                     alt={crop.name}
+                    cropName={getLocalizedName(crop)}
                     className="w-12 h-12 rounded-xl object-cover border border-forest-600 flex-shrink-0"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
                   />
-                  <div>
-                    <h4 className="font-bold text-sm text-white">{getLocalizedName(crop)}</h4>
-                    <p className="text-[11px] text-mint-200/70 italic">{crop.scientificName || crop.name}</p>
+                  <div className="min-w-0 flex-1">
+                    <h4 className="font-bold text-sm text-white truncate">{getLocalizedName(crop)}</h4>
+                    <p className="text-[11px] text-mint-200/70 italic truncate">{crop.scientificName || crop.name}</p>
                   </div>
                 </div>
                 {crop.gestationYears && (
-                  <span className="text-[10px] font-black px-2 py-1 rounded-lg bg-amber-400/20 text-amber-300 border border-amber-400/30 whitespace-nowrap">
+                  <span className="text-[10px] font-black px-2 py-1 rounded-lg bg-amber-400/20 text-amber-300 border border-amber-400/30 whitespace-nowrap shrink-0">
                     {crop.gestationYears} Yrs Gestation
                   </span>
                 )}

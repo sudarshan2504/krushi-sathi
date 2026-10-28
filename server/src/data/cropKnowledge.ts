@@ -97,7 +97,7 @@ const BASE_CROPS: CropData[] = [
     descriptionKn: 'ಭತ್ತವು ಪ್ರಮುಖ ಧಾನ್ಯ ಬೆಳೆಯಾಗಿದ್ದು, ಜೇಡಿಮಣ್ಣು ಮತ್ತು ಫಲವತ್ತಾದ ಗೋಡು ಮಣ್ಣಿನಲ್ಲಿ ನೀರಿನ ಸೌಲಭ್ಯವಿದ್ದಾಗ ಸಮೃದ್ಧವಾಗಿ ಬೆಳೆಯುತ್ತದೆ.',
     descriptionTa: 'நெல் முதன்மை உணவுப் பயிராகும். களிமண் மற்றும் வண்டல் மண்ணில் நீர் வசதியுடன் நன்கு வளரும்.',
     descriptionTe: 'వరి ప్రధాన ఆహార పంట. బంకమట్టి మరియు ఒండ్రు నేలల్లో నీటి వసతితో అధిక దిగుబడినిస్తుంది.',
-    imageUrl: 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '/crops/crop-paddy-rice.webp',
     risks: ['Stem borer and blast disease risk under humid weather', 'Waterlogging without drainage during heavy downpours', 'Market price fluctuations during peak harvest season'],
     benefits: ['Government MSP procurement support', 'Staple grain with continuous year-round market demand', 'Straw serves as valuable livestock fodder'],
     stages: [
@@ -304,7 +304,7 @@ const BASE_CROPS: CropData[] = [
     descriptionKn: 'ರಾಗಿಯು ಅತ್ಯಂತ ಪೌಷ್ಟಿಕ, ಬರ ನಿರೋಧಕ ಕಿರುಧಾನ್ಯವಾಗಿದ್ದು, ಕೆಂಪು ಮಣ್ಣು ಮತ್ತು ಮಳೆಯಾಶ್ರಿತ ಪ್ರದೇಶಗಳಿಗೆ ಅತ್ಯಂತ ಸೂಕ್ತವಾಗಿದೆ.',
     descriptionTa: 'கேழ்வரகு சத்துக்கள் நிறைந்த, வறட்சியைத் தாங்கும் சிறுதானிய பயிராகும். செம்மண் மற்றும் மானாவாரிக்கு மிக ஏற்றது.',
     descriptionTe: 'రాగులు పోషకాలు మెండుగా ఉండే చిరుధాన్య పంట. ఎర్ర నేలలు మరియు వర్షాధార ప్రాంతాలకు అనుకూలమైనది.',
-    imageUrl: 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '/crops/crop-ragi-finger-millet.webp',
     risks: ['Heavy unseasonal rains at maturity can cause grain lodging', 'Blast disease in dense shade or high humidity'],
     benefits: ['Extremely low water requirement', 'Superfood status with consistently rising market price', 'Long shelf life (seeds can be stored for 5+ years safely)'],
     stages: [
@@ -457,7 +457,7 @@ const BASE_CROPS: CropData[] = [
     descriptionKn: 'ಮೆಕ್ಕೆಜೋಳವು ಕೋಳಿ ಆಹಾರ ಮತ್ತು ಕೈಗಾರಿಕೆಗೆ ಭಾರಿ ಬೇಡಿಕೆಯಿರುವ ಬೆಳೆಯಾಗಿದ್ದು, ಗೋಡು ಮತ್ತು ಕಪ್ಪು ಮಣ್ಣಿನಲ್ಲಿ ಹೆಚ್ಚು ಇಳುವರಿ ನೀಡುತ್ತದೆ.',
     descriptionTa: 'மக்காச்சோளம் கோழித்தீவனம் மற்றும் தொழிற்சாலைகளுக்கு அதிக தேவை கொண்ட பணப்பயிராகும்.',
     descriptionTe: 'మొక్కజొన్న పౌల్ట్రీ పరిశ్రమకు మరియు స్టార్చ్ తయారీకి అధిక డిమాండ్ ఉన్న వాణిజ్య పంట.',
-    imageUrl: 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '/crops/crop-maize-corn.webp',
     risks: ['Fall Armyworm (Spodoptera frugiperda) infestation in young whorls', 'Waterlogging causes rapid root rot within 48 hours'],
     benefits: ['Quick duration (under 110 days)', 'Guaranteed corporate & poultry feed buyer demand', 'Mechanized planting and harvesting available in most taluks'],
     stages: [
@@ -586,7 +586,7 @@ const BASE_CROPS: CropData[] = [
     descriptionKn: 'ಕಡಲೆಕಾಯಿಯು ಮಣ್ಣಿನ ಫಲವತ್ತತೆ ಹೆಚ್ಚಿಸುವ ಎಣ್ಣೆಕಾಳು ಬೆಳೆಯಾಗಿದ್ದು, ಕೆಂಪು ಮತ್ತು ಮರಳು ಮಿಶ್ರಿತ ಗೋಡು ಮಣ್ಣಿಗೆ ಹೇಳಿಮಾಡಿಸಿದ ಬೆಳೆ.',
     descriptionTa: 'நிலக்கடலை மண்ணை வளப்படுத்தும் முக்கிய எண்ணெய் வித்து பயிராகும். செம்மண் மற்றும் மணற்பாங்கான நிலத்தில் அமோக விளைச்சல் தரும்.',
     descriptionTe: 'వేరుశనగ నేల సారాన్ని పెంచే ప్రధాన నూనెగింజల పంట. ఎర్ర మరియు ఇసుక నేలల్లో అత్యధిక దిగుబడినిస్తుంది.',
-    imageUrl: 'https://images.unsplash.com/photo-1567894340315-735d7c361db0?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '/crops/crop-groundnut-peanut.webp',
     risks: ['Tikka leaf spot disease during late vegetative stage', 'Hard soil compaction stops underground peg penetration', 'Pod borer insects in moist soils'],
     benefits: ['Fixes 40-50 kg atmospheric Nitrogen/acre naturally', 'Ready local market for oil mills and roasted snacks', 'Foliage makes nutritious protein-rich cattle fodder'],
     stages: [
@@ -691,7 +691,7 @@ const BASE_CROPS: CropData[] = [
     descriptionKn: 'ವಾರಕ್ಕೊಮ್ಮೆ ನಿರಂತರ ಆದಾಯ ನೀಡುವ ಜನಪ್ರಿಯ ತರಕಾರಿ ಬೆಳೆಯಾಗಿದ್ದು, ಹನಿ ನೀರಾವರಿ ಮತ್ತು ಕಡ್ಡಿ ಕಟ್ಟುವ ಪದ್ಧತಿಯಲ್ಲಿ ಭರ್ಜರಿ ಇಳುವರಿ ಸಿಗುತ್ತದೆ.',
     descriptionTa: 'தொடர் வருமானம் தரும் முக்கிய காய்கறிப் பயிராகும். சொட்டு நீர் பாசனம் மற்றும் கம்பு ஊன்றி கட்டுதல் மூலம் அதிக லாபம் பெறலாம்.',
     descriptionTe: 'వారానికోసారి నిరంతర ఆదాయాన్నిచ్చే వాణిజ్య కూరగాయ పంట. డ్రిప్ మరియు కర్రలు కట్టే పద్ధతిలో అత్యధిక దిగుబడి లభిస్తుంది.',
-    imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '/crops/crop-tomato-vegetable.webp',
     risks: ['Early blight & Late blight during rainy spells', 'Price volatility in APMC wholesale mandis', 'Whitefly transmitting Leaf Curl Virus'],
     benefits: ['Harvest every 3-4 days for 6-8 continuous weeks', 'High net returns when market prices peak', 'Ideal for micro-irrigation and fertigation'],
     stages: [
@@ -796,7 +796,7 @@ const BASE_CROPS: CropData[] = [
     descriptionKn: 'ಭಾರತದ ಪ್ರಮುಖ ವಾಣಿಜ್ಯ ಬೆಳೆಯಾಗಿದ್ದು, ಆಳವಾದ ಕಪ್ಪು ಮಣ್ಣಿನಲ್ಲಿ ತೇವಾಂಶ ಹಿಡಿದಿಟ್ಟುಕೊಂಡು ಉತ್ತಮ ಇಳುವರಿ ಕೊಡುತ್ತದೆ.',
     descriptionTa: 'வெள்ளை தங்கம் எனப்படும் முக்கிய பணப்பயிராகும். கரிசல் மண்ணில் மிகச் சிறப்பாக வளரும்.',
     descriptionTe: 'తెల్ల బంగారం అని పిలువబడే ప్రధాన వాణిజ్య పంట. నల్లరేగడి నేలల్లో అద్భుతమైన దిಗುబడినిస్తుంది.',
-    imageUrl: 'https://images.unsplash.com/photo-1606041008023-472dfb5e530f?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '/crops/crop-cotton-cash.webp',
     risks: ['Pink Bollworm (Pectinophora gossypiella) damaging developing bolls', 'Sucking pests (jassids, thrips, aphids) in first 60 days', 'Late season unseasonal rains ruining open lint'],
     benefits: ['CCI (Cotton Corporation of India) government MSP guarantee', 'High monetary return per acre', 'Stalks useful as bio-fuel and paper pulp'],
     stages: [
@@ -901,7 +901,7 @@ const BASE_CROPS: CropData[] = [
     descriptionKn: 'ಹಿಂಗಾರು ಹಂಗಾಮಿನ ಪ್ರಮುಖ ದ್ವಿದಳ ಧಾನ್ಯ ಬೆಳೆಯಾಗಿದ್ದು, ಭತ್ತದ ನಂತರದ ತೇವಾಂಶದಲ್ಲಿ ಅಲ್ಪ ಖರ್ಚಿನಲ್ಲಿ ಉತ್ತಮ ಆದಾಯ ನೀಡುತ್ತದೆ.',
     descriptionTa: 'குளிர்கால முக்கிய பயறு வகை பயிராகும். நெல் அல்லது மக்காச்சோளத்திற்கு பின் எஞ்சிய ஈரப்பதத்தில் குறைவான செலவில் சாகுபடி செய்யலாம்.',
     descriptionTe: 'రబీ కాలపు ప్రధాన పప్పుధాన్య పంట. ఖరీఫ్ పంట తర్వాత మిగిలిన తేమతో తక్కువ ఖర్చుతో అధిక లాభాన్నిస్తుంది.',
-    imageUrl: 'https://images.unsplash.com/photo-1515543237350-b3eea1ec8082?w=800&auto=format&fit=crop&q=80',
+    imageUrl: '/crops/crop-chickpea-gram.webp',
     risks: ['Fusarium wilt in hot soils', 'Pod borer (Helicoverpa armigera) at flowering/pod stage'],
     benefits: ['Extremely low cost of cultivation', 'Enriches soil with organic nitrogen for upcoming summer/monsoon crop', 'High local market price with government MSP'],
     stages: [

@@ -12,9 +12,12 @@ export async function createCropPlan(data: {
     where: { id: data.cropId },
   });
 
-  const cropKnowledge = CROPS_DATA.find(c => c.id === data.cropId) || CROPS_DATA[0];
+  const cropKnowledge = CROPS_DATA.find(c => c.id === data.cropId);
 
   if (!crop) {
+    if (!cropKnowledge) {
+      throw new Error(`Crop not found with id: ${data.cropId}`);
+    }
     // If not seeded yet, create crop record
     crop = await prisma.crop.create({
       data: {

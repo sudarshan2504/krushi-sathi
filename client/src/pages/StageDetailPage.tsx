@@ -103,57 +103,58 @@ export const StageDetailPage: React.FC = () => {
     );
   }
 
-  const stageImage =
-    currentStage.stage.toLowerCase().includes('land') || currentStage.stage.toLowerCase().includes('preparation')
-      ? 'https://images.unsplash.com/photo-1500937386664-56d1dfef3854?w=800&auto=format&fit=crop&q=80'
-      : currentStage.stage.toLowerCase().includes('sowing')
-      ? 'https://images.unsplash.com/photo-1592417817098-8f3d69104a47?w=800&auto=format&fit=crop&q=80'
-      : currentStage.stage.toLowerCase().includes('harvest')
-      ? 'https://images.unsplash.com/photo-1574323347407-f5e1ad6d020b?w=800&auto=format&fit=crop&q=80'
-      : 'https://images.unsplash.com/photo-1536657464919-892534f60d6e?w=800&auto=format&fit=crop&q=80';
-
   const hasPrev = currentStageIdx > 0;
   const hasNext = plan && plan.stages && currentStageIdx < plan.stages.length - 1;
+  const cropImageSrc = plan?.crop?.imageUrl;
 
   return (
     <div className="max-w-xl mx-auto space-y-4 py-2">
       {/* Top Header */}
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between gap-2 mb-2">
         <button
           onClick={() => navigate(`/crops/lifecycle/${planId}`)}
-          className="min-w-[48px] min-h-[48px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-forest transition"
+          className="min-w-[44px] min-h-[44px] shrink-0 flex items-center justify-center rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-forest transition"
           aria-label="Back to crop plan"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
-        <div className="text-center">
+        <div className="text-center min-w-0 flex-1 px-1">
           <span className="text-xs font-bold text-forest uppercase tracking-wider block">
             {currentStage.dayRange}
           </span>
-          <h1 className="text-base font-extrabold text-dark-text leading-tight">
+          <h1 className="text-base font-extrabold text-dark-text leading-tight truncate">
             {currentStage.stage}
           </h1>
         </div>
 
-        <div className="w-12" />
+        <div className="w-11 shrink-0" />
       </div>
 
-      {/* Stage Visual Card (Matching Screen 8 from reference image) */}
+      {/* Stage Visual Card */}
       <div className="rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-card">
         {/* Stage Hero Image */}
-        <div className="h-44 sm:h-52 w-full relative">
-          <img
-            src={stageImage}
-            alt={currentStage.stage}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-dark-text/75 via-transparent to-transparent" />
+        <div className="h-44 sm:h-52 w-full relative bg-mint/40 overflow-hidden">
+          {cropImageSrc ? (
+            <img
+              src={cropImageSrc}
+              alt={currentStage.stage}
+              className="w-full h-full object-cover"
+              onError={(e) => {
+                (e.target as HTMLElement).style.display = 'none';
+              }}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-forest to-forest-dark flex items-center justify-center text-mint">
+              <span className="text-3xl font-black">{plan?.cropName || '🌾'}</span>
+            </div>
+          )}
+          <div className="absolute inset-0 bg-gradient-to-t from-dark-text/80 via-dark-text/20 to-transparent pointer-events-none" />
           <div className="absolute bottom-3.5 left-4 right-4 text-white">
             <span className="py-0.5 px-3 rounded-full bg-forest text-white text-[10px] font-bold">
               Stage {currentStage.stageOrder} of {plan?.stages?.length || 7}
             </span>
-            <h2 className="text-lg font-black mt-1 leading-snug">
+            <h2 className="text-lg font-black mt-1 leading-snug break-words">
               {currentStage.stage}
             </h2>
           </div>

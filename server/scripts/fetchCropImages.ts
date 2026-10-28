@@ -189,6 +189,13 @@ export async function fetchAllCropImages(options: { limit?: number; force?: bool
   let cropsMissingImages = 0;
   let totalImagesDownloaded = 0;
 
+  // Load existing catalog if available to avoid refetching
+  const existingCatalog: any[] = fs.existsSync(CLIENT_CROPS_JSON_PATH)
+    ? JSON.parse(fs.readFileSync(CLIENT_CROPS_JSON_PATH, 'utf-8'))
+    : [];
+  const existingMap = new Map<string, any>();
+  existingCatalog.forEach(c => existingMap.set(c.id, c));
+
   for (let i = 0; i < cropsToProcess.length; i++) {
     const crop = cropsToProcess[i];
     const cropDir = path.join(CLIENT_PUBLIC_CROPS_DIR, crop.id);
@@ -200,8 +207,20 @@ export async function fetchAllCropImages(options: { limit?: number; force?: bool
 
     // Check if crop already has downloaded images
     const existingWebpFiles = fs.readdirSync(cropDir).filter(f => f.endsWith('.webp'));
-    if (existingWebpFiles.length >= 3 && !force && crop.images && crop.images.length >= 3) {
+    const existing = existingMap.get(crop.id);
+
+    if (existingWebpFiles.length >= 1 && !force && existing && existing.images && existing.images.length > 0) {
       console.log(`  ⏩ Already has ${existingWebpFiles.length} downloaded images. Skipping.`);
+      crop.images = existing.images;
+      crop.imageUrl = existing.imageUrl || `/crops/${crop.id}/${existingWebpFiles[0]}`;
+
+      // Ensure root crop-id.webp exists
+      const singleWebp = path.join(CLIENT_PUBLIC_CROPS_DIR, `${crop.id}.webp`);
+      const cropPrefixWebp = path.join(CLIENT_PUBLIC_CROPS_DIR, `crop-${crop.id}.webp`);
+      const srcWebp = path.join(cropDir, existingWebpFiles[0]);
+      if (!fs.existsSync(singleWebp)) fs.copyFileSync(srcWebp, singleWebp);
+      if (!fs.existsSync(cropPrefixWebp)) fs.copyFileSync(srcWebp, cropPrefixWebp);
+
       updatedCatalog.push(crop);
       cropsWithImages++;
       totalImagesDownloaded += existingWebpFiles.length;
@@ -269,6 +288,15 @@ export async function fetchAllCropImages(options: { limit?: number; force?: bool
       crop.images = downloadedImages;
       crop.imageUrl = downloadedImages[0].path;
       cropsWithImages++;
+
+      const singleWebp = path.join(CLIENT_PUBLIC_CROPS_DIR, `${crop.id}.webp`);
+      const cropPrefixWebp = path.join(CLIENT_PUBLIC_CROPS_DIR, `crop-${crop.id}.webp`);
+      const srcWebp = path.join(cropDir, 'image-1.webp');
+      if (fs.existsSync(srcWebp)) {
+        if (!fs.existsSync(singleWebp)) fs.copyFileSync(srcWebp, singleWebp);
+        if (!fs.existsSync(cropPrefixWebp)) fs.copyFileSync(srcWebp, cropPrefixWebp);
+      }
+
       console.log(`  ✅ Successfully downloaded ${downloadedImages.length} images.`);
     } else {
       crop.images = [];

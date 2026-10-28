@@ -23,6 +23,7 @@ import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { LoadingState } from '../components/ui/LoadingState';
 import { Button } from '../components/ui/Button';
+import { CropImage } from '../components/ui/CropImage';
 
 // Crop Components
 import { CategorySelector } from '../components/crops/CategorySelector';
@@ -405,26 +406,22 @@ export const CropRecommendationsPage: React.FC = () => {
                     <div>
                       {/* Top bar with Image, Title and Suitability Score */}
                       <div className="flex items-start justify-between gap-3 mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-earth-100 flex-shrink-0 border border-earth-200 flex items-center justify-center">
-                            {!hasImageFailed ? (
-                              <img
-                                src={crop.imageUrl}
-                                alt={crop.name}
-                                className="w-full h-full object-cover"
-                                onError={() => handleImageError(crop.cropId)}
-                              />
-                            ) : (
-                              <Sprout className="w-7 h-7 text-forest-600" />
-                            )}
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-mint shrink-0 border border-earth-200">
+                            <CropImage
+                              src={crop.imageUrl}
+                              alt={crop.name}
+                              cropName={crop.name}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
-                          <div>
+                          <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <h2 className="text-base font-extrabold text-earth-900 leading-tight">
+                              <h2 className="text-base font-extrabold text-earth-900 leading-tight break-words">
                                 {getLocalizedName(crop)}
                               </h2>
                               {isBestMatch && (
-                                <span className="py-0.5 px-2 rounded-full bg-forest-600 text-white text-[9px] font-black uppercase tracking-wide">
+                                <span className="py-0.5 px-2 rounded-full bg-forest-600 text-white text-[9px] font-black uppercase tracking-wide shrink-0">
                                   Top Pick
                                 </span>
                               )}

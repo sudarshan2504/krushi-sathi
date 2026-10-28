@@ -67,7 +67,7 @@ export const DISEASES_DATA: DiseaseData[] = [
     ],
     expertAdvice: 'Always inspect the bottom 10 cm of the rice tiller. Avoid spraying broad-spectrum pyrethroid insecticides which trigger secondary spider mite and brown planthopper outbreaks.',
     severity: 'high',
-    imageUrl: 'https://images.unsplash.com/photo-1589923188900-85dae523342b?w=800&auto=format&fit=crop&q=80'
+    imageUrl: '/problems/yellow-stem-borer/scirpophaga_incertulas_female_moth_png_1.webp'
   },
   {
     id: 'disease-blast-magnaporthe',
@@ -111,7 +111,7 @@ export const DISEASES_DATA: DiseaseData[] = [
     ],
     expertAdvice: 'Neck blast is irreversible once the fungus girdles the panicle node. Preventive spraying immediately upon panicle emergence is mandatory in endemic taluks.',
     severity: 'critical',
-    imageUrl: 'https://images.unsplash.com/photo-1599818817281-cf1b4142f155?w=800&auto=format&fit=crop&q=80'
+    imageUrl: '/problems/blast-disease-paddy/magnaporthe_grisea_jpg_1.webp'
   },
   {
     id: 'disease-fall-armyworm',
@@ -155,7 +155,7 @@ export const DISEASES_DATA: DiseaseData[] = [
     ],
     expertAdvice: 'Spray nozzles must be directed straight downwards into the funnel/whorl cavity of each maize plant, not sprayed over the top canopy, to reach the hidden larvae.',
     severity: 'critical',
-    imageUrl: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=800&auto=format&fit=crop&q=80'
+    imageUrl: '/problems/fall-armyworm-maize/spodoptera_frugiperda_caterpillar01_jpg_2.webp'
   },
   {
     id: 'disease-brown-planthopper',
@@ -199,7 +199,7 @@ export const DISEASES_DATA: DiseaseData[] = [
     ],
     expertAdvice: 'Always part the rice hill to observe the base stems before spraying; spraying the upper foliage is completely useless against BPH which lives exclusively at the water-stem waterline.',
     severity: 'critical',
-    imageUrl: 'https://images.unsplash.com/photo-1544717305-2782549b5136?w=800&auto=format&fit=crop&q=80'
+    imageUrl: '/problems/brown-planthopper/nilaparvata_lugens_-_brown_planthopper_-_2.webp'
   },
   {
     id: 'disease-early-blight-tomato',
@@ -240,6 +240,6 @@ export const DISEASES_DATA: DiseaseData[] = [
     ],
     expertAdvice: 'Maintain uniform irrigation; fluctuating drought and flooding triggers severe Alternaria leaf shedding.',
     severity: 'medium',
-    imageUrl: 'https://images.unsplash.com/photo-1592924357228-91a4daadcfea?w=800&auto=format&fit=crop&q=80'
+    imageUrl: '/problems/early-blight-tomato/alternaria_solani_-_leaf_lesions_jpg_1.webp'
   }
 ];

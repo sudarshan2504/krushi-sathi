@@ -354,38 +354,38 @@ export const DiseasePreventionPage: React.FC = () => {
       </div>
 
       {/* Main Mode Tabs */}
-      <div className="flex rounded-2xl bg-white p-1.5 border border-gray-200 shadow-sm text-xs sm:text-sm font-bold gap-1">
+      <div className="flex rounded-2xl bg-white p-1.5 border border-gray-200 shadow-sm text-xs sm:text-sm font-bold gap-1 overflow-x-auto scrollbar-none snap-x snap-mandatory [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
         <button
           type="button"
           onClick={() => setActiveTab('common')}
-          className={`flex-1 min-h-[46px] py-2 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 ${
+          className={`shrink-0 sm:flex-1 min-h-[44px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 whitespace-nowrap snap-start touch-target ${
             activeTab === 'common' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
           }`}
         >
-          <ShieldAlert className="w-4 h-4 flex-shrink-0" />
-          <span>{t('commonProblems') || 'Common Problems'}</span>
+          <ShieldAlert className="w-4 h-4 shrink-0" />
+          <span className="truncate max-w-[150px] sm:max-w-none">{t('commonProblems') || 'Common Problems'}</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('calendar')}
-          className={`flex-1 min-h-[46px] py-2 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 ${
+          className={`shrink-0 sm:flex-1 min-h-[44px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 whitespace-nowrap snap-start touch-target ${
             activeTab === 'calendar' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
           }`}
         >
-          <Calendar className="w-4 h-4 flex-shrink-0" />
-          <span>{t('preventionCalendar') || 'Prevention Calendar'}</span>
+          <Calendar className="w-4 h-4 shrink-0" />
+          <span className="truncate max-w-[150px] sm:max-w-none">{t('preventionCalendar') || 'Prevention Calendar'}</span>
         </button>
 
         <button
           type="button"
           onClick={() => setActiveTab('checker')}
-          className={`flex-1 min-h-[46px] py-2 px-2 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 ${
+          className={`shrink-0 sm:flex-1 min-h-[44px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 whitespace-nowrap snap-start touch-target ${
             activeTab === 'checker' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
           }`}
         >
-          <Sparkles className="w-4 h-4 flex-shrink-0 text-amber-300" />
-          <span>{t('diagnoseLeaf') || 'Symptom Checker'}</span>
+          <Sparkles className="w-4 h-4 shrink-0 text-amber-300" />
+          <span className="truncate max-w-[150px] sm:max-w-none">{t('diagnoseLeaf') || 'Symptom Checker'}</span>
         </button>
       </div>
 

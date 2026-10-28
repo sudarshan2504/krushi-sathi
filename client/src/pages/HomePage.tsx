@@ -303,7 +303,7 @@ export const HomePage: React.FC = () => {
       variants={containerVariants}
       initial={isInitialMount.current ? 'hidden' : 'visible'}
       animate="visible"
-      className="space-y-5 pb-[calc(3rem+env(safe-area-inset-bottom,0px))] max-w-4xl mx-auto"
+      className="space-y-5 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] max-w-4xl mx-auto"
     >
       {/* =========================================================================
           SECTION 1: GREETING + LOCATION CHIP + WEATHER WIDGET
@@ -412,7 +412,7 @@ export const HomePage: React.FC = () => {
           <div className="rounded-3xl bg-white border border-forest/15 shadow-sm p-5 space-y-4">
             {/* Multiple Plans Switcher (if farmer has > 1 active plan) */}
             {plans.length > 1 && (
-              <div className="flex items-center justify-between gap-2 p-2 rounded-2xl bg-cream-light/60 border border-forest/10">
+              <div className="flex items-center gap-1.5 p-1.5 sm:p-2 rounded-2xl bg-cream-light/60 border border-forest/10 min-w-0 w-full relative">
                 <button
                   type="button"
                   onClick={() =>
@@ -420,28 +420,42 @@ export const HomePage: React.FC = () => {
                       activePlanIndex > 0 ? activePlanIndex - 1 : plans.length - 1
                     )
                   }
-                  className="min-w-[44px] min-h-[44px] rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 active:scale-95 transition cursor-pointer touch-target"
+                  className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 active:scale-95 transition cursor-pointer shadow-2xs touch-target z-10"
                   title="Previous plan"
                   aria-label="Previous plan"
                 >
-                  <ChevronLeft className="w-5 h-5" />
+                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
 
-                <div className="flex items-center gap-1.5 overflow-x-auto py-1 scrollbar-none">
-                  {plans.map((p, idx) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => handleSelectPlan(idx)}
-                      className={`min-h-[44px] px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap cursor-pointer touch-target ${
-                        idx === activePlanIndex
-                          ? 'bg-forest text-white shadow-xs'
-                          : 'bg-white text-dark-text border border-forest/15 hover:bg-forest/5'
-                      }`}
-                    >
-                      {p.cropName}
-                    </button>
-                  ))}
+                <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto py-1 px-0.5 scrollbar-none snap-x snap-mandatory touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  {plans.map((p, idx) => {
+                    const hasDuplicateCrop = plans.some(
+                      (other, otherIdx) => otherIdx !== idx && other.cropName === p.cropName
+                    );
+                    const fieldLabel = p.fieldName || `${t('fieldLabel') || 'Field'} ${idx + 1}`;
+                    const chipLabel = hasDuplicateCrop
+                      ? `${p.cropName} · ${fieldLabel}`
+                      : p.cropName;
+
+                    return (
+                      <button
+                        key={p.id}
+                        ref={(el) => {
+                          planButtonRefs.current[idx] = el;
+                        }}
+                        type="button"
+                        onClick={() => handleSelectPlan(idx)}
+                        title={`${p.cropName} (${fieldLabel})`}
+                        className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 whitespace-nowrap snap-center cursor-pointer touch-target max-w-[170px] sm:max-w-[220px] flex items-center gap-1 border ${
+                          idx === activePlanIndex
+                            ? 'bg-forest text-white border-forest shadow-xs'
+                            : 'bg-white text-dark-text border-forest/15 hover:bg-forest/5'
+                        }`}
+                      >
+                        <span className="truncate">{chipLabel}</span>
+                      </button>
+                    );
+                  })}
                 </div>
 
                 <button
@@ -451,11 +465,11 @@ export const HomePage: React.FC = () => {
                       activePlanIndex < plans.length - 1 ? activePlanIndex + 1 : 0
                     )
                   }
-                  className="min-w-[44px] min-h-[44px] rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 active:scale-95 transition cursor-pointer touch-target"
+                  className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 active:scale-95 transition cursor-pointer shadow-2xs touch-target z-10"
                   title="Next plan"
                   aria-label="Next plan"
                 >
-                  <ChevronRight className="w-5 h-5" />
+                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
                 </button>
               </div>
             )}
@@ -464,12 +478,10 @@ export const HomePage: React.FC = () => {
             <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2.5 sm:gap-3">
               <div className="flex items-center gap-3 min-w-0 flex-1">
                 <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl overflow-hidden bg-mint shrink-0 border border-forest/15 shadow-2xs">
-                  <img
-                    src={
-                      currentPlan.crop?.imageUrl ||
-                      'https://images.unsplash.com/photo-1536657464919-892534f60d6e?w=200&auto=format&fit=crop&q=80'
-                    }
+                  <CropImage
+                    src={currentPlan.crop?.imageUrl}
                     alt={currentPlan.cropName}
+                    cropName={currentPlan.cropName}
                     className="w-full h-full object-cover"
                   />
                 </div>
@@ -525,8 +537,8 @@ export const HomePage: React.FC = () => {
                     onClick={() => handleToggleTask(task.id, task.isCompleted)}
                     className={`w-full text-left min-h-[44px] flex items-start gap-2.5 p-3 rounded-2xl border cursor-pointer transition-colors ${
                       task.isCompleted
-                        ? 'bg-gray-50/80 border-gray-100 text-dark-muted line-through'
-                        : 'bg-cream-light/40 border-forest/15 hover:border-forest/40 text-dark-text'
+                        ? 'bg-gray-50/80 border-gray-100'
+                        : 'bg-cream-light/40 border-forest/15 hover:border-forest/40'
                     }`}
                   >
                     <span className="mt-0.5 text-forest shrink-0">
@@ -537,7 +549,13 @@ export const HomePage: React.FC = () => {
                       )}
                     </span>
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs sm:text-sm font-bold block leading-tight">
+                      <span
+                        className={`text-xs sm:text-sm font-bold block leading-tight ${
+                          task.isCompleted
+                            ? 'line-through text-dark-muted'
+                            : 'text-dark-text'
+                        }`}
+                      >
                         {language === 'kn'
                           ? task.titleKn || task.title
                           : language === 'ta'
@@ -546,7 +564,7 @@ export const HomePage: React.FC = () => {
                           ? task.titleTe || task.title
                           : task.title}
                       </span>
-                      <span className="text-[11px] text-dark-muted block mt-0.5">
+                      <span className="text-[11px] text-dark-muted block mt-0.5 no-underline font-medium">
                         {task.dayRange} • {task.stage}
                       </span>
                     </div>
@@ -622,27 +640,30 @@ export const HomePage: React.FC = () => {
           Ranked dynamically by active crop, lifecycle stage, and live weather risk
           ========================================================================= */}
       <motion.section variants={itemVariants}>
-        <div className="flex items-center justify-between mb-2.5 px-1">
-          <div className="flex items-center gap-2">
-            <h2 className="text-base font-black text-dark-text tracking-tight">
+        <div className="mb-2.5 px-1 space-y-1.5">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
+            <h2 className="text-base font-black text-dark-text tracking-tight break-words">
               {t('cropHealthAlertsTitle')}
             </h2>
-            <span className="text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-red-100 text-red-700">
-              Live Advisory
-            </span>
+            <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200/80 whitespace-nowrap">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                Live Advisory
+              </span>
+              <button
+                type="button"
+                onClick={() => navigate('/diseases')}
+                className="text-xs text-forest font-bold hover:underline min-h-[36px] flex items-center gap-1 cursor-pointer whitespace-nowrap touch-target ml-auto sm:ml-0"
+              >
+                <span>{t('viewFullGuide')}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
-
-          <button
-            onClick={() => navigate('/diseases')}
-            className="text-xs text-forest font-bold hover:underline min-h-[36px] flex items-center gap-1 cursor-pointer"
-          >
-            <span>{t('viewFullGuide')}</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
         </div>
 
         {rankedHealthAlerts.length > 0 ? (
-          <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 scrollbar-none snap-x touch-pan-x">
+          <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 scrollbar-none snap-x snap-mandatory touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {rankedHealthAlerts.map(({ disease: d, riskLevel, primaryReason }) => {
               const badgeStyle =
                 riskLevel === 'high'
@@ -658,61 +679,67 @@ export const HomePage: React.FC = () => {
                   ? t('riskModerate')
                   : t('riskLow');
 
+              const diseaseName =
+                language === 'kn'
+                  ? d.nameKannada || d.name
+                  : language === 'ta'
+                  ? d.nameTamil || d.name
+                  : language === 'te'
+                  ? d.nameTelugu || d.name
+                  : d.name;
+
+              const symptomsText =
+                language === 'kn'
+                  ? d.symptomsKn || d.symptoms
+                  : language === 'ta'
+                  ? d.symptomsTa || d.symptoms
+                  : language === 'te'
+                  ? d.symptomsTe || d.symptoms
+                  : d.symptoms;
+
               return (
                 <motion.div
                   key={d.id}
                   whileHover={shouldReduceMotion ? {} : { y: -2 }}
                   onClick={() => navigate('/diseases', { state: { selectedProblemId: d.id } })}
-                  className="w-[260px] xs:w-[280px] sm:w-[320px] shrink-0 p-4 rounded-3xl bg-white border border-forest/15 shadow-xs cursor-pointer hover:border-forest/40 transition-all flex flex-col justify-between min-h-[175px] snap-start"
+                  className="w-[270px] sm:w-[300px] shrink-0 p-4 rounded-3xl bg-white border border-forest/15 shadow-xs cursor-pointer hover:border-forest/40 transition-all flex flex-col justify-between min-h-[185px] snap-start min-w-0"
                 >
-                  <div>
+                  <div className="min-w-0">
                     {/* Badges: Risk level + Primary trigger reason */}
-                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                    <div className="flex items-center justify-between gap-1.5 mb-2.5 min-w-0">
                       <span
-                        className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border flex items-center gap-1 ${badgeStyle}`}
+                        className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${badgeStyle}`}
                       >
-                        <ShieldAlert className="w-3 h-3" />
-                        <span>{badgeLabel}</span>
+                        <ShieldAlert className="w-3 h-3 shrink-0" />
+                        <span className="whitespace-nowrap">{badgeLabel}</span>
                       </span>
 
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cream-light text-dark-muted border border-forest/10 truncate max-w-[150px]">
+                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cream-light text-dark-muted border border-forest/10 truncate min-w-0 max-w-[140px]">
                         {primaryReason}
                       </span>
                     </div>
 
                     {/* Problem Name & Affected Crops */}
-                    <h3 className="text-sm font-black text-dark-text leading-tight line-clamp-1">
-                      {language === 'kn'
-                        ? d.nameKannada || d.name
-                        : language === 'ta'
-                        ? d.nameTamil || d.name
-                        : language === 'te'
-                        ? d.nameTelugu || d.name
-                        : d.name}
+                    <h3 className="text-sm font-black text-dark-text leading-tight line-clamp-1 break-words">
+                      {diseaseName}
                     </h3>
                     <p className="text-[11px] text-dark-muted font-medium mt-0.5 truncate">
                       {d.affectedCrops?.join(', ') || 'Field crops'}
                     </p>
 
                     {/* Symptoms preview */}
-                    <p className="text-xs text-dark-text/80 line-clamp-2 leading-relaxed mt-2">
-                      {language === 'kn'
-                        ? d.symptomsKn || d.symptoms
-                        : language === 'ta'
-                        ? d.symptomsTa || d.symptoms
-                        : language === 'te'
-                        ? d.symptomsTe || d.symptoms
-                        : d.symptoms}
+                    <p className="text-xs text-dark-text/80 line-clamp-3 leading-relaxed mt-2 break-words">
+                      {symptomsText}
                     </p>
                   </div>
 
                   {/* CTA link */}
-                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between mt-auto">
-                    <span className="text-xs text-forest font-black flex items-center gap-1">
-                      <span>{t('viewSolution')}</span>
+                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between mt-3 min-w-0">
+                    <span className="text-xs text-forest font-black flex items-center gap-1 hover:underline">
+                      <span>{t('viewSolution') || 'Read more'}</span>
                       <ArrowRight className="w-3.5 h-3.5" />
                     </span>
-                    <span className="text-[11px] text-dark-muted">Advisory</span>
+                    <span className="text-[11px] text-dark-muted font-semibold">Tap to open</span>
                   </div>
                 </motion.div>
               );

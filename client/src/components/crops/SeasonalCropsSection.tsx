@@ -14,6 +14,7 @@ import {
 import { useTranslation } from '../../context/LanguageContext';
 import { api } from '../../services/api';
 import { RecommendationResult } from '../../types';
+import { CropImage } from '../ui/CropImage';
 
 interface SeasonalCropsSectionProps {
   currentSeason?: string;
@@ -161,22 +162,22 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
             >
               <div>
                 <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2.5">
-                    <img
-                      src={crop.imageUrl}
-                      alt={crop.name}
-                      className="w-12 h-12 rounded-xl object-cover border border-earth-100 flex-shrink-0"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                    <div>
-                      <h4 className="font-bold text-sm text-earth-900">{getLocalizedName(crop)}</h4>
-                      <p className="text-[11px] text-earth-500 italic">{crop.scientificName || crop.name}</p>
+                  <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                    <div className="w-12 h-12 rounded-xl overflow-hidden bg-mint shrink-0 border border-earth-100">
+                      <CropImage
+                        src={crop.imageUrl}
+                        alt={crop.name}
+                        cropName={crop.name}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="font-bold text-sm text-earth-900 truncate">{getLocalizedName(crop)}</h4>
+                      <p className="text-[11px] text-earth-500 italic truncate">{crop.scientificName || crop.name}</p>
                     </div>
                   </div>
                   {crop.marketDemand && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                       {crop.marketDemand} Demand
                     </span>
                   )}
