@@ -23,9 +23,12 @@ import {
   Sparkles,
   Info,
   CheckCircle2,
+  Trees,
+  FlaskConical,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { StickyBottomBar } from '../components/ui/StickyBottomBar';
+import { StatTile } from '../components/ui/StatTile';
 import { useTranslation } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { CropImage } from '../types';
@@ -191,20 +194,20 @@ export const CropDetailsPage: React.FC = () => {
   const getImageTypeLabel = (type: string) => {
     switch (type) {
       case 'plant':
-        return '🌿 Whole Plant';
+        return 'Whole Plant';
       case 'flower':
-        return '🌸 Flower';
+        return 'Flower';
       case 'fruit':
-        return '🍎 Fruit';
+        return 'Fruit';
       case 'produce':
       case 'grain':
-        return '🌾 Grain / Harvest';
+        return 'Grain / Harvest';
       case 'seed':
-        return '🌰 Seed';
+        return 'Seed';
       case 'leaf':
-        return '🍃 Leaf';
+        return 'Leaf';
       default:
-        return '📸 Photo';
+        return 'Photo';
     }
   };
 
@@ -353,38 +356,38 @@ export const CropDetailsPage: React.FC = () => {
           </div>
         )}
 
-        {/* 4 Metadata Quick Chips */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 p-3 bg-cream-light border-b border-gray-100 text-center">
-          <div className="p-2 rounded-2xl bg-white/90 border border-gray-100">
-            <Clock className="w-4 h-4 text-forest mx-auto mb-1" />
-            <span className="text-[10px] text-dark-muted block">Duration</span>
-            <span className="text-xs font-bold text-dark-text block truncate">
-              {crop.durationDays || crop.growingDuration || '100-120 days'}
-            </span>
+        {/* 4 Metadata Quick Chips using StatTile */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 p-3 bg-gray-50 dark:bg-dark-elevated border-b border-gray-100 dark:border-dark-border text-center">
+          <div className="p-2.5 rounded-2xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border">
+            <StatTile
+              icon={<Clock className="w-4 h-4 text-brand-600 dark:text-brand-400" />}
+              label="Duration"
+              value={crop.durationDays || crop.growingDuration || '100-120 days'}
+            />
           </div>
 
-          <div className="p-2 rounded-2xl bg-white/90 border border-gray-100">
-            <Droplets className="w-4 h-4 text-blue-500 mx-auto mb-1" />
-            <span className="text-[10px] text-dark-muted block">Water Need</span>
-            <span className="text-xs font-bold text-dark-text block truncate">
-              {crop.waterRequirement || crop.waterRequirements?.split(' ')[0] || 'Moderate'}
-            </span>
+          <div className="p-2.5 rounded-2xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border">
+            <StatTile
+              icon={<Droplets className="w-4 h-4 text-blue-500" />}
+              label="Water Need"
+              value={crop.waterRequirement || crop.waterRequirements?.split(' ')[0] || 'Moderate'}
+            />
           </div>
 
-          <div className="p-2 rounded-2xl bg-white/90 border border-gray-100">
-            <Layers className="w-4 h-4 text-amber-700 mx-auto mb-1" />
-            <span className="text-[10px] text-dark-muted block">Ideal Soil & pH</span>
-            <span className="text-xs font-bold text-dark-text block truncate">
-              {crop.minPh && crop.maxPh ? `pH ${crop.minPh}-${crop.maxPh}` : 'Loamy / Red'}
-            </span>
+          <div className="p-2.5 rounded-2xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border">
+            <StatTile
+              icon={<Layers className="w-4 h-4 text-amber-700" />}
+              label="Ideal Soil & pH"
+              value={crop.minPh && crop.maxPh ? `pH ${crop.minPh}-${crop.maxPh}` : 'Loamy / Red'}
+            />
           </div>
 
-          <div className="p-2 rounded-2xl bg-white/90 border border-gray-100">
-            <Calendar className="w-4 h-4 text-emerald-600 mx-auto mb-1" />
-            <span className="text-[10px] text-dark-muted block">Best Season</span>
-            <span className="text-xs font-bold text-dark-text block truncate">
-              {Array.isArray(crop.seasons) ? crop.seasons.join(', ') : crop.seasons || 'Kharif'}
-            </span>
+          <div className="p-2.5 rounded-2xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border">
+            <StatTile
+              icon={<Calendar className="w-4 h-4 text-emerald-600" />}
+              label="Best Season"
+              value={Array.isArray(crop.seasons) ? crop.seasons.join(', ') : crop.seasons || 'Kharif'}
+            />
           </div>
         </div>
 
@@ -521,8 +524,9 @@ export const CropDetailsPage: React.FC = () => {
               {/* Intercropping & Gestation for Orchard / Long-term */}
               {(crop.gestationYears || crop.fruitingTime || (crop.intercroppingOptions && crop.intercroppingOptions.length > 0)) && (
                 <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200/80 space-y-2.5">
-                  <span className="font-extrabold text-amber-900 text-xs block">
-                    🌳 Orchard & Plantation Specifications:
+                  <span className="font-extrabold text-amber-900 text-xs flex items-center gap-1.5">
+                    <Trees className="w-4 h-4 text-amber-700" />
+                    <span>Orchard & Plantation Specifications:</span>
                   </span>
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     {crop.gestationYears && (
@@ -595,9 +599,10 @@ export const CropDetailsPage: React.FC = () => {
               </div>
 
               {/* Fertilizer Schedule */}
-              <div className="p-4 rounded-2xl bg-mint/30 border border-forest/15 space-y-2.5">
-                <span className="font-extrabold text-forest text-sm block">
-                  🧪 ICAR Standard Fertilizer & Nutrient Schedule (Per Acre)
+              <div className="p-4 rounded-2xl bg-brand-50/40 dark:bg-brand-950/20 border border-brand-200/40 dark:border-brand-800/40 space-y-2.5">
+                <span className="font-extrabold text-brand-800 dark:text-brand-300 text-sm flex items-center gap-1.5">
+                  <FlaskConical className="w-4 h-4 text-brand-600 dark:text-brand-400" />
+                  <span>ICAR Standard Fertilizer & Nutrient Schedule (Per Acre)</span>
                 </span>
                 <div className="space-y-2 text-dark-text">
                   <div className="p-2.5 rounded-xl bg-white border border-forest/10">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MapPin, Navigation, Search, Check, Layers, AlertCircle, RefreshCw } from 'lucide-react';
+import { MapPin, Navigation, Search, Check, Layers, AlertCircle, RefreshCw, Sprout } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
 import { api } from '../../services/api';
 
@@ -306,7 +306,7 @@ export const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-2">
               <div className="w-7 h-7 rounded-xl bg-forest text-white flex items-center justify-center text-xs font-bold">
-                🌾
+                <Sprout className="w-4 h-4 text-white" />
               </div>
               <div>
                 <h4 className="text-xs font-extrabold text-dark-text flex items-center gap-1.5">

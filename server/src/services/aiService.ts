@@ -11,7 +11,7 @@ export interface ChatResponse {
   answer: string;
   speechContent?: string;
   language: string;
-  mode: 'gemini' | 'local_demo';
+  mode: 'gemini' | 'openrouter' | 'local_demo';
   modelUsed?: string;
   sources?: string[];
   suggestedQuestions?: string[];
@@ -89,29 +89,39 @@ async function ensureCorrectScriptWithGemini(
   targetLanguage: string
 ): Promise<string> {
   const cleaned = cleanTransliteratedGreeting(rawText, targetLanguage);
+  // Fast path: Only run Gemini auto-correction when script check truly fails
   if (isValidScriptForLanguage(cleaned, targetLanguage)) {
     return cleaned;
   }
 
   const targetName = LANGUAGE_DISPLAY_NAMES[targetLanguage as SupportedLanguage] || targetLanguage;
-  console.warn(`[aiService] Detected script mismatch for '${targetLanguage}'. Running Gemini auto-correction...`);
+  console.warn(`[aiService] Detected script mismatch for '${targetLanguage}'. Running quick auto-correction...`);
 
   try {
-    const res = await client.models.generateContent({
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      const id = setTimeout(() => {
+        clearTimeout(id);
+        reject(new Error('Script correction timed out after 8s'));
+      }, 8000);
+    });
+
+    const generatePromise = client.models.generateContent({
       model,
       contents: `You are an expert Indian agricultural advisor. Translate the following advisory completely and strictly into ${targetName}. Use authentic native script only. Do NOT include any sentences from other languages. Write the full response in ${targetName}:\n\n${cleaned}`,
       config: {
         temperature: 0.1,
-        maxOutputTokens: 600,
+        maxOutputTokens: 300,
       },
     });
 
-    if (res.text && isValidScriptForLanguage(res.text, targetLanguage)) {
+    const res = await Promise.race([generatePromise, timeoutPromise]);
+
+    if (res && res.text && isValidScriptForLanguage(res.text, targetLanguage)) {
       console.log(`[aiService] Successfully auto-corrected response to ${targetLanguage}!`);
       return cleanTransliteratedGreeting(res.text.trim(), targetLanguage);
     }
   } catch (err: any) {
-    console.warn(`[aiService] Auto-correction translation failed: ${err.message}`);
+    console.warn(`[aiService] Auto-correction translation skipped: ${err.message}`);
   }
 
   return cleaned;
@@ -153,12 +163,13 @@ export function cleanForSpeakableSummary(rawText: string, language: string): str
   if (sentences.length === 0) return cleaned;
 
   const summary = sentences.slice(0, 3).join(' ');
-  return summary.length > 350 ? summary.slice(0, 350) + '...' : summary;
+  return summary.length > 250 ? summary.slice(0, 250) + '...' : summary;
 }
 
 /**
  * Extracts written advisory and speechContent from an AI response.
  * Uses <speech_summary> if provided by Gemini, or falls back to cleanForSpeakableSummary.
+ * Strictly guarantees a concise 2-3 sentence speakable summary for voice.
  */
 export function extractSpeechContent(
   rawText: string,
@@ -169,7 +180,8 @@ export function extractSpeechContent(
 
   const speechMatch = rawText.match(/<speech_summary>([\s\S]*?)<\/speech_summary>/i);
   if (speechMatch && speechMatch[1]) {
-    speechContent = cleanSpeechFormatting(speechMatch[1].trim());
+    const rawSummary = cleanSpeechFormatting(speechMatch[1].trim());
+    speechContent = cleanForSpeakableSummary(rawSummary, language);
     writtenAnswer = rawText.replace(/<speech_summary>[\s\S]*?<\/speech_summary>/gi, '').trim();
   }
 
@@ -215,16 +227,41 @@ export const REGIONAL_NEURAL_VOICES: Record<string, { female: string; male: stri
   },
 };
 
+// Circuit breaker for Cloud TTS engines (5 minute lockout on failure/timeout)
+const TTS_CIRCUIT_BREAKER_LOCKOUT_MS = 5 * 60 * 1000;
+const ttsCircuitBreakers: Record<'gemini-tts' | 'edge-neural', { failUntil: number }> = {
+  'gemini-tts': { failUntil: 0 },
+  'edge-neural': { failUntil: 0 },
+};
+
+export function isTtsCircuitBroken(provider: 'gemini-tts' | 'edge-neural'): boolean {
+  return Date.now() < ttsCircuitBreakers[provider].failUntil;
+}
+
+export function tripTtsCircuitBreaker(provider: 'gemini-tts' | 'edge-neural', reason: string) {
+  ttsCircuitBreakers[provider].failUntil = Date.now() + TTS_CIRCUIT_BREAKER_LOCKOUT_MS;
+  console.warn(`[aiService] ${provider} tripped circuit breaker: ${reason}. Bypassing for 5 minutes.`);
+}
+
+export function resetTtsCircuitBreaker(provider: 'gemini-tts' | 'edge-neural') {
+  ttsCircuitBreakers[provider].failUntil = 0;
+}
+
 /**
  * Synthesizes audio using Microsoft Edge Regional Neural voices.
  * Provides completely natural South Indian conversational voices for
  * Kannada, Tamil, Telugu, and Indian English with zero rate limit restrictions.
+ * Fast 4s timeout + 5-minute circuit breaker.
  */
 async function synthesizeWithEdgeNeural(
   text: string,
   language: string,
   gender: 'female' | 'male' = 'female'
 ): Promise<SpeechGenerationResult | null> {
+  if (isTtsCircuitBroken('edge-neural')) {
+    return null;
+  }
+
   const safeLang = ['en', 'kn', 'ta', 'te'].includes(language) ? language : 'en';
   const voiceConfig = REGIONAL_NEURAL_VOICES[safeLang] || REGIONAL_NEURAL_VOICES.en;
   const voiceName = gender === 'male' ? voiceConfig.male : voiceConfig.female;
@@ -237,8 +274,8 @@ async function synthesizeWithEdgeNeural(
     const buffer = await new Promise<Buffer>((resolve, reject) => {
       const chunks: Buffer[] = [];
       const timeout = setTimeout(() => {
-        reject(new Error(`Edge Neural TTS timed out after 12s for voice ${voiceName}`));
-      }, 12000);
+        reject(new Error(`Edge Neural TTS timed out after 4s for voice ${voiceName}`));
+      }, 4000);
 
       audioStream.on('data', (chunk: Buffer) => chunks.push(chunk));
       audioStream.on('end', () => {
@@ -252,6 +289,7 @@ async function synthesizeWithEdgeNeural(
     });
 
     if (buffer && buffer.length > 0) {
+      resetTtsCircuitBreaker('edge-neural');
       return {
         audio: buffer.toString('base64'),
         mimeType: 'audio/mp3',
@@ -261,13 +299,14 @@ async function synthesizeWithEdgeNeural(
       };
     }
   } catch (err: any) {
-    console.warn(`[aiService] Edge Neural TTS failed (${voiceName}): ${err.message || err}`);
+    tripTtsCircuitBreaker('edge-neural', err.message || 'Timeout/Error');
   }
   return null;
 }
 
 /**
  * Synthesizes audio using Google Gemini 3.8 Flash TTS via official interactions API.
+ * Fast 4s timeout + 5-minute circuit breaker.
  */
 async function synthesizeWithGeminiTts(
   text: string,
@@ -275,7 +314,7 @@ async function synthesizeWithGeminiTts(
   gender: 'female' | 'male' = 'female'
 ): Promise<SpeechGenerationResult | null> {
   const apiKey = (config.geminiApiKey || '').trim();
-  if (!apiKey) return null;
+  if (!apiKey || isTtsCircuitBroken('gemini-tts')) return null;
 
   const safeLang = ['en', 'kn', 'ta', 'te'].includes(language) ? language : 'en';
   const voiceName = gender === 'male' ? 'Charon' : 'Aoede';
@@ -286,7 +325,7 @@ async function synthesizeWithGeminiTts(
   for (const model of ttsModels) {
     try {
       const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 12000);
+      const timeout = setTimeout(() => controller.abort(), 4000); // 4 second timeout
 
       const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/interactions?key=${apiKey}`, {
         method: 'POST',
@@ -321,12 +360,11 @@ async function synthesizeWithGeminiTts(
       clearTimeout(timeout);
 
       if (res.status === 429) {
-        console.warn(`[aiService] Gemini TTS (${model}) hit rate limit (429).`);
+        tripTtsCircuitBreaker('gemini-tts', 'Rate limited (429)');
         return null;
       }
 
       if (!res.ok) {
-        console.warn(`[aiService] Gemini TTS (${model}) HTTP ${res.status}`);
         continue;
       }
 
@@ -335,6 +373,7 @@ async function synthesizeWithGeminiTts(
       const audioContent = audioStep?.content?.find((c: any) => c.type === 'audio');
 
       if (audioContent?.data) {
+        resetTtsCircuitBreaker('gemini-tts');
         return {
           audio: audioContent.data,
           mimeType: audioContent.mime_type || 'audio/wav',
@@ -344,19 +383,20 @@ async function synthesizeWithGeminiTts(
         };
       }
     } catch (err: any) {
-      console.warn(`[aiService] Gemini TTS (${model}) attempt failed: ${err.message || err}`);
+      // If timed out or aborted, continue or break
     }
   }
 
+  tripTtsCircuitBreaker('gemini-tts', 'All models failed or timed out after 4s');
   return null;
 }
 
 /**
  * Primary Configurable Speech Synthesis Engine.
  * Supports:
- * - 'gemini-tts': Gemini 3.8 Flash TTS
- * - 'edge-neural': Regional Neural voices (kn, ta, te, en)
- * - 'auto': Gemini TTS first; if quota exceeded or unavailable, seamlessly falls back to Edge Neural!
+ * - 'gemini-tts': Gemini 3.8 Flash TTS (with circuit breaker)
+ * - 'edge-neural': Regional Neural voices (with circuit breaker)
+ * - 'auto': Gemini TTS first (if healthy); if tripped or failed, Edge Neural; if both down, returns null immediately so client uses browser voice with 0 wait time!
  * - 'browser': returns null so client directly uses browser SpeechSynthesis.
  */
 export async function generateSpeechAudio({
@@ -372,16 +412,14 @@ export async function generateSpeechAudio({
 
   const safeLang = ['en', 'kn', 'ta', 'te'].includes(language) ? language : 'en';
   const safeGender = gender === 'male' ? 'male' : 'female';
-  const textToSynthesize = cleanText.length > 800 ? cleanText.slice(0, 800) + '...' : cleanText;
+  const textToSynthesize = cleanText.length > 500 ? cleanText.slice(0, 500) + '...' : cleanText;
 
   if (provider === 'browser') {
     return null;
   }
 
   if (provider === 'gemini-tts') {
-    const geminiRes = await synthesizeWithGeminiTts(textToSynthesize, safeLang, safeGender);
-    if (geminiRes) return geminiRes;
-    return null;
+    return synthesizeWithGeminiTts(textToSynthesize, safeLang, safeGender);
   }
 
   if (provider === 'edge-neural') {
@@ -389,17 +427,117 @@ export async function generateSpeechAudio({
   }
 
   // provider === 'auto':
-  // 1. Try Gemini TTS if key configured
-  if (config.geminiApiKey) {
+  // 1. Try Gemini TTS if key configured and circuit not broken
+  if (config.geminiApiKey && !isTtsCircuitBroken('gemini-tts')) {
     const geminiRes = await synthesizeWithGeminiTts(textToSynthesize, safeLang, safeGender);
     if (geminiRes) return geminiRes;
   }
 
-  // 2. Fall back to South Indian Regional Neural Edge TTS
-  const edgeRes = await synthesizeWithEdgeNeural(textToSynthesize, safeLang, safeGender);
-  if (edgeRes) return edgeRes;
+  // 2. Try Edge Neural if circuit not broken
+  if (!isTtsCircuitBroken('edge-neural')) {
+    const edgeRes = await synthesizeWithEdgeNeural(textToSynthesize, safeLang, safeGender);
+    if (edgeRes) return edgeRes;
+  }
 
+  // 3. Both cloud services down / circuit broken: return null immediately
+  // Client is instructed to use browser voice without waiting!
   return null;
+}
+
+/**
+ * Streaming variant of the Gemini call.
+ * Yields raw text chunks as they arrive from the model.
+ * Returns { modelUsed } once the stream is exhausted.
+ * Throws on unrecoverable errors.
+ */
+export async function* callGoogleGeminiWithSdkStream(
+  query: string,
+  systemPrompt: string,
+  history: HistoryTurn[] = [],
+  targetLanguage = 'en'
+): AsyncGenerator<{ chunk?: string; modelUsed?: string; done?: boolean }> {
+  const client = getGeminiClient();
+  if (!client) return;
+
+  const preferredModel = (config.geminiModel || 'gemini-3.5-flash').trim();
+  const fallbackModel = preferredModel === 'gemini-3.5-flash-lite' ? 'gemini-3.5-flash' : 'gemini-3.5-flash-lite';
+  const modelsToTry = [preferredModel, fallbackModel]; // At most 2 models for fast turnaround
+
+  let validHistory: HistoryTurn[] = [];
+  for (const turn of history) {
+    if (turn.parts && turn.parts.length > 0 && turn.parts[0]?.text) {
+      validHistory.push({ role: turn.role, parts: [{ text: turn.parts[0].text }] });
+    }
+  }
+  while (validHistory.length > 0 && validHistory[0].role !== 'user') validHistory.shift();
+
+  let isLanguageSwitch = false;
+  if (validHistory.length > 0) {
+    const lastTurnText = validHistory[validHistory.length - 1].parts[0]?.text || '';
+    if (!isValidScriptForLanguage(lastTurnText, targetLanguage)) {
+      isLanguageSwitch = true;
+      if (validHistory.length > 2) {
+        validHistory = validHistory.slice(-2);
+        while (validHistory.length > 0 && validHistory[0].role !== 'user') validHistory.shift();
+      }
+    }
+  }
+
+  const langDirectives: Record<string, string> = {
+    kn: '[MANDATORY: You MUST reply strictly and entirely in Kannada (ಕನ್ನಡ) script. Do NOT use English, Tamil, or Telugu. Start with a proper Kannada greeting like "ನಮಸ್ಕಾರ".]',
+    ta: '[MANDATORY: You MUST reply strictly and entirely in Tamil (தமிழ்) script. Do NOT use English, Kannada, or Telugu. Start with a proper Tamil greeting like "வணக்கம்".]',
+    te: '[MANDATORY: You MUST reply strictly and entirely in Telugu (తెలుగు) script. Do NOT use English, Kannada, or Tamil. Start with a proper Telugu greeting like "నమస్కారం".]',
+    en: '[MANDATORY: You MUST reply strictly and entirely in English. Do NOT use Kannada, Tamil, or Telugu script. Start with an English greeting like "Hello" or "Greetings".]',
+  };
+
+  const directive = langDirectives[targetLanguage] || langDirectives.en;
+  const switchNotice = isLanguageSwitch
+    ? `[LANGUAGE SWITCH: The farmer has switched to ${LANGUAGE_DISPLAY_NAMES[targetLanguage as SupportedLanguage] || targetLanguage}. Disregard previous languages.]\n`
+    : '';
+  const userContent = `${switchNotice}${directive}\n\n${query}`;
+  const contents = [...validHistory, { role: 'user' as const, parts: [{ text: userContent }] }];
+
+  let lastError: any = null;
+
+  for (const model of modelsToTry) {
+    try {
+      const stream = await client.models.generateContentStream({
+        model,
+        contents,
+        config: {
+          systemInstruction: systemPrompt,
+          temperature: 0.25,
+          maxOutputTokens: 600,
+        },
+      });
+
+      for await (const chunk of stream) {
+        const chunkText = chunk.text;
+        if (chunkText) {
+          yield { chunk: chunkText };
+        }
+      }
+
+      yield { done: true, modelUsed: model };
+      return;
+    } catch (err: any) {
+      lastError = err;
+      const status = err?.status || err?.statusCode;
+      const msg = err?.message || '';
+      if (
+        status === 404 || status === 503 || status === 429 ||
+        msg.includes('not found') || msg.includes('is not supported') ||
+        msg.includes('UNAVAILABLE') || msg.includes('high demand') ||
+        msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')
+      ) {
+        console.warn(`[aiService] Gemini stream model '${model}' unavailable (${status || msg}), trying next...`);
+        continue;
+      }
+      break;
+    }
+  }
+
+  if (lastError) throw lastError;
 }
 
 export async function callGoogleGeminiWithSdk(
@@ -413,17 +551,10 @@ export async function callGoogleGeminiWithSdk(
     return null;
   }
 
-  // Model selection: user configured model or available model fallback
+  // Model selection: at most 2 models for fast turnaround
   const preferredModel = (config.geminiModel || 'gemini-3.5-flash').trim();
-  const modelsToTry = Array.from(
-    new Set([
-      preferredModel,
-      'gemini-3.5-flash',
-      'gemini-3.5-flash-lite',
-      'gemini-3.8-flash',
-      'gemini-flash-latest',
-    ])
-  );
+  const fallbackModel = preferredModel === 'gemini-3.5-flash-lite' ? 'gemini-3.5-flash' : 'gemini-3.5-flash-lite';
+  const modelsToTry = [preferredModel, fallbackModel];
 
   // Build sanitized history
   let validHistory: HistoryTurn[] = [];
@@ -483,12 +614,12 @@ export async function callGoogleGeminiWithSdk(
 
   for (const model of modelsToTry) {
     try {
-      // 20 second timeout for safety
+      // 8 second timeout per model for fast turnaround
       const timeoutPromise = new Promise<never>((_, reject) => {
         const id = setTimeout(() => {
           clearTimeout(id);
-          reject(new Error('Gemini API request timed out after 20 seconds'));
-        }, 20000);
+          reject(new Error(`Gemini API request timed out after 8s for model ${model}`));
+        }, 8000);
       });
 
       const generatePromise = client.models.generateContent({
@@ -546,6 +677,194 @@ export async function callGoogleGeminiWithSdk(
   }
 
   return null;
+}
+
+export async function callOpenRouter(
+  query: string,
+  systemPrompt: string,
+  history: HistoryTurn[] = [],
+  targetLanguage = 'en'
+): Promise<{ text: string; modelUsed: string } | null> {
+  const apiKey = (config.openRouterApiKey || '').trim();
+  if (!apiKey) return null;
+
+  const preferredModel = (config.openRouterModel || 'openrouter/free').trim();
+  const modelsToTry = [preferredModel, 'nvidia/nemotron-3.5-lightning:free'];
+
+  const messages: { role: string; content: string }[] = [
+    { role: 'system', content: systemPrompt },
+  ];
+
+  for (const turn of history) {
+    if (turn.parts?.[0]?.text) {
+      messages.push({
+        role: turn.role === 'model' ? 'assistant' : 'user',
+        content: turn.parts[0].text,
+      });
+    }
+  }
+
+  const langDirectives: Record<string, string> = {
+    kn: '[MANDATORY: Reply strictly in Kannada (ಕನ್ನಡ) script. Start with "ನಮಸ್ಕಾರ".]',
+    ta: '[MANDATORY: Reply strictly in Tamil (தமிழ்) script. Start with "வணக்கம்".]',
+    te: '[MANDATORY: Reply strictly in Telugu (తెలుగు) script. Start with "నమస్కారం".]',
+    en: '[MANDATORY: Reply strictly in English. Start with "Hello" or "Greetings".]',
+  };
+  const directive = langDirectives[targetLanguage] || langDirectives.en;
+  messages.push({ role: 'user', content: `${directive}\n\n${query}` });
+
+  let lastError: any = null;
+  for (const model of modelsToTry) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': config.clientUrl || 'http://localhost:5173',
+          'X-Title': 'Krushi Sathi',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.25,
+          max_tokens: 600,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errorBody = await res.text();
+        console.warn(`[aiService] OpenRouter ${model} error (${res.status}): ${errorBody}`);
+        continue;
+      }
+
+      const data: any = await res.json();
+      const text = data?.choices?.[0]?.message?.content;
+      if (text && typeof text === 'string') {
+        return {
+          text: text.trim(),
+          modelUsed: model,
+        };
+      }
+    } catch (err: any) {
+      lastError = err;
+      console.warn(`[aiService] OpenRouter ${model} attempt failed: ${err.message}`);
+    }
+  }
+
+  if (lastError) throw lastError;
+  return null;
+}
+
+export async function* callOpenRouterStream(
+  query: string,
+  systemPrompt: string,
+  history: HistoryTurn[] = [],
+  targetLanguage = 'en'
+): AsyncGenerator<{ chunk?: string; modelUsed?: string; done?: boolean }> {
+  const apiKey = (config.openRouterApiKey || '').trim();
+  if (!apiKey) return;
+
+  const preferredModel = (config.openRouterModel || 'openrouter/free').trim();
+  const modelsToTry = [preferredModel, 'nvidia/nemotron-3.5-lightning:free'];
+
+  const messages: { role: string; content: string }[] = [
+    { role: 'system', content: systemPrompt },
+  ];
+
+  for (const turn of history) {
+    if (turn.parts?.[0]?.text) {
+      messages.push({
+        role: turn.role === 'model' ? 'assistant' : 'user',
+        content: turn.parts[0].text,
+      });
+    }
+  }
+
+  const langDirectives: Record<string, string> = {
+    kn: '[MANDATORY: Reply strictly in Kannada (ಕನ್ನಡ) script. Start with "ನಮಸ್ಕಾರ".]',
+    ta: '[MANDATORY: Reply strictly in Tamil (தமிழ்) script. Start with "வணக்கம்".]',
+    te: '[MANDATORY: Reply strictly in Telugu (తెలుగు) script. Start with "నమస్కారం".]',
+    en: '[MANDATORY: Reply strictly in English. Start with "Hello" or "Greetings".]',
+  };
+  const directive = langDirectives[targetLanguage] || langDirectives.en;
+  messages.push({ role: 'user', content: `${directive}\n\n${query}` });
+
+  for (const model of modelsToTry) {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 18000);
+
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'HTTP-Referer': config.clientUrl || 'http://localhost:5173',
+          'X-Title': 'Krushi Sathi',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0.25,
+          max_tokens: 600,
+          stream: true,
+        }),
+        signal: controller.signal,
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!res.ok) {
+        const errorBody = await res.text();
+        console.warn(`[aiService] OpenRouter stream ${model} error (${res.status}): ${errorBody}`);
+        continue;
+      }
+
+      if (!res.body) continue;
+
+      const reader = (res.body as any).getReader();
+      const decoder = new TextDecoder('utf-8');
+      let buffer = '';
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split('\n');
+        buffer = lines.pop() || '';
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith('data: ')) {
+            const dataStr = trimmed.slice(6);
+            if (dataStr === '[DONE]') {
+              yield { done: true, modelUsed: model };
+              return;
+            }
+            try {
+              const parsed = JSON.parse(dataStr);
+              const content = parsed.choices?.[0]?.delta?.content;
+              if (content) {
+                yield { chunk: content };
+              }
+            } catch {}
+          }
+        }
+      }
+
+      yield { done: true, modelUsed: model };
+      return;
+    } catch (err: any) {
+      console.warn(`[aiService] OpenRouter stream attempt for ${model} failed: ${err.message}`);
+    }
+  }
 }
 
 export async function generateChatResponse(
@@ -646,7 +965,31 @@ export async function generateChatResponse(
     }
   }
 
-  // 3. FALLBACK: Gemini API key not configured -> Clean local demo mode (Requirement 7)
+  // 3. SECONDARY LIVE AI: OpenRouter (Free models)
+  if (config.openRouterApiKey && config.openRouterApiKey.trim() !== '') {
+    try {
+      const orResult = await callOpenRouter(normQuery, systemPrompt, history, effectiveLang);
+      if (orResult && orResult.text) {
+        const { writtenAnswer, speechContent } = extractSpeechContent(orResult.text, effectiveLang);
+        return {
+          answer: writtenAnswer,
+          speechContent,
+          language: effectiveLang,
+          mode: 'openrouter',
+          modelUsed: orResult.modelUsed,
+          sources: [
+            `OpenRouter AI (${orResult.modelUsed})`,
+            'ICAR / Krishi Vigyan Kendra (KVK) Agronomy Standards',
+          ],
+          suggestedQuestions: getSuggestedQuestions(effectiveLang),
+        };
+      }
+    } catch (err: any) {
+      console.warn(`[aiService] OpenRouter API call failed: ${err.message}. Safely falling back to local demo agronomy engine.`);
+    }
+  }
+
+  // 4. FALLBACK: Live AI key not configured or unavailable -> Clean local demo mode
   const expertAnswer = generateContextualAgronomyAnswer(normQuery, effectiveLang, context);
   const { writtenAnswer, speechContent } = extractSpeechContent(expertAnswer, effectiveLang);
   const banner = getLocalFallbackBanner(effectiveLang, 'Gemini API key not configured');
@@ -1253,7 +1596,7 @@ function generateContextualAgronomyAnswer(
   );
 }
 
-function getSuggestedQuestions(language: string): string[] {
+export function getSuggestedQuestions(language: string): string[] {
   if (language === 'kn') {
     return [
       'ನನ್ನ ಮಣ್ಣಿಗೆ ಯಾವ ಬೆಳೆ ಉತ್ತಮ?',

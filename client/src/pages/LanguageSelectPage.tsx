@@ -16,28 +16,28 @@ export const LanguageSelectPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-gradient-to-b from-cream via-white to-mint-light flex flex-col justify-between pt-[max(1.25rem,env(safe-area-inset-top,0px))] pb-[max(1.25rem,env(safe-area-inset-bottom,0px))] px-4 sm:px-6 max-w-md mx-auto">
+    <div className="min-h-dvh bg-bg dark:bg-dark-bg flex flex-col justify-between pt-[max(1.5rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] px-6 max-w-sm mx-auto w-full">
       {/* Header */}
       <motion.div
-        initial={shouldReduceMotion ? false : { opacity: 0, y: -15 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="pt-4 text-center"
       >
-        <span className="w-12 h-1.5 rounded-full bg-forest/20 inline-block mb-4 sm:mb-6" />
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-dark-text leading-tight">
+        <span className="w-10 h-1 rounded-full bg-brand-600/30 inline-block mb-4" />
+        <h1 className="text-display font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight">
           {t('chooseLanguage')}
         </h1>
-        <p className="text-sm text-dark-muted font-medium mt-1.5 sm:mt-2 max-w-xs mx-auto">
+        <p className="text-[14px] text-gray-500 dark:text-gray-400 font-medium mt-1.5 max-w-xs mx-auto leading-relaxed">
           {t('selectLanguageComfortable')}
         </p>
       </motion.div>
 
       {/* 2x2 Language Cards Grid */}
       <motion.div
-        initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.96 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: shouldReduceMotion ? 0 : 0.05, duration: 0.3 }}
-        className="grid grid-cols-2 gap-3 sm:gap-4 my-auto py-4 sm:py-6"
+        transition={{ delay: shouldReduceMotion ? 0 : 0.05, duration: 0.25 }}
+        className="grid grid-cols-2 gap-3.5 my-auto py-6"
       >
         {languages.map((lang, index) => {
           const isSelected = language === lang.code;
@@ -45,39 +45,43 @@ export const LanguageSelectPage: React.FC = () => {
           return (
             <motion.button
               key={lang.code}
-              whileTap={{ scale: 0.96 }}
-              initial={shouldReduceMotion ? false : { opacity: 0, y: 15 }}
+              whileTap={shouldReduceMotion ? undefined : { scale: 0.96 }}
+              initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: shouldReduceMotion ? 0 : 0.04 * index }}
               onClick={() => setLanguage(lang.code as LanguageCode)}
-              className={`relative flex flex-col items-center justify-center p-3.5 sm:p-6 min-h-[110px] sm:min-h-[135px] rounded-2xl sm:rounded-3xl border-2 transition-all duration-200 select-none focus-visible:ring-2 focus-visible:ring-forest ${
+              className={[
+                'relative flex flex-col items-center justify-center p-5 min-h-[140px] rounded-4xl border-2 transition-all duration-150 select-none text-center',
                 isSelected
-                  ? 'border-forest bg-mint/50 shadow-xl shadow-forest/15 ring-2 ring-forest/20'
-                  : 'border-gray-100 bg-white hover:border-forest/30 shadow-card'
-              }`}
+                  ? 'border-brand-700 bg-brand-50/60 dark:bg-brand-900/25 dark:border-brand-500 shadow-sm'
+                  : 'border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-brand-300 dark:hover:border-brand-700 shadow-xs',
+              ].join(' ')}
             >
               {isSelected && (
-                <div className="absolute top-3 right-3 w-6 h-6 rounded-full bg-forest text-white flex items-center justify-center shadow-sm">
-                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-brand-700 dark:bg-brand-600 text-white flex items-center justify-center shadow-xs">
+                  <Check className="w-3 h-3 stroke-[3]" />
                 </div>
               )}
 
-              {/* Indic Script Character */}
+              {/* Indic Script Character Emblem */}
               <div
-                className={`w-14 h-14 rounded-2xl flex items-center justify-center text-3xl font-bold mb-3 shadow-sm ${
-                  isSelected ? 'bg-forest text-white' : 'bg-mint-light text-forest border border-forest/10'
-                }`}
+                className={[
+                  'w-12 h-12 rounded-2xl flex items-center justify-center text-2xl font-bold mb-3 shadow-xs',
+                  isSelected
+                    ? 'bg-brand-700 text-white dark:bg-brand-600'
+                    : 'bg-gray-100 text-gray-700 dark:bg-dark-elevated dark:text-gray-300',
+                ].join(' ')}
               >
                 {lang.symbol}
               </div>
 
               {/* Native Language Name */}
-              <span className="text-lg font-extrabold text-dark-text block">
+              <span className="text-[17px] font-bold text-gray-900 dark:text-gray-100 block leading-tight">
                 {lang.nativeLabel}
               </span>
 
               {/* English Sub-label */}
-              <span className="text-xs font-semibold text-dark-muted mt-0.5">
+              <span className="text-[12px] font-medium text-gray-400 dark:text-gray-500 mt-0.5">
                 {lang.label}
               </span>
             </motion.button>
@@ -85,23 +89,24 @@ export const LanguageSelectPage: React.FC = () => {
         })}
       </motion.div>
 
-      {/* Bottom Action */}
+      {/* Bottom Action Area */}
       <motion.div
-        initial={{ opacity: 0, y: 15 }}
+        initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.3 }}
-        className="pb-4"
+        transition={{ delay: 0.15 }}
+        className="pb-2"
       >
         <Button
           onClick={handleContinue}
           size="lg"
           fullWidth
-          className="shadow-xl shadow-forest/20 flex items-center justify-center gap-2 group"
+          rightIcon={<ArrowRight className="w-4 h-4" />}
         >
-          <span>{t('navContinue')}</span>
-          <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          {t('navContinue') || 'Continue'}
         </Button>
       </motion.div>
     </div>
   );
 };
+
+export default LanguageSelectPage;

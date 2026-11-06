@@ -62,7 +62,7 @@ export const en = {
 
   // Home Dashboard
   helloFarmer: 'Hello {name}!',
-  goodDayFarming: 'Good day for farming 🌾',
+  goodDayFarming: 'Good day for farming',
   location: 'Location',
   updatedJustNow: 'Updated recently',
   changeLocation: 'Change Location',
@@ -250,9 +250,11 @@ export const en = {
   aiStatusOnline: 'Online • Ask anything about your farm',
   localDemoMode: 'Local Agricultural Knowledge (Offline Mode)',
   realAiMode: 'Powered by Gemini AI',
-  chatGreeting: 'Namaste! 🌾 I am your farming assistant. Ask me anything about crops, soil, weather, pest management, or government schemes.',
+  chatGreeting: 'Namaste! I am your farming assistant. Ask me anything about crops, soil, weather, pest management, or government schemes.',
   askPlaceholder: 'Type your farming question...',
   tapToSpeak: 'Tap to speak',
+  voiceTab: 'Voice',
+  chatTab: 'Chat',
   listening: 'Listening to your voice...',
   send: 'Send',
   youCanAsk: 'Suggested questions:',
@@ -303,7 +305,7 @@ export const en = {
   languageSuggestionKeep: 'Keep {currentLang}',
 
   // Phase 1: Home Page Declutter & Redesign
-  greetingNamaste: 'Namaste, {name}! 🙏',
+  greetingNamaste: 'Namaste, {name}!',
   setLocation: 'Set Farm Location',
   saveLocation: 'Save Farm Location',
   editLocationTitle: 'Edit Farm Location',
@@ -333,9 +335,9 @@ export const en = {
   planSwitcherCount: 'Plan {current} of {total}',
   stageLabel: 'Stage',
   upcomingTasksTitle: 'Next Tasks',
-  allTasksCompleted: 'All tasks completed for this stage! 🎉',
+  allTasksCompleted: 'All tasks completed for this stage!',
   taskPendingToast: 'Task marked pending',
-  taskCompletedToast: 'Task marked complete! 🌾',
+  taskCompletedToast: 'Task marked complete!',
 
   // Crop Health Specific Keys
   typeInsectPest: 'Insect Pest',

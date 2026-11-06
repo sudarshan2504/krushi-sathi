@@ -27,6 +27,37 @@ export interface UseVoiceAssistantOptions {
   onNewMessage?: (msg: ChatMessage) => void;
 }
 
+// Helper: Detect whether the recognized speech is an echo of the assistant's own voice
+function isEchoOfAssistant(recognized: string, assistantReply: string, spokenSummary: string): boolean {
+  if (!recognized) return false;
+  const clean = (s: string) =>
+    (s || '')
+      .toLowerCase()
+      .replace(/[^\p{L}\p{N}\s]/gu, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+  const r = clean(recognized);
+  const a = clean(assistantReply);
+  const s = clean(spokenSummary);
+  if (!r || r.length < 3) return false;
+
+  // Direct containment
+  if ((a && a.includes(r)) || (s && s.includes(r))) {
+    return true;
+  }
+
+  // Word overlap check (>60% of recognized words are contained in the assistant's speech)
+  const words = r.split(' ').filter((w) => w.length > 2);
+  if (words.length >= 2) {
+    const inA = words.filter((w) => a.includes(w)).length;
+    const inS = words.filter((w) => s.includes(w)).length;
+    if (inA / words.length >= 0.6 || inS / words.length >= 0.6) {
+      return true;
+    }
+  }
+  return false;
+}
+
 export function useVoiceAssistant({
   language,
   initialGender = 'female',
@@ -50,6 +81,10 @@ export function useVoiceAssistant({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isPermissionDenied, setIsPermissionDenied] = useState(false);
   const [voiceNotice, setVoiceNotice] = useState<string | null>(null);
+
+  // References to avoid stale closures
+  const lastAssistantWordsRef = useRef('');
+  const lastSpokenSummaryRef = useRef('');
 
   // Keep ref to conversationId to avoid stale closures in callbacks
   const convIdRef = useRef(conversationId);
@@ -114,6 +149,12 @@ export function useVoiceAssistant({
         return;
       }
 
+      // Stop any ongoing speech cleanly
+      speechService.stopSpeaking();
+
+      const tSubmit = performance.now();
+      console.log(`[Voice Perf] Submitting query: "${trimmed}"`);
+
       setState('preparing');
       setErrorMessage(null);
 
@@ -129,6 +170,8 @@ export function useVoiceAssistant({
 
       try {
         const res = await api.chat.sendMessage(trimmed, languageRef.current, convIdRef.current);
+        const tChat = performance.now();
+        console.log(`[Voice Perf] Chat API responded in ${Math.round(tChat - tSubmit)}ms`);
 
         if (res.conversationId && !convIdRef.current) {
           onConversationIdChange?.(res.conversationId);
@@ -141,6 +184,9 @@ export function useVoiceAssistant({
         setLastSpokenSummary(spokenText);
         setLastAssistantWords(assistantMsg.content);
         setLastAssistantMessage(assistantMsg);
+
+        lastAssistantWordsRef.current = assistantMsg.content;
+        lastSpokenSummaryRef.current = spokenText;
 
         // Language synchronization
         let activeLang = languageRef.current;
@@ -155,6 +201,12 @@ export function useVoiceAssistant({
           gender: voiceGenderRef.current,
           provider: providerChoiceRef.current,
           onStart: () => {
+            const tPlayback = performance.now();
+            console.log(
+              `[Voice Perf] Total turnaround to audio start: ${Math.round(tPlayback - tSubmit)}ms (Chat: ${Math.round(
+                tChat - tSubmit
+              )}ms, TTS/Audio Start: ${Math.round(tPlayback - tChat)}ms)`
+            );
             setState('speaking');
           },
           onProviderSelected: (provider, vName) => {
@@ -180,9 +232,10 @@ export function useVoiceAssistant({
           onEnd: () => {
             // Check if user enabled continuous conversation
             if (autoListenRef.current) {
+              // Wait 800 ms after speech ends before restarting mic to prevent picking up audio tail/echo
               setTimeout(() => {
                 startListening();
-              }, 400);
+              }, 800);
             } else {
               setState('ready');
             }
@@ -205,11 +258,12 @@ export function useVoiceAssistant({
 
   // Start listening session with turn-taking and interruption support
   const startListening = useCallback(() => {
-    // 1. If currently speaking, handle interruption
+    // Cleanly cancel previous speech first
+    speechService.stopSpeaking();
+
+    // If currently speaking, handle interruption with brief transition
     if (stateRef.current === 'speaking') {
       setState('interrupted');
-      speechService.stopSpeaking();
-      // Brief pause for natural audio transition
       setTimeout(() => {
         executeListening();
       }, 150);
@@ -232,13 +286,25 @@ export function useVoiceAssistant({
           setInterimTranscript(interim);
         },
         onFinalResult: (final) => {
+          // Check if recognized words are an echo of the assistant's previous reply
+          if (isEchoOfAssistant(final, lastAssistantWordsRef.current, lastSpokenSummaryRef.current)) {
+            console.log('[Voice Perf] Ignored microphone echo of assistant speech:', final);
+            setInterimTranscript('');
+            if (autoListenRef.current) {
+              setTimeout(() => {
+                executeListening();
+              }, 800);
+            } else {
+              setState('ready');
+            }
+            return;
+          }
+
           setInterimTranscript(final);
           setLastFarmerWords(final);
           setState('understanding');
-          // Short delay to let user see recognized text before auto-submitting
-          setTimeout(() => {
-            submitQuery(final);
-          }, 350);
+          // Immediate submission without artificial 350ms delay
+          submitQuery(final);
         },
         onError: (err) => {
           setErrorMessage(err.message);
@@ -262,6 +328,10 @@ export function useVoiceAssistant({
   const repeatResponse = useCallback(() => {
     const textToRepeat = lastSpokenSummary || lastAssistantWords;
     if (!textToRepeat) return;
+
+    // Cleanly cancel any previous speech before starting repeat
+    speechService.stopSpeaking();
+
     setState('speaking');
     speechService.speakNatural(textToRepeat, languageRef.current, {
       gender: voiceGenderRef.current,

@@ -16,6 +16,9 @@ import {
   Trees,
   Filter,
   X,
+  Clock,
+  Droplets,
+  Coins,
 } from 'lucide-react';
 import { RecommendationResult } from '../types';
 import { api } from '../services/api';
@@ -24,6 +27,7 @@ import { useAuth } from '../context/AuthContext';
 import { LoadingState } from '../components/ui/LoadingState';
 import { Button } from '../components/ui/Button';
 import { CropImage } from '../components/ui/CropImage';
+import { ProgressRing } from '../components/ui/Progress';
 
 // Crop Components
 import { CategorySelector } from '../components/crops/CategorySelector';
@@ -203,13 +207,13 @@ export const CropRecommendationsPage: React.FC = () => {
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/home')}
-            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white border border-earth-200 text-earth-800 hover:bg-earth-50 transition shadow-xs"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-800 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-dark-elevated transition shadow-xs"
             aria-label="Back to home"
           >
             <ArrowLeft className="w-5 h-5" />
           </button>
           <div>
-            <h1 className="text-xl font-extrabold text-earth-900 leading-tight">
+            <h1 className="text-xl font-extrabold text-gray-900 dark:text-gray-50 leading-tight">
               {language === 'kn'
                 ? 'ಶಿಫಾರಸು ಮಾಡಿದ ಬೆಳೆಗಳು'
                 : language === 'ta'
@@ -218,7 +222,7 @@ export const CropRecommendationsPage: React.FC = () => {
                 ? 'సిఫార్సు చేయబడిన పంటలు'
                 : 'Crop Recommendations'}
             </h1>
-            <p className="text-xs text-earth-500 font-medium">
+            <p className="text-xs text-gray-500 dark:text-gray-400 font-medium">
               {assessment
                 ? `Matched to your ${assessment.soilType || 'field'} soil in ${assessment.district || 'Mandya'} (${assessment.season || 'Kharif'})`
                 : 'ICAR agronomic suitability matching for your regional conditions'}
@@ -230,66 +234,53 @@ export const CropRecommendationsPage: React.FC = () => {
           {selectedForCompare.length >= 2 && (
             <button
               onClick={() => setIsCompareOpen(true)}
-              className="py-2 px-3.5 rounded-full bg-forest-700 text-white text-xs font-bold hover:bg-forest-800 transition flex items-center gap-1.5 shadow-sm animate-pulse"
+              className="py-2 px-3.5 rounded-full bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
             >
-              <Scale className="w-4 h-4 text-mint-300" />
+              <Scale className="w-4 h-4 text-brand-200" />
               <span>Compare ({selectedForCompare.length})</span>
             </button>
           )}
 
           <button
             onClick={() => navigate('/soil')}
-            className="py-2 px-3.5 rounded-full bg-forest-600 text-white text-xs font-bold hover:bg-forest-700 transition flex items-center gap-1.5 shadow-sm flex-shrink-0"
+            className="py-2 px-3.5 rounded-full bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm flex-shrink-0"
           >
-            <PlusCircle className="w-4 h-4 text-mint-300" />
+            <PlusCircle className="w-4 h-4 text-brand-200" />
             <span>Retest Soil</span>
           </button>
         </div>
       </div>
 
-      {/* Main Mode Tabs: Tailored Matches | Seasonal Fruits | Long-Term Crops */}
-      <div className="flex items-center bg-earth-100 p-1.5 rounded-2xl gap-1">
-        <button
-          onClick={() => setActiveTab('matches')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'matches'
-              ? 'bg-white text-forest-900 shadow-sm'
-              : 'text-earth-600 hover:text-earth-900'
-          }`}
-        >
-          <Sparkles className="w-4 h-4 text-forest-600" />
-          <span>
-            {language === 'kn' ? 'ಸೂಕ್ತ ಬೆಳೆಗಳು' : 'Best Matches'}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('seasonal')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'seasonal'
-              ? 'bg-white text-amber-900 shadow-sm'
-              : 'text-earth-600 hover:text-earth-900'
-          }`}
-        >
-          <Sun className="w-4 h-4 text-amber-600" />
-          <span>
-            {language === 'kn' ? 'ಋತುಮಾನದ ಹಣ್ಣುಗಳು' : 'Seasonal Fruits'}
-          </span>
-        </button>
-
-        <button
-          onClick={() => setActiveTab('long_term')}
-          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-            activeTab === 'long_term'
-              ? 'bg-white text-emerald-950 shadow-sm'
-              : 'text-earth-600 hover:text-earth-900'
-          }`}
-        >
-          <Trees className="w-4 h-4 text-emerald-700" />
-          <span>
-            {language === 'kn' ? 'ದೀರ್ಘಾವಧಿ ತೋಟಗಾರಿಕೆ' : 'Long-Term Crops'}
-          </span>
-        </button>
+      {/* Main Mode Tabs: Underlined Tabs */}
+      <div className="flex border-b border-gray-200 dark:border-dark-border gap-6 px-1 overflow-x-auto scrollbar-none">
+        {[
+          { id: 'matches', label: language === 'kn' ? 'ಸೂಕ್ತ ಬೆಳೆಗಳು' : 'Best Matches', icon: Sparkles },
+          { id: 'seasonal', label: language === 'kn' ? 'ಋತುಮಾನದ ಹಣ್ಣುಗಳು' : 'Seasonal Fruits', icon: Sun },
+          { id: 'long_term', label: language === 'kn' ? 'ದೀರ್ಘಾವಧಿ ತೋಟಗಾರಿಕೆ' : 'Long-Term Crops', icon: Trees },
+        ].map((tab) => {
+          const Icon = tab.icon;
+          const isActive = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id as any)}
+              className={`pb-3 text-sm font-semibold flex items-center gap-2 relative transition-colors shrink-0 ${
+                isActive
+                  ? 'text-brand-700 dark:text-brand-400 font-bold'
+                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              <span>{tab.label}</span>
+              {isActive && (
+                <motion.div
+                  layoutId="cropRecTabUnderline"
+                  className="absolute bottom-0 left-0 right-0 h-0.5 bg-brand-600 dark:bg-brand-400"
+                />
+              )}
+            </button>
+          );
+        })}
       </div>
 
       {/* TAB 1: TAILORED BEST MATCHES */}
@@ -397,17 +388,17 @@ export const CropRecommendationsPage: React.FC = () => {
                     initial={shouldReduceMotion ? false : { opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: shouldReduceMotion ? 0 : idx * 0.04, duration: 0.25 }}
-                    className={`p-4 rounded-3xl bg-white border-2 transition-all flex flex-col justify-between ${
+                    className={`p-4 rounded-3xl bg-white dark:bg-dark-surface border transition-all flex flex-col justify-between ${
                       isBestMatch
-                        ? 'border-forest-500/40 shadow-sm ring-1 ring-forest-500/10'
-                        : 'border-earth-200/80 shadow-xs'
+                        ? 'border-brand-500/50 dark:border-brand-500/30 shadow-card ring-1 ring-brand-500/10'
+                        : 'border-gray-200 dark:border-dark-border shadow-xs'
                     }`}
                   >
                     <div>
                       {/* Top bar with Image, Title and Suitability Score */}
                       <div className="flex items-start justify-between gap-3 mb-3">
                         <div className="flex items-center gap-3 min-w-0 flex-1">
-                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-mint shrink-0 border border-earth-200">
+                          <div className="w-14 h-14 rounded-2xl overflow-hidden bg-brand-50 dark:bg-dark-elevated shrink-0 border border-gray-200 dark:border-dark-border">
                             <CropImage
                               src={crop.imageUrl}
                               alt={crop.name}
@@ -417,52 +408,31 @@ export const CropRecommendationsPage: React.FC = () => {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-1.5 flex-wrap">
-                              <h2 className="text-base font-extrabold text-earth-900 leading-tight break-words">
+                              <h2 className="text-base font-extrabold text-gray-900 dark:text-gray-50 leading-tight break-words">
                                 {getLocalizedName(crop)}
                               </h2>
                               {isBestMatch && (
-                                <span className="py-0.5 px-2 rounded-full bg-forest-600 text-white text-[9px] font-black uppercase tracking-wide shrink-0">
+                                <span className="py-0.5 px-2 rounded-full bg-brand-600 text-white text-[9px] font-black uppercase tracking-wide shrink-0">
                                   Top Pick
                                 </span>
                               )}
                             </div>
-                            <span className="text-xs text-forest-700 font-bold block">
+                            <span className="text-xs text-brand-700 dark:text-brand-400 font-bold block">
                               {crop.name} {crop.category && `• ${crop.category}`}
                             </span>
                           </div>
                         </div>
 
-                        {/* Circular Score */}
+                        {/* Circular Score using ProgressRing */}
                         <div className="flex flex-col items-center flex-shrink-0">
-                          <div className="relative w-11 h-11 flex items-center justify-center">
-                            <svg className="w-11 h-11 transform -rotate-90">
-                              <circle
-                                cx="22"
-                                cy="22"
-                                r="18"
-                                stroke="currentColor"
-                                strokeWidth="3"
-                                className="text-earth-100"
-                                fill="transparent"
-                              />
-                              <circle
-                                cx="22"
-                                cy="22"
-                                r="18"
-                                stroke="currentColor"
-                                strokeWidth="3"
-                                strokeDasharray={113}
-                                strokeDashoffset={113 - (113 * crop.suitabilityScore) / 100}
-                                strokeLinecap="round"
-                                className={isBestMatch ? 'text-forest-600' : 'text-emerald-500'}
-                                fill="transparent"
-                              />
-                            </svg>
-                            <span className="absolute text-[11px] font-black text-earth-900">
-                              {crop.suitabilityScore}%
-                            </span>
-                          </div>
-                          <span className="text-[9px] font-extrabold text-earth-400 mt-0.5 uppercase tracking-wider">
+                          <ProgressRing
+                            value={crop.suitabilityScore}
+                            size={44}
+                            strokeWidth={3.5}
+                            color={isBestMatch ? 'brand' : 'success'}
+                            showValue
+                          />
+                          <span className="text-[9px] font-extrabold text-gray-400 dark:text-gray-500 mt-0.5 uppercase tracking-wider">
                             {crop.matchTier || 'Match'}
                           </span>
                         </div>
@@ -470,8 +440,8 @@ export const CropRecommendationsPage: React.FC = () => {
 
                       {/* Explanation box: "Why this crop" */}
                       {crop.explanation && (
-                        <div className="bg-forest-50/70 p-2.5 rounded-xl border border-forest-100 mb-3 text-xs text-forest-900 leading-snug">
-                          <span className="font-bold text-forest-800">Why this crop: </span>
+                        <div className="bg-brand-50/70 dark:bg-brand-950/20 p-2.5 rounded-xl border border-brand-100 dark:border-brand-900/30 mb-3 text-xs text-brand-900 dark:text-brand-300 leading-snug">
+                          <span className="font-bold text-brand-800 dark:text-brand-400">Why this crop: </span>
                           <span>{crop.explanation}</span>
                         </div>
                       )}
@@ -482,12 +452,12 @@ export const CropRecommendationsPage: React.FC = () => {
                           <span
                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-[11px] font-bold border ${
                               crop.sowingWindowStatus.status === 'open'
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/40'
                                 : crop.sowingWindowStatus.status === 'closing_soon'
-                                ? 'bg-amber-50 text-amber-900 border-amber-200'
+                                ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-900 dark:text-amber-300 border-amber-200 dark:border-amber-800/40'
                                 : crop.sowingWindowStatus.status === 'opens_in_n_days'
-                                ? 'bg-blue-50 text-blue-800 border-blue-200'
-                                : 'bg-gray-100 text-gray-700 border-gray-200'
+                                ? 'bg-blue-50 dark:bg-blue-950/30 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800/40'
+                                : 'bg-gray-100 dark:bg-dark-elevated text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'
                             }`}
                           >
                             <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
@@ -508,8 +478,8 @@ export const CropRecommendationsPage: React.FC = () => {
                       <div className="space-y-1 mb-3">
                         {crop.keyReasons &&
                           crop.keyReasons.slice(0, 2).map((reason, rIdx) => (
-                            <div key={rIdx} className="flex items-center gap-1.5 text-xs text-earth-700">
-                              <div className="w-3.5 h-3.5 rounded-full bg-mint-100 text-forest-700 flex items-center justify-center flex-shrink-0">
+                            <div key={rIdx} className="flex items-center gap-1.5 text-xs text-gray-700 dark:text-gray-300">
+                              <div className="w-3.5 h-3.5 rounded-full bg-brand-100 dark:bg-brand-950/40 text-brand-700 dark:text-brand-300 flex items-center justify-center flex-shrink-0">
                                 <Check className="w-2.5 h-2.5 stroke-[3]" />
                               </div>
                               <span className="line-clamp-1">{reason}</span>
@@ -517,47 +487,51 @@ export const CropRecommendationsPage: React.FC = () => {
                           ))}
                       </div>
 
-                      {/* Quick Meta badges */}
-                      <div className="flex items-center flex-wrap gap-2 text-[11px] text-earth-600 font-medium pb-3 border-t border-earth-100 pt-2">
-                        <span className="bg-earth-100 px-2 py-0.5 rounded-md">
-                          ⏱️ {crop.growingDuration}
+                      {/* Quick Meta badges with Lucide icons (no emojis) */}
+                      <div className="flex items-center flex-wrap gap-2 text-[11px] text-gray-600 dark:text-gray-400 font-medium pb-3 border-t border-gray-100 dark:border-dark-border pt-2">
+                        <span className="bg-gray-100 dark:bg-dark-elevated px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <Clock className="w-3 h-3 text-gray-500" />
+                          <span>{crop.growingDuration}</span>
                         </span>
-                        <span className="bg-earth-100 px-2 py-0.5 rounded-md">
-                          💧 {crop.waterRequirements?.split(' ')[0] || 'Moderate'}
+                        <span className="bg-gray-100 dark:bg-dark-elevated px-2 py-0.5 rounded-md flex items-center gap-1">
+                          <Droplets className="w-3 h-3 text-blue-500" />
+                          <span>{crop.waterRequirements?.split(' ')[0] || 'Moderate'}</span>
                         </span>
                         {crop.estimatedCost && (
-                          <span className="bg-earth-100 px-2 py-0.5 rounded-md">
-                            💰 {crop.estimatedCost}
+                          <span className="bg-gray-100 dark:bg-dark-elevated px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <Coins className="w-3 h-3 text-amber-500" />
+                            <span>{crop.estimatedCost}</span>
                           </span>
                         )}
                         {crop.potentialYield && (
-                          <span className="bg-earth-100 px-2 py-0.5 rounded-md">
-                            🌾 {crop.potentialYield}
+                          <span className="bg-gray-100 dark:bg-dark-elevated px-2 py-0.5 rounded-md flex items-center gap-1">
+                            <Sprout className="w-3 h-3 text-brand-500" />
+                            <span>{crop.potentialYield}</span>
                           </span>
                         )}
                       </div>
                     </div>
 
                     {/* Action Bar: Compare Checkbox + View Details Button */}
-                    <div className="flex items-center justify-between pt-2 border-t border-earth-100 gap-2">
+                    <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-dark-border gap-2">
                       <button
                         type="button"
                         onClick={() => handleToggleCompare(crop.cropId)}
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
                           isSelectedForCompare
-                            ? 'bg-forest-700 text-white border-forest-700 shadow-xs'
-                            : 'bg-white text-earth-700 border-earth-200 hover:bg-earth-50'
+                            ? 'bg-brand-700 text-white border-brand-700 shadow-xs'
+                            : 'bg-white dark:bg-dark-surface text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-elevated'
                         }`}
                       >
                         <Scale className="w-3.5 h-3.5" />
-                        <span>{isSelectedForCompare ? 'Compared ✓' : '+ Compare'}</span>
+                        <span>{isSelectedForCompare ? 'Compared' : '+ Compare'}</span>
                       </button>
 
                       <button
                         onClick={() =>
                           navigate(`/crops/${crop.cropId}`, { state: { crop } })
                         }
-                        className="py-1.5 px-3.5 rounded-xl bg-forest-600 hover:bg-forest-700 text-white text-xs font-bold transition-colors flex items-center gap-1 shadow-xs"
+                        className="py-1.5 px-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-colors flex items-center gap-1 shadow-xs"
                       >
                         <span>{t('viewDetails') || 'View Details'}</span>
                         <ArrowRight className="w-3.5 h-3.5" />

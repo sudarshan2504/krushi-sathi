@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion, Variants } from 'framer-motion';
 import {
   Sparkles,
-  Bot,
+  MessageCircle,
   Sprout,
   ArrowRight,
   CheckCircle2,
@@ -13,8 +13,11 @@ import {
   ChevronLeft,
   ChevronRight,
   Layers,
-  AlertTriangle,
   Check,
+  Lightbulb,
+  RefreshCw,
+  Bell,
+  TrendingUp,
 } from 'lucide-react';
 import { WeatherWidget } from '../components/weather/WeatherWidget';
 import { LocationEditModal } from '../components/location/LocationEditModal';
@@ -26,6 +29,10 @@ import { CropPlan, Disease, WeatherData } from '../types';
 import { LoadingState } from '../components/ui/LoadingState';
 import { AnimatedCounter } from '../components/ui/AnimatedCounter';
 import { CropImage } from '../components/ui/CropImage';
+import { Card } from '../components/ui/Card';
+import { Badge } from '../components/ui/Badge';
+import { ProgressBar } from '../components/ui/Progress';
+import { Button } from '../components/ui/Button';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -41,13 +48,16 @@ export const HomePage: React.FC = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [latestAssessment, setLatestAssessment] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [weatherRefreshKey, setWeatherRefreshKey] = useState(0);
 
+  // Pull-to-refresh touch tracking
+  const [pullY, setPullY] = useState(0);
+  const touchStartY = useRef(0);
+
   // Avoid re-animating on re-renders
   const isInitialMount = useRef(true);
-
-  // Active chip scroll into view ref
   const planButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
   useEffect(() => {
@@ -61,60 +71,80 @@ export const HomePage: React.FC = () => {
   }, [activePlanIndex]);
 
   // Load dashboard data
+  const loadDashboardData = useCallback(async (isPull = false) => {
+    if (isPull) setIsRefreshing(true);
+    try {
+      const [plansRes, diseasesRes, assessmentsRes] = await Promise.all([
+        api.lifecycle.getPlans().catch(() => []),
+        api.diseases.getAll().catch(() => []),
+        api.soil.getAssessments().catch(() => []),
+      ]);
+
+      // Process plans
+      if (plansRes && plansRes.length > 0) {
+        const firstPlanFull = await api.lifecycle
+          .getPlan(plansRes[0].id)
+          .catch(() => plansRes[0]);
+        const populatedPlans = [...plansRes];
+        populatedPlans[0] = firstPlanFull;
+        setPlans(populatedPlans);
+      } else {
+        setPlans([]);
+      }
+
+      setDiseases(diseasesRes || []);
+
+      if (assessmentsRes && assessmentsRes.length > 0) {
+        const sorted = [...assessmentsRes].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        setLatestAssessment(sorted[0]);
+      }
+
+      if (isPull) {
+        setWeatherRefreshKey((k) => k + 1);
+        showToast('Dashboard refreshed', 'success');
+      }
+    } catch (err) {
+      console.error('Dashboard load error:', err);
+    } finally {
+      setIsLoading(false);
+      setIsRefreshing(false);
+      setTimeout(() => {
+        isInitialMount.current = false;
+      }, 500);
+    }
+  }, [showToast]);
+
   useEffect(() => {
-    let isMounted = true;
+    loadDashboardData();
+  }, [loadDashboardData]);
 
-    async function loadDashboardData() {
-      try {
-        const [plansRes, diseasesRes, assessmentsRes] = await Promise.all([
-          api.lifecycle.getPlans().catch(() => []),
-          api.diseases.getAll().catch(() => []),
-          api.soil.getAssessments().catch(() => []),
-        ]);
+  // Pull to refresh gesture listeners
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      touchStartY.current = e.touches[0].clientY;
+    } else {
+      touchStartY.current = 0;
+    }
+  };
 
-        if (!isMounted) return;
-
-        // Process plans
-        if (plansRes && plansRes.length > 0) {
-          // Fetch full plan with tasks for the first plan
-          const firstPlanFull = await api.lifecycle
-            .getPlan(plansRes[0].id)
-            .catch(() => plansRes[0]);
-          const populatedPlans = [...plansRes];
-          populatedPlans[0] = firstPlanFull;
-          setPlans(populatedPlans);
-        } else {
-          setPlans([]);
-        }
-
-        // Process diseases
-        setDiseases(diseasesRes || []);
-
-        // Process latest soil assessment if any
-        if (assessmentsRes && assessmentsRes.length > 0) {
-          // Sort descending by date
-          const sorted = [...assessmentsRes].sort(
-            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          );
-          setLatestAssessment(sorted[0]);
-        }
-      } catch (err) {
-        console.error('Dashboard load error:', err);
-      } finally {
-        if (isMounted) {
-          setIsLoading(false);
-          setTimeout(() => {
-            isInitialMount.current = false;
-          }, 500);
-        }
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (touchStartY.current > 0 && window.scrollY === 0) {
+      const diff = e.touches[0].clientY - touchStartY.current;
+      if (diff > 0) {
+        setPullY(Math.min(diff * 0.4, 70));
       }
     }
+  };
 
-    loadDashboardData();
-    return () => {
-      isMounted = false;
-    };
-  }, []);
+  const handleTouchEnd = () => {
+    if (pullY > 45 && !isRefreshing) {
+      loadDashboardData(true);
+    }
+    setPullY(0);
+    touchStartY.current = 0;
+  };
 
   // When switching plans, fetch full plan if tasks aren't loaded yet
   const handleSelectPlan = async (index: number) => {
@@ -159,39 +189,47 @@ export const HomePage: React.FC = () => {
     }
   };
 
-  // Quick Actions: strictly 3 streamlined cards (merged soil/recommend, crop library, AI chat)
-  const quickActions = [
+  // 2x2 Bento Grid Quick Actions
+  const bentoActions = [
     {
-      title: t('findRightCrop'),
-      subtitle: t('findRightCropSub'),
-      icon: Sparkles,
-      bg: 'bg-emerald-50 text-forest border-emerald-200/80 hover:bg-emerald-100/70',
-      iconBg: 'bg-emerald-600 text-white',
+      id: 'soil',
+      title: t('checkMySoil') || 'Soil Check',
+      subtitle: 'Nutrients & pH test',
+      icon: Layers,
+      bg: 'bg-white dark:bg-dark-surface hover:border-brand-500/40',
+      iconBg: 'bg-brand-50 text-brand-700 dark:bg-brand-900/30 dark:text-brand-400',
       action: () => navigate('/soil'),
     },
     {
-      title: t('cropLibraryAction'),
-      subtitle: t('cropLibraryActionSub'),
+      id: 'crops',
+      title: t('recommendCrop') || 'Crop Advice',
+      subtitle: 'Seasonal recommendations',
       icon: Sprout,
-      bg: 'bg-amber-50 text-earth-dark border-amber-200/80 hover:bg-amber-100/70',
-      iconBg: 'bg-amber-600 text-white',
-      action: () => navigate('/crop-library'),
+      bg: 'bg-white dark:bg-dark-surface hover:border-brand-500/40',
+      iconBg: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+      action: () => navigate('/crops'),
     },
     {
-      title: t('askAiAssistantAction'),
-      subtitle: t('askAiAssistantActionSub'),
-      icon: Bot,
-      bg: 'bg-blue-50 text-blue-800 border-blue-200/80 hover:bg-blue-100/70',
-      iconBg: 'bg-blue-600 text-white',
+      id: 'disease',
+      title: t('diseaseTips') || 'Disease Help',
+      subtitle: 'Protection & cures',
+      icon: ShieldAlert,
+      bg: 'bg-white dark:bg-dark-surface hover:border-brand-500/40',
+      iconBg: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+      action: () => navigate('/diseases'),
+    },
+    {
+      id: 'chat',
+      title: t('askAiAssistant') || 'Ask AI',
+      subtitle: 'Voice & text companion',
+      icon: MessageCircle,
+      bg: 'bg-white dark:bg-dark-surface hover:border-brand-500/40',
+      iconBg: 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
       action: () => navigate('/chat'),
     },
   ];
 
-  // Dynamic ranking of Crop Health Alerts based on:
-  // 1. Farmer's active crop(s)
-  // 2. Crop lifecycle stage
-  // 3. Current weather risk (humidity, temperature, rain from live Open-Meteo)
-  // 4. Current season
+  // Dynamic ranking of Crop Health Alerts
   const rankedHealthAlerts = useMemo(() => {
     if (!diseases || diseases.length === 0) return [];
 
@@ -217,7 +255,6 @@ export const HomePage: React.FC = () => {
         primaryReason = `${currentPlan?.cropName || 'Your crop'} susceptible`;
       }
 
-      // High humidity risk
       const isHumiditySensitive =
         /fungal|blight|mildew|rot|leaf spot|blast/i.test(d.name) ||
         /humid|wet|moist/i.test(d.conditions || '');
@@ -226,13 +263,11 @@ export const HomePage: React.FC = () => {
         primaryReason = t('reasonHumidity');
       }
 
-      // Rain / wet risk
       if (isRaining && isHumiditySensitive) {
         score += 25;
         primaryReason = t('reasonRain');
       }
 
-      // High temperature / drought pest risk
       const isHeatSensitive =
         /wilt|mite|borer|thrip|aphid|heat/i.test(d.name) ||
         /dry|warm|hot|temp/i.test(d.conditions || '');
@@ -241,42 +276,62 @@ export const HomePage: React.FC = () => {
         primaryReason = t('reasonTemperature');
       }
 
-      // Lifecycle stage vulnerability
       if (currentStage && d.conditions && d.conditions.toLowerCase().includes(currentStage)) {
         score += 25;
         primaryReason = t('reasonLifecycleStage');
       }
 
-      // Assign badge tier
-      if (score >= 65) {
-        riskLevel = 'high';
-      } else if (score >= 35) {
-        riskLevel = 'medium';
-      } else {
-        riskLevel = 'low';
-      }
+      if (score >= 65) riskLevel = 'high';
+      else if (score >= 35) riskLevel = 'medium';
+      else riskLevel = 'low';
 
-      return {
-        disease: d,
-        score,
-        riskLevel,
-        primaryReason,
-      };
+      return { disease: d, score, riskLevel, primaryReason };
     });
 
-    // Sort descending by calculated score and take top 3
     scored.sort((a, b) => b.score - a.score);
     return scored.slice(0, 3);
   }, [diseases, plans, currentPlan, weatherData, t]);
+
+  // Dynamic Today's Tip
+  const todayTip = useMemo(() => {
+    const humidity = weatherData?.humidity ?? 65;
+    const temp = weatherData?.temperature ?? 28;
+    const rainProb = weatherData?.rainfallProbability ?? 0;
+
+    if (rainProb > 50) {
+      return {
+        title: 'Rain Protection & Drainage',
+        desc: 'Clear farm channels to avoid root waterlogging. Hold off on nitrogen spraying until leaves dry.',
+        tag: 'Weather Advisory',
+      };
+    }
+    if (temp > 32) {
+      return {
+        title: 'Midday Heat Management',
+        desc: 'Irrigate fields early morning or after 5 PM to minimize evaporation loss and preserve soil moisture.',
+        tag: 'Moisture Care',
+      };
+    }
+    if (humidity > 75) {
+      return {
+        title: 'Fungal Monitoring',
+        desc: 'High ambient humidity creates spore-friendly conditions. Inspect lower leaf undersides for early spots.',
+        tag: 'Crop Health',
+      };
+    }
+    return {
+      title: 'Optimal Sowing Window',
+      desc: 'Soil temperature and moisture balance are ideal for pulse sowing and seed germination this week.',
+      tag: 'Field Best Practice',
+    };
+  }, [weatherData]);
 
   // Motion variants
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: {
-        staggerChildren: shouldReduceMotion ? 0 : 0.04,
-      },
+      transition: { staggerChildren: shouldReduceMotion ? 0 : 0.05 },
     },
   };
 
@@ -290,471 +345,415 @@ export const HomePage: React.FC = () => {
   };
 
   if (isLoading) {
-    return <LoadingState type="dashboard" />;
+    return (
+      <div className="py-12">
+        <LoadingState message="Loading your farm companion..." />
+      </div>
+    );
   }
 
-  // Location display text
   const locationDisplay = user?.district
     ? `${user?.village ? user.village + ', ' : ''}${user.district}${user.state ? ', ' + user.state : ''}`
     : 'Mysuru, Karnataka';
 
   return (
-    <motion.div
-      variants={containerVariants}
-      initial={isInitialMount.current ? 'hidden' : 'visible'}
-      animate="visible"
-      className="space-y-5 pb-[calc(5.5rem+env(safe-area-inset-bottom,0px))] max-w-4xl mx-auto"
+    <div
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      className="relative"
     >
-      {/* =========================================================================
-          SECTION 1: GREETING + LOCATION CHIP + WEATHER WIDGET
-          ========================================================================= */}
-      <motion.section variants={itemVariants} className="space-y-3">
-        {/* Farmer Greeting & Location Chip Bar */}
-        <div className="bg-white rounded-3xl p-4 sm:p-5 border border-forest/15 shadow-xs bg-gradient-to-r from-white via-cream-light/40 to-mint-light/40 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      {/* Pull-to-refresh indicator */}
+      {pullY > 0 && (
+        <div
+          style={{ height: pullY }}
+          className="flex items-center justify-center overflow-hidden transition-all text-xs font-semibold text-brand-700 dark:text-brand-400 gap-1.5"
+        >
+          <RefreshCw className={`w-4 h-4 ${pullY > 45 ? 'animate-spin' : ''}`} />
+          <span>{pullY > 45 ? 'Release to refresh' : 'Pull down to refresh'}</span>
+        </div>
+      )}
+
+      <motion.div
+        variants={containerVariants}
+        initial={isInitialMount.current ? 'hidden' : 'visible'}
+        animate="visible"
+        className="space-y-6 max-w-xl mx-auto"
+      >
+        {/* =========================================================================
+            HEADER GREETING (Clean display type + 1-line subtitle, no emoji, no location pill)
+            ========================================================================= */}
+        <motion.section variants={itemVariants} className="pt-1">
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-dark-text tracking-tight flex items-center gap-2">
-              <span>{t('greetingNamaste', { name: user?.name || 'Farmer' })}</span>
+            <h1 className="text-display font-extrabold text-gray-900 dark:text-gray-100 tracking-tight leading-tight">
+              {t('helloFarmer', { name: user?.name ? user.name.split(' ')[0] : 'Farmer' })}
             </h1>
-            <p className="text-xs text-dark-muted font-medium mt-0.5">
+            <p className="text-[15px] text-gray-600 dark:text-gray-300 font-medium mt-1">
               {t('goodDayFarming')}
             </p>
           </div>
+        </motion.section>
 
-          {/* Interactive Location Chip (opens LocationEditModal) */}
-          <button
-            type="button"
-            onClick={() => setIsLocationModalOpen(true)}
-            className="inline-flex items-center gap-2 self-start sm:self-center px-3.5 py-2.5 rounded-2xl bg-forest/10 hover:bg-forest/15 active:scale-95 text-forest border border-forest/20 text-xs font-bold transition shadow-2xs group cursor-pointer min-h-[44px] touch-target"
-            title={t('editLocationTitle')}
-          >
-            <MapPin className="w-4 h-4 text-forest shrink-0 group-hover:scale-110 transition-transform" />
-            <span className="truncate max-w-[200px] sm:max-w-[260px]">
-              {locationDisplay}
-            </span>
-            <span className="text-[10px] uppercase font-black px-1.5 py-0.5 rounded-md bg-forest/20 text-forest ml-0.5">
-              {t('locationEditBtn')}
-            </span>
-          </button>
-        </div>
+        {/* =========================================================================
+            HERO WEATHER CARD
+            ========================================================================= */}
+        <motion.section variants={itemVariants}>
+          <WeatherWidget
+            key={`weather-${weatherRefreshKey}-${user?.district || 'Mysuru'}`}
+            initialDistrict={user?.district || 'Mysuru'}
+            onWeatherDataLoaded={setWeatherData}
+          />
+        </motion.section>
 
-        {/* Live Weather Widget */}
-        <WeatherWidget
-          key={`weather-${weatherRefreshKey}-${user?.district || 'Mysuru'}`}
-          initialDistrict={user?.district || 'Mysuru'}
-          onWeatherDataLoaded={setWeatherData}
-        />
-      </motion.section>
-
-      {/* =========================================================================
-          SECTION 2: STREAMLINED QUICK ACTIONS (MAX 3)
-          Merged: "Find the right crop", "Crop library", "Ask AI"
-          ========================================================================= */}
-      <motion.section variants={itemVariants}>
-        <div className="flex items-center justify-between mb-2.5 px-1">
-          <h2 className="text-sm font-extrabold text-dark-muted uppercase tracking-wider">
-            {t('quickActionsTitle')}
-          </h2>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          {quickActions.map((action, idx) => {
-            const Icon = action.icon;
-            return (
-              <motion.button
-                key={idx}
-                whileHover={shouldReduceMotion ? {} : { y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={action.action}
-                className={`p-4 rounded-3xl border text-left flex items-center sm:flex-col sm:items-start justify-start gap-3.5 shadow-2xs transition-all cursor-pointer ${action.bg}`}
-              >
-                <div
-                  className={`w-11 h-11 rounded-2xl ${action.iconBg} flex items-center justify-center shrink-0 shadow-xs`}
-                >
-                  <Icon className="w-5 h-5 stroke-[2.2]" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <span className="text-sm font-extrabold block text-dark-text leading-tight">
-                    {action.title}
-                  </span>
-                  <span className="text-xs text-dark-muted block mt-0.5 line-clamp-1">
-                    {action.subtitle}
-                  </span>
-                </div>
-                <ArrowRight className="w-4 h-4 text-dark-muted shrink-0 sm:hidden" />
-              </motion.button>
-            );
-          })}
-        </div>
-      </motion.section>
-
-      {/* =========================================================================
-          SECTION 3: SMART "TODAY" CARD
-          - If active plan: shows progress, next 1-3 tasks, and multiple plans switcher
-          - If none: ONE CTA "Plan your first crop" reusing saved soil test if exists
-          ========================================================================= */}
-      <motion.section variants={itemVariants}>
-        <div className="flex items-center justify-between mb-2.5 px-1">
-          <h2 className="text-base font-black text-dark-text tracking-tight flex items-center gap-2">
-            <span>{t('todayCardTitle')}</span>
-          </h2>
-          {currentPlan && (
-            <button
-              onClick={() => navigate(`/crops/lifecycle/${currentPlan.id}`)}
-              className="text-xs text-forest font-bold hover:underline flex items-center gap-1 min-h-[44px] py-1 px-2 touch-target"
-            >
-              <span>{t('viewFullGuide')}</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        {currentPlan ? (
-          <div className="rounded-3xl bg-white border border-forest/15 shadow-sm p-5 space-y-4">
-            {/* Multiple Plans Switcher (if farmer has > 1 active plan) */}
-            {plans.length > 1 && (
-              <div className="flex items-center gap-1.5 p-1.5 sm:p-2 rounded-2xl bg-cream-light/60 border border-forest/10 min-w-0 w-full relative">
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSelectPlan(
-                      activePlanIndex > 0 ? activePlanIndex - 1 : plans.length - 1
-                    )
-                  }
-                  className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 active:scale-95 transition cursor-pointer shadow-2xs touch-target z-10"
-                  title="Previous plan"
-                  aria-label="Previous plan"
-                >
-                  <ChevronLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-
-                <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto py-1 px-0.5 scrollbar-none snap-x snap-mandatory touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                  {plans.map((p, idx) => {
-                    const hasDuplicateCrop = plans.some(
-                      (other, otherIdx) => otherIdx !== idx && other.cropName === p.cropName
-                    );
-                    const fieldLabel = p.fieldName || `${t('fieldLabel') || 'Field'} ${idx + 1}`;
-                    const chipLabel = hasDuplicateCrop
-                      ? `${p.cropName} · ${fieldLabel}`
-                      : p.cropName;
-
-                    return (
-                      <button
-                        key={p.id}
-                        ref={(el) => {
-                          planButtonRefs.current[idx] = el;
-                        }}
-                        type="button"
-                        onClick={() => handleSelectPlan(idx)}
-                        title={`${p.cropName} (${fieldLabel})`}
-                        className={`min-h-[40px] px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 whitespace-nowrap snap-center cursor-pointer touch-target max-w-[170px] sm:max-w-[220px] flex items-center gap-1 border ${
-                          idx === activePlanIndex
-                            ? 'bg-forest text-white border-forest shadow-xs'
-                            : 'bg-white text-dark-text border-forest/15 hover:bg-forest/5'
-                        }`}
-                      >
-                        <span className="truncate">{chipLabel}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    handleSelectPlan(
-                      activePlanIndex < plans.length - 1 ? activePlanIndex + 1 : 0
-                    )
-                  }
-                  className="w-9 h-9 sm:w-10 sm:h-10 shrink-0 rounded-xl bg-white border border-forest/15 flex items-center justify-center text-forest hover:bg-forest/10 active:scale-95 transition cursor-pointer shadow-2xs touch-target z-10"
-                  title="Next plan"
-                  aria-label="Next plan"
-                >
-                  <ChevronRight className="w-4 h-4 sm:w-5 sm:h-5" />
-                </button>
-              </div>
-            )}
-
-            {/* Plan Header: Crop Name, Stage, Progress */}
-            <div className="flex flex-col xs:flex-row xs:items-center justify-between gap-2.5 sm:gap-3">
-              <div className="flex items-center gap-3 min-w-0 flex-1">
-                <div className="w-12 h-12 sm:w-13 sm:h-13 rounded-2xl overflow-hidden bg-mint shrink-0 border border-forest/15 shadow-2xs">
-                  <CropImage
-                    src={currentPlan.crop?.imageUrl}
-                    alt={currentPlan.cropName}
-                    cropName={currentPlan.cropName}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h3 className="font-black text-dark-text text-base sm:text-lg leading-snug truncate">
-                    {currentPlan.cropName}
-                  </h3>
-                  <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
-                    <span className="text-xs text-dark-muted font-medium">
-                      {currentPlan.fieldName || 'Main Field'} • {currentPlan.areaAcre || 1.5}{' '}
-                      {t('acres')}
-                    </span>
-                    {currentPlan.currentStage && (
-                      <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded-full bg-forest/10 text-forest border border-forest/20 whitespace-nowrap">
-                        {t('stageLabel')}: {currentPlan.currentStage}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <span className="py-1 px-3 rounded-full bg-mint text-forest text-xs font-black border border-forest/20 shrink-0 self-start xs:self-center whitespace-nowrap">
-                <AnimatedCounter value={currentPlan.progressPercentage} suffix="%" />{' '}
-                {t('progress')}
-              </span>
-            </div>
-
-            {/* Progress Bar */}
-            <div className="w-full h-2.5 rounded-full bg-gray-100 overflow-hidden">
-              <motion.div
-                initial={
-                  shouldReduceMotion
-                    ? { width: `${currentPlan.progressPercentage}%` }
-                    : { width: 0 }
-                }
-                animate={{ width: `${currentPlan.progressPercentage}%` }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
-                className="h-full bg-gradient-to-r from-forest to-leaf rounded-full"
-              />
-            </div>
-
-            {/* Next 1 to 3 Tasks */}
-            <div className="space-y-2 pt-1">
-              <span className="text-xs font-extrabold text-dark-muted uppercase tracking-wider block">
-                {t('upcomingTasksTitle')}:
-              </span>
-
-              {currentPlan.tasks && currentPlan.tasks.length > 0 ? (
-                currentPlan.tasks.slice(0, 3).map((task) => (
-                  <button
-                    key={task.id}
-                    type="button"
-                    onClick={() => handleToggleTask(task.id, task.isCompleted)}
-                    className={`w-full text-left min-h-[44px] flex items-start gap-2.5 p-3 rounded-2xl border cursor-pointer transition-colors ${
-                      task.isCompleted
-                        ? 'bg-gray-50/80 border-gray-100'
-                        : 'bg-cream-light/40 border-forest/15 hover:border-forest/40'
-                    }`}
-                  >
-                    <span className="mt-0.5 text-forest shrink-0">
-                      {task.isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5 text-forest" />
-                      ) : (
-                        <Circle className="w-5 h-5 text-gray-400" />
-                      )}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <span
-                        className={`text-xs sm:text-sm font-bold block leading-tight ${
-                          task.isCompleted
-                            ? 'line-through text-dark-muted'
-                            : 'text-dark-text'
-                        }`}
-                      >
-                        {language === 'kn'
-                          ? task.titleKn || task.title
-                          : language === 'ta'
-                          ? task.titleTa || task.title
-                          : language === 'te'
-                          ? task.titleTe || task.title
-                          : task.title}
-                      </span>
-                      <span className="text-[11px] text-dark-muted block mt-0.5 no-underline font-medium">
-                        {task.dayRange} • {task.stage}
-                      </span>
-                    </div>
-                  </button>
-                ))
-              ) : (
-                <div className="p-3.5 rounded-2xl bg-mint-light/40 border border-forest/15 text-xs text-forest font-bold flex items-center gap-2">
-                  <Check className="w-4 h-4" />
-                  <span>{t('allTasksCompleted')}</span>
-                </div>
-              )}
-            </div>
-          </div>
-        ) : (
-          /* Empty State: ONE call to action "Plan your first crop", reuses saved soil test if exists */
-          <div className="p-6 rounded-3xl bg-white border border-forest/15 shadow-sm text-center space-y-4">
-            <div className="w-14 h-14 rounded-2xl bg-mint flex items-center justify-center mx-auto text-forest shadow-xs">
-              <Sprout className="w-7 h-7" />
-            </div>
-
-            <div className="space-y-1 max-w-md mx-auto">
-              <h3 className="text-base sm:text-lg font-black text-dark-text">
-                {t('planFirstCrop')}
-              </h3>
-              <p className="text-xs sm:text-sm text-dark-muted leading-relaxed">
-                {t('planFirstCropSubtitle')}
-              </p>
-            </div>
-
-            {latestAssessment ? (
-              <div className="space-y-2.5 max-w-sm mx-auto">
-                <button
-                  type="button"
-                  onClick={() =>
-                    navigate('/crops/recommend', {
-                      state: { assessment: latestAssessment },
-                    })
-                  }
-                  className="w-full min-h-[46px] py-2.5 px-5 rounded-2xl bg-forest text-white text-xs sm:text-sm font-extrabold shadow-md hover:bg-forest-dark transition-all inline-flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-                >
-                  <Sparkles className="w-4 h-4 text-goldenrod" />
-                  <span>
-                    {t('startWithSavedSoil', {
-                      date: new Date(latestAssessment.createdAt).toLocaleDateString(),
-                    })}
-                  </span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => navigate('/soil')}
-                  className="text-xs text-forest font-bold hover:underline py-1 block mx-auto cursor-pointer"
-                >
-                  {t('startNewSoilTest')} →
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={() => navigate('/soil')}
-                className="min-h-[46px] py-2.5 px-6 rounded-2xl bg-forest text-white text-xs sm:text-sm font-extrabold shadow-md hover:bg-forest-dark transition-all inline-flex items-center justify-center gap-2 cursor-pointer active:scale-95"
-              >
-                <span>🌾</span>
-                <span>{t('planFirstCrop')}</span>
-              </button>
-            )}
-          </div>
-        )}
-      </motion.section>
-
-      {/* =========================================================================
-          SECTION 4: CROP HEALTH ALERTS ROW (MAX 3, HORIZONTALLY SCROLLABLE)
-          Ranked dynamically by active crop, lifecycle stage, and live weather risk
-          ========================================================================= */}
-      <motion.section variants={itemVariants}>
-        <div className="mb-2.5 px-1 space-y-1.5">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1.5 sm:gap-2">
-            <h2 className="text-base font-black text-dark-text tracking-tight break-words">
-              {t('cropHealthAlertsTitle')}
+        {/* =========================================================================
+            2x2 GRID OF QUICK ACTIONS (Equal-height tiles, circle icons, robust text wrapping)
+            ========================================================================= */}
+        <motion.section variants={itemVariants}>
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <h2 className="text-[13px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              {t('quickActionsTitle') || 'Quick Actions'}
             </h2>
-            <div className="flex items-center justify-between sm:justify-end gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200/80 whitespace-nowrap">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
-                Live Advisory
-              </span>
-              <button
-                type="button"
-                onClick={() => navigate('/diseases')}
-                className="text-xs text-forest font-bold hover:underline min-h-[36px] flex items-center gap-1 cursor-pointer whitespace-nowrap touch-target ml-auto sm:ml-0"
-              >
-                <span>{t('viewFullGuide')}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
           </div>
-        </div>
 
-        {rankedHealthAlerts.length > 0 ? (
-          <div className="flex gap-3 overflow-x-auto pb-3 -mx-1 px-1 scrollbar-none snap-x snap-mandatory touch-pan-x [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {rankedHealthAlerts.map(({ disease: d, riskLevel, primaryReason }) => {
-              const badgeStyle =
-                riskLevel === 'high'
-                  ? 'bg-red-50 text-red-700 border-red-200'
-                  : riskLevel === 'medium'
-                  ? 'bg-amber-50 text-amber-800 border-amber-200'
-                  : 'bg-emerald-50 text-emerald-700 border-emerald-200';
-
-              const badgeLabel =
-                riskLevel === 'high'
-                  ? t('riskHigh')
-                  : riskLevel === 'medium'
-                  ? t('riskModerate')
-                  : t('riskLow');
-
-              const diseaseName =
-                language === 'kn'
-                  ? d.nameKannada || d.name
-                  : language === 'ta'
-                  ? d.nameTamil || d.name
-                  : language === 'te'
-                  ? d.nameTelugu || d.name
-                  : d.name;
-
-              const symptomsText =
-                language === 'kn'
-                  ? d.symptomsKn || d.symptoms
-                  : language === 'ta'
-                  ? d.symptomsTa || d.symptoms
-                  : language === 'te'
-                  ? d.symptomsTe || d.symptoms
-                  : d.symptoms;
-
+          <div className="grid grid-cols-2 gap-3 items-stretch">
+            {bentoActions.map((action) => {
+              const Icon = action.icon;
               return (
-                <motion.div
-                  key={d.id}
-                  whileHover={shouldReduceMotion ? {} : { y: -2 }}
-                  onClick={() => navigate('/diseases', { state: { selectedProblemId: d.id } })}
-                  className="w-[270px] sm:w-[300px] shrink-0 p-4 rounded-3xl bg-white border border-forest/15 shadow-xs cursor-pointer hover:border-forest/40 transition-all flex flex-col justify-between min-h-[185px] snap-start min-w-0"
+                <button
+                  key={action.id}
+                  type="button"
+                  onClick={action.action}
+                  className="p-4 rounded-3xl border border-gray-100 dark:border-dark-border text-left flex flex-col justify-between gap-3 shadow-card transition-all duration-150 active:scale-[0.98] min-h-[128px] h-full bg-white dark:bg-dark-surface hover:border-brand-500/30"
                 >
+                  <div className={`w-11 h-11 rounded-full ${action.iconBg} flex items-center justify-center shrink-0`}>
+                    <Icon className="w-5 h-5" strokeWidth={2} />
+                  </div>
                   <div className="min-w-0">
-                    {/* Badges: Risk level + Primary trigger reason */}
-                    <div className="flex items-center justify-between gap-1.5 mb-2.5 min-w-0">
-                      <span
-                        className={`text-[10px] uppercase font-black px-2 py-0.5 rounded-full border flex items-center gap-1 shrink-0 ${badgeStyle}`}
-                      >
-                        <ShieldAlert className="w-3 h-3 shrink-0" />
-                        <span className="whitespace-nowrap">{badgeLabel}</span>
-                      </span>
-
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cream-light text-dark-muted border border-forest/10 truncate min-w-0 max-w-[140px]">
-                        {primaryReason}
-                      </span>
-                    </div>
-
-                    {/* Problem Name & Affected Crops */}
-                    <h3 className="text-sm font-black text-dark-text leading-tight line-clamp-1 break-words">
-                      {diseaseName}
-                    </h3>
-                    <p className="text-[11px] text-dark-muted font-medium mt-0.5 truncate">
-                      {d.affectedCrops?.join(', ') || 'Field crops'}
-                    </p>
-
-                    {/* Symptoms preview */}
-                    <p className="text-xs text-dark-text/80 line-clamp-3 leading-relaxed mt-2 break-words">
-                      {symptomsText}
-                    </p>
-                  </div>
-
-                  {/* CTA link */}
-                  <div className="pt-3 border-t border-gray-100 flex items-center justify-between mt-3 min-w-0">
-                    <span className="text-xs text-forest font-black flex items-center gap-1 hover:underline">
-                      <span>{t('viewSolution') || 'Read more'}</span>
-                      <ArrowRight className="w-3.5 h-3.5" />
+                    <span className="text-[15px] font-bold block text-gray-900 dark:text-gray-100 leading-snug break-words">
+                      {action.title}
                     </span>
-                    <span className="text-[11px] text-dark-muted font-semibold">Tap to open</span>
+                    <span className="text-[12px] text-gray-500 dark:text-gray-400 block mt-1 leading-snug line-clamp-1">
+                      {action.subtitle}
+                    </span>
                   </div>
-                </motion.div>
+                </button>
               );
             })}
           </div>
-        ) : (
-          <div className="p-4 rounded-3xl bg-white border border-forest/15 shadow-xs text-center text-xs text-dark-muted font-medium">
-            {t('noAlertsForNow')}
-          </div>
-        )}
-      </motion.section>
+        </motion.section>
 
-      {/* =========================================================================
-          LOCATION EDIT MODAL
-          ========================================================================= */}
+        {/* =========================================================================
+            TODAY'S CARD: ACTIVE CROP OR PLAN FIRST CROP
+            ========================================================================= */}
+        <motion.section variants={itemVariants}>
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <h2 className="text-[16px] font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+              {t('todayCardTitle') || 'Current Crop Lifecycle'}
+            </h2>
+            {currentPlan && (
+              <button
+                onClick={() => navigate(`/crops/lifecycle/${currentPlan.id}`)}
+                className="text-xs text-brand-700 dark:text-brand-400 font-bold hover:underline inline-flex items-center gap-1"
+              >
+                <span>{t('viewFullGuide') || 'View Guide'}</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {currentPlan ? (
+            <Card variant="flat" className="p-5 space-y-4">
+              {/* Multiple Plans Switcher */}
+              {plans.length > 1 && (
+                <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-gray-50 dark:bg-dark-elevated border border-gray-100 dark:border-dark-border min-w-0 w-full">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSelectPlan(
+                        activePlanIndex > 0 ? activePlanIndex - 1 : plans.length - 1
+                      )
+                    }
+                    className="w-8 h-8 shrink-0 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border flex items-center justify-center text-gray-700 dark:text-gray-300 hover:text-brand-600 transition"
+                    aria-label="Previous plan"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                  </button>
+
+                  <div className="flex-1 min-w-0 flex items-center gap-1.5 overflow-x-auto py-0.5 chips-scroll">
+                    {plans.map((p, idx) => (
+                      <button
+                        key={p.id}
+                        ref={(el) => { planButtonRefs.current[idx] = el; }}
+                        type="button"
+                        onClick={() => handleSelectPlan(idx)}
+                        className={[
+                          'px-3 py-1.5 rounded-xl text-xs font-bold transition shrink-0 whitespace-nowrap',
+                          idx === activePlanIndex
+                            ? 'bg-brand-700 text-white shadow-xs'
+                            : 'bg-white dark:bg-dark-surface text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-dark-border hover:border-brand-400',
+                        ].join(' ')}
+                      >
+                        {p.cropName}
+                      </button>
+                    ))}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      handleSelectPlan(
+                        activePlanIndex < plans.length - 1 ? activePlanIndex + 1 : 0
+                      )
+                    }
+                    className="w-8 h-8 shrink-0 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border flex items-center justify-center text-gray-700 dark:text-gray-300 hover:text-brand-600 transition"
+                    aria-label="Next plan"
+                  >
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Plan Header */}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-12 h-12 rounded-2xl overflow-hidden bg-brand-50 shrink-0 border border-brand-100">
+                    <CropImage
+                      src={currentPlan.crop?.imageUrl}
+                      alt={currentPlan.cropName}
+                      cropName={currentPlan.cropName}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="font-bold text-gray-900 dark:text-gray-100 text-[16px] leading-tight truncate">
+                      {currentPlan.cropName}
+                    </h3>
+                    <div className="flex items-center gap-1.5 mt-0.5">
+                      <span className="text-xs text-gray-500 dark:text-gray-400 font-medium">
+                        {currentPlan.fieldName || 'Main Field'}
+                      </span>
+                      {currentPlan.currentStage && (
+                        <Badge variant="brand">
+                          {currentPlan.currentStage}
+                        </Badge>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Badge variant="brand" className="text-xs font-bold tabular">
+                  <AnimatedCounter value={currentPlan.progressPercentage} suffix="%" />
+                </Badge>
+              </div>
+
+              {/* Progress bar */}
+              <ProgressBar value={currentPlan.progressPercentage} color="brand" size="sm" />
+
+              {/* Tasks List */}
+              <div className="space-y-2 pt-1">
+                <span className="text-[12px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider block">
+                  {t('upcomingTasks') || 'Upcoming Tasks'}
+                </span>
+
+                {currentPlan.tasks && currentPlan.tasks.length > 0 ? (
+                  currentPlan.tasks.slice(0, 3).map((task) => (
+                    <button
+                      key={task.id}
+                      type="button"
+                      onClick={() => handleToggleTask(task.id, task.isCompleted)}
+                      className={[
+                        'w-full text-left flex items-start gap-3 p-3 rounded-2xl border transition-colors',
+                        task.isCompleted
+                          ? 'bg-gray-50 dark:bg-dark-elevated border-gray-100 dark:border-dark-border'
+                          : 'bg-white dark:bg-dark-surface border-gray-200 dark:border-dark-border hover:border-brand-400',
+                      ].join(' ')}
+                    >
+                      <span className="mt-0.5 text-brand-700 dark:text-brand-400 shrink-0">
+                        {task.isCompleted ? (
+                          <CheckCircle2 className="w-5 h-5" />
+                        ) : (
+                          <Circle className="w-5 h-5 text-gray-400" />
+                        )}
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <span
+                          className={[
+                            'text-[13px] font-semibold block leading-snug',
+                            task.isCompleted
+                              ? 'line-through text-gray-400 dark:text-gray-500'
+                              : 'text-gray-900 dark:text-gray-100',
+                          ].join(' ')}
+                        >
+                          {language === 'kn'
+                            ? task.titleKn || task.title
+                            : language === 'ta'
+                            ? task.titleTa || task.title
+                            : language === 'te'
+                            ? task.titleTe || task.title
+                            : task.title}
+                        </span>
+                        <span className="text-[11px] text-gray-400 dark:text-gray-500 block mt-0.5">
+                          {task.dayRange} • {task.stage}
+                        </span>
+                      </div>
+                    </button>
+                  ))
+                ) : (
+                  <div className="p-3.5 rounded-2xl bg-brand-50 dark:bg-brand-900/20 text-xs text-brand-700 dark:text-brand-300 font-bold flex items-center gap-2">
+                    <Check className="w-4 h-4" />
+                    <span>{t('allTasksCompleted') || 'All current tasks completed!'}</span>
+                  </div>
+                )}
+              </div>
+            </Card>
+          ) : (
+            <Card variant="flat" className="p-6 text-center space-y-4">
+              <div className="w-12 h-12 rounded-3xl bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 flex items-center justify-center mx-auto">
+                <Sprout className="w-6 h-6" strokeWidth={1.75} />
+              </div>
+              <div className="space-y-1 max-w-sm mx-auto">
+                <h3 className="text-[16px] font-bold text-gray-900 dark:text-gray-100">
+                  {t('planFirstCrop') || 'Plan Your First Crop'}
+                </h3>
+                <p className="text-[13px] text-gray-500 dark:text-gray-400 leading-relaxed">
+                  {t('planFirstCropSubtitle') || 'Get personalized advice tailored to your soil, water and climate.'}
+                </p>
+              </div>
+
+              {latestAssessment ? (
+                <div className="space-y-2 max-w-xs mx-auto">
+                  <Button
+                    fullWidth
+                    variant="primary"
+                    onClick={() =>
+                      navigate('/crops/recommend', {
+                        state: { assessment: latestAssessment },
+                      })
+                    }
+                    leftIcon={<Sparkles className="w-4 h-4" />}
+                  >
+                    Start with Saved Soil Test
+                  </Button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/soil')}
+                    className="text-xs text-brand-700 dark:text-brand-400 font-bold hover:underline block mx-auto py-1"
+                  >
+                    {t('startNewSoilTest') || 'Take a new soil test'} →
+                  </button>
+                </div>
+              ) : (
+                <Button
+                  variant="primary"
+                  onClick={() => navigate('/soil')}
+                  leftIcon={<Sprout className="w-4 h-4" />}
+                >
+                  {t('planFirstCrop') || 'Start Soil Check'}
+                </Button>
+              )}
+            </Card>
+          )}
+        </motion.section>
+
+        {/* =========================================================================
+            ALERTS & REMINDERS ROW
+            ========================================================================= */}
+        <motion.section variants={itemVariants}>
+          <div className="flex items-center justify-between mb-3 px-0.5">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[16px] font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                {t('cropHealthAlertsTitle') || 'Crop Health Alerts'}
+              </h2>
+              <Badge variant="danger" dot>
+                Live Advisory
+              </Badge>
+            </div>
+            <button
+              type="button"
+              onClick={() => navigate('/diseases')}
+              className="text-xs text-brand-700 dark:text-brand-400 font-bold hover:underline inline-flex items-center gap-1"
+            >
+              <span>{t('viewFullGuide') || 'All Diseases'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          {rankedHealthAlerts.length > 0 ? (
+            <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none chips-scroll">
+              {rankedHealthAlerts.map(({ disease: d, riskLevel, primaryReason }) => {
+                const diseaseName =
+                  language === 'kn'
+                    ? d.nameKannada || d.name
+                    : language === 'ta'
+                    ? d.nameTamil || d.name
+                    : language === 'te'
+                    ? d.nameTelugu || d.name
+                    : d.name;
+
+                return (
+                  <button
+                    key={d.id}
+                    type="button"
+                    onClick={() => navigate('/diseases', { state: { selectedProblemId: d.id } })}
+                    className="w-[260px] shrink-0 p-4 rounded-4xl bg-white dark:bg-dark-surface border border-gray-100 dark:border-dark-border shadow-card text-left flex flex-col justify-between min-h-[160px] transition-all active:scale-[0.98] hover:border-brand-400"
+                  >
+                    <div>
+                      <div className="flex items-center justify-between gap-1 mb-2">
+                        <Badge variant={riskLevel === 'high' ? 'danger' : riskLevel === 'medium' ? 'warning' : 'success'}>
+                          {riskLevel === 'high' ? 'High Risk' : riskLevel === 'medium' ? 'Moderate' : 'Low Risk'}
+                        </Badge>
+                        <span className="text-[11px] font-medium text-gray-400 truncate max-w-[120px]">
+                          {primaryReason}
+                        </span>
+                      </div>
+                      <h3 className="text-[14px] font-bold text-gray-900 dark:text-gray-100 leading-snug line-clamp-1">
+                        {diseaseName}
+                      </h3>
+                      <p className="text-[12px] text-gray-500 dark:text-gray-400 line-clamp-2 mt-1 leading-relaxed">
+                        {d.symptoms}
+                      </p>
+                    </div>
+                    <div className="pt-2 border-t border-gray-100 dark:border-dark-border flex items-center justify-between mt-2 text-[12px] font-bold text-brand-700 dark:text-brand-400">
+                      <span>{t('viewSolution') || 'View treatment'}</span>
+                      <ArrowRight className="w-3.5 h-3.5" />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          ) : (
+            <Card variant="flat" className="p-4 text-center text-xs text-gray-500">
+              {t('noAlertsForNow') || 'No critical disease risks for your region right now.'}
+            </Card>
+          )}
+        </motion.section>
+
+        {/* =========================================================================
+            TODAY'S TIP CARD
+            ========================================================================= */}
+        <motion.section variants={itemVariants}>
+          <Card variant="tinted" className="p-4 sm:p-5 flex items-start gap-3.5">
+            <div className="w-10 h-10 rounded-2xl bg-brand-600 text-white flex items-center justify-center shrink-0 shadow-xs">
+              <Lightbulb className="w-5 h-5" strokeWidth={2} />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-brand-700 dark:text-brand-400">
+                  {todayTip.tag}
+                </span>
+              </div>
+              <h3 className="text-[14px] font-bold text-gray-900 dark:text-gray-100 leading-tight">
+                {todayTip.title}
+              </h3>
+              <p className="text-[13px] text-gray-600 dark:text-gray-300 mt-1 leading-relaxed">
+                {todayTip.desc}
+              </p>
+            </div>
+          </Card>
+        </motion.section>
+      </motion.div>
+
+      {/* Location Edit Modal */}
       <LocationEditModal
         isOpen={isLocationModalOpen}
         onClose={() => setIsLocationModalOpen(false)}
@@ -762,7 +761,7 @@ export const HomePage: React.FC = () => {
           setWeatherRefreshKey((k) => k + 1);
         }}
       />
-    </motion.div>
+    </div>
   );
 };
 

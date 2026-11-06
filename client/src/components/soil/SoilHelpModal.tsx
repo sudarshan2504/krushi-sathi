@@ -32,7 +32,6 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
       texture: 'fine_clayey',
       title: 'Black Soil (ಕಪ್ಪು ಮಣ್ಣು / கரிசல் மண்)',
       badge: 'Cracks in Summer',
-      icon: '🌑',
       cues: [
         'Forms wide, deep vertical cracks in hot summer sun',
         'Becomes extremely sticky and heavy like grease when wet',
@@ -52,7 +51,7 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
       texture: 'medium_loamy',
       title: 'Red Soil (ಕೆಂಪು ಮಣ್ಣು / செம்மண்)',
       badge: 'Porous & Friable',
-      icon: '🧱',
+      color: 'bg-red-600',
       cues: [
         'Rich reddish-brown or brick-red colour from iron oxides',
         'Drains rainwater easily without water stagnation',
@@ -72,7 +71,7 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
       texture: 'medium_loamy',
       title: 'Loamy Soil (ಗೋಡು ಮಣ್ಣು / வண்டல் மண்)',
       badge: 'Best All-Rounder',
-      icon: '🌱',
+      color: 'bg-amber-800',
       cues: [
         'Forms a soft, spongy ball when wet that crumbles easily when thumb-pressed',
         'Equal balanced feel of sand and clay, dark rich colour',
@@ -92,7 +91,7 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
       texture: 'fine_clayey',
       title: 'Clay Soil (ಜೇಡಿ ಮಣ್ಣು / களிமண்)',
       badge: 'Pottery Sticky',
-      icon: '🏺',
+      color: 'bg-yellow-900',
       cues: [
         'Forms a firm, shiny, dense ribbon when rolled between palms',
         'Holds puddles of water for weeks (slow percolation)',
@@ -112,7 +111,7 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
       texture: 'coarse_sandy',
       title: 'Sandy Soil (ಮರಳು ಮಣ್ಣು / மணல் மண்)',
       badge: 'Gritty & Quick Draining',
-      icon: '🏖️',
+      color: 'bg-amber-400',
       cues: [
         'Feels rough and gritty like sugar grains between fingers',
         'Falls apart immediately; impossible to form a ball',
@@ -132,7 +131,7 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
       texture: 'silty',
       title: 'Alluvial Soil (ಮೆಕ್ಕಲು / ನದಿ ಗೋಡು / ஆற்று வண்டல்)',
       badge: 'River Delta Silt',
-      icon: '🌊',
+      color: 'bg-stone-500',
       cues: [
         'Found near river basins (Cauvery, Krishna, Tungabhadra)',
         'Very silky smooth silt deposited by flowing water',
@@ -152,7 +151,7 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
       texture: 'coarse_sandy',
       title: 'Laterite Soil (ಲ್ಯಾಟರೈಟ್ / ಮುರಕಲ್ಲು ಮಣ್ಣು / செம்பொறை மண்)',
       badge: 'Western Ghats Hills',
-      icon: '⛰️',
+      color: 'bg-orange-700',
       cues: [
         'Common in Malnad, Western Ghats & Coastal Karnataka',
         'Rusty yellowish-red with hard pea-sized iron gravel pebbles',
@@ -181,8 +180,8 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
           {/* Header */}
           <div className="bg-gradient-to-r from-forest to-leaf p-5 text-white flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center text-xl">
-                🖐️
+              <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
+                <Sparkles className="w-5 h-5 text-white" />
               </div>
               <div>
                 <h2 className="text-lg font-bold">
@@ -226,7 +225,7 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
-                    <span className="text-2xl">{opt.icon}</span>
+                    <span className={`w-3.5 h-3.5 rounded-full ${(opt as any).color || 'bg-stone-800'} shrink-0`} />
                     <div>
                       <div className="flex items-center gap-2">
                         <h3 className="font-bold text-dark-text text-sm">

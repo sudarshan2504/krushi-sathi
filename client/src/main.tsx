@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { RootErrorBoundary } from './components/ui/RootErrorBoundary';
+import { ThemeProvider } from './context/ThemeContext';
 import { checkUrlKillSwitch } from './utils/serviceWorkerKillSwitch';
 
 // Check if user requested a cache purge / service-worker reset via query param
@@ -16,7 +17,9 @@ if (!rootElement) {
 ReactDOM.createRoot(rootElement).render(
   <React.StrictMode>
     <RootErrorBoundary>
-      <App />
+      <ThemeProvider>
+        <App />
+      </ThemeProvider>
     </RootErrorBoundary>
   </React.StrictMode>
 );

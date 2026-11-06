@@ -1,167 +1,168 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Sprout, Bell, Globe, ChevronDown, Check, LogOut } from 'lucide-react';
+/**
+ * Header — slim app header.
+ *
+ * On the home page: logo left, language + notification right.
+ * On inner pages: back button left, page title center, optional right action.
+ *
+ * Scrolling behavior: slight shadow appears when scrolled.
+ * No heavy background — transparent that becomes white/dark on scroll.
+ */
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { Globe, Bell, Check, LogOut, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { api } from '../../services/api';
 import { Modal } from '../ui/Modal';
-import { UserAvatar } from '../ui/UserAvatar';
 import { LanguageCode } from '../../i18n';
+import { IconButton } from '../ui/IconButton';
+
+const PAGE_TITLES: Record<string, string> = {
+  '/home':      '',          // Home shows brand logo
+  '/soil':      'Soil Check',
+  '/crops':     'Crop Advice',
+  '/crop-library': 'Crop Library',
+  '/diseases':  'Disease Guide',
+  '/chat':      'AI Assistant',
+  '/profile':   'Profile',
+};
+
+const LANG_SHORT_CODES: Record<LanguageCode, string> = {
+  en: 'EN',
+  kn: 'ಕನ್ನಡ',
+  ta: 'தமிழ்',
+  te: 'తెలుగు',
+};
+
+function useScrolled(threshold = 4) {
+  const [scrolled, setScrolled] = useState(false);
+  useEffect(() => {
+    const el = document.querySelector('main') ?? window;
+    const handler = () => {
+      const y = el instanceof Window ? window.scrollY : (el as Element).scrollTop;
+      setScrolled(y > threshold);
+    };
+    el.addEventListener('scroll', handler, { passive: true });
+    return () => el.removeEventListener('scroll', handler);
+  }, []);
+  return scrolled;
+}
 
 export const Header: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout } = useAuth();
   const { language, setLanguage, languages, t } = useTranslation();
-  const [isLangModalOpen, setIsLangModalOpen] = useState(false);
+  const [isLangOpen, setIsLangOpen] = useState(false);
   const [isNotifOpen, setIsNotifOpen] = useState(false);
+  const scrolled = useScrolled();
 
-  const currentLangLabel = languages.find((l) => l.code === language)?.label || 'English';
+  const isHome = location.pathname === '/home';
+  const pageTitle = PAGE_TITLES[location.pathname] ?? '';
 
-  const handleHeaderLogout = async () => {
+  const handleLogout = async () => {
     await logout();
     navigate('/login');
   };
 
+  const currentLang = languages.find((l) => l.code === language);
+
   return (
     <>
-      <header className="sticky top-0 z-30 w-full bg-[#FFFCF5]/95 backdrop-blur-md border-b border-[#E8EDE8] px-2.5 sm:px-4 pt-[max(0.5rem,env(safe-area-inset-top,0px))] pb-2 sm:pb-3 pl-[max(0.5rem,env(safe-area-inset-left,0px))] pr-[max(0.5rem,env(safe-area-inset-right,0px))] transition-colors">
-        <div className="max-w-xl md:max-w-5xl mx-auto flex items-center justify-between gap-1.5 sm:gap-2">
-          {/* Brand Logo & Name */}
-          <Link to="/home" className="flex items-center gap-2 sm:gap-2.5 text-left group shrink-0 min-h-[44px]">
-            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-white border border-[#E8EDE8] flex items-center justify-center shadow-xs overflow-hidden p-1 shrink-0">
-              <picture className="w-full h-full flex items-center justify-center">
-                <source srcSet="/krushi-sathi-logo.webp" type="image/webp" />
-                <img
-                  src="/krushi-sathi-logo.png"
-                  alt="Krushi Sathi Logo"
-                  width="36"
-                  height="36"
-                  className="w-full h-full max-w-full max-h-full object-contain"
-                />
-              </picture>
-            </div>
-            <div className="min-w-0">
-              <span className="font-extrabold text-[#18352B] text-sm sm:text-base leading-tight block tracking-tight truncate">
-                Krushi Sathi
-              </span>
-              <span className="text-[10px] sm:text-xs text-[#60717A] font-medium leading-tight hidden xs:block truncate">
-                Your Farming Companion
-              </span>
-            </div>
+      <header
+        className={[
+          'sticky top-0 z-30 w-full',
+          'pt-[max(0.75rem,env(safe-area-inset-top,0px))]',
+          'pb-2.5',
+          'px-4 sm:px-5',
+          'flex items-center gap-2',
+          'transition-all duration-200',
+          scrolled
+            ? 'bg-white/95 dark:bg-dark-surface/95 backdrop-blur-md border-b border-gray-100 dark:border-dark-border shadow-xs'
+            : 'bg-bg dark:bg-dark-bg',
+        ].join(' ')}
+      >
+        {/* Left — back button or logo */}
+        {isHome ? (
+          <Link
+            to="/home"
+            className="flex items-center gap-2 shrink-0 group min-h-[44px]"
+            aria-label="Krushi Sathi home"
+          >
+            {/* Logo mark */}
+            <picture className="w-8 h-8 flex items-center justify-center shrink-0">
+              <source srcSet="/krushi-sathi-icon.webp" type="image/webp" />
+              <img
+                src="/krushi-sathi-icon.png"
+                alt="Krushi Sathi"
+                width="32"
+                height="32"
+                className="w-full h-full object-contain"
+              />
+            </picture>
+            <span className="font-extrabold text-[16px] text-gray-900 dark:text-gray-100 leading-tight tracking-tight whitespace-nowrap">
+              Krushi Sathi
+            </span>
           </Link>
+        ) : (
+          <button
+            onClick={() => navigate(-1)}
+            className="flex items-center justify-center w-10 h-10 rounded-2xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-brand"
+            aria-label={t('navBack')}
+          >
+            <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
+          </button>
+        )}
 
-          {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
-            <Link
-              to="/home"
-              className="px-3 py-2 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition min-h-[44px] inline-flex items-center"
-            >
-              Home
-            </Link>
-            <Link
-              to="/soil"
-              className="px-3 py-2 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition min-h-[44px] inline-flex items-center"
-            >
-              Soil Test
-            </Link>
-            <Link
-              to="/crop-library"
-              className="px-3 py-2 rounded-full text-xs font-extrabold text-[#105C32] bg-[#E8F5E9] hover:bg-[#C8E6C9] transition flex items-center gap-1.5 min-h-[44px]"
-            >
-              <Sprout className="w-3.5 h-3.5 text-[#105C32]" />
-              <span>Crop Library (A-Z)</span>
-            </Link>
-            <Link
-              to="/crops"
-              className="px-3 py-2 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition min-h-[44px] inline-flex items-center"
-            >
-              Recommend
-            </Link>
-            <Link
-              to="/diseases"
-              className="px-3 py-2 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition min-h-[44px] inline-flex items-center"
-            >
-              Diseases
-            </Link>
-            <Link
-              to="/chat"
-              className="px-3 py-2 rounded-full text-xs font-bold text-gray-700 hover:text-[#105C32] hover:bg-[#105C32]/5 transition min-h-[44px] inline-flex items-center"
-            >
-              AI Chat
-            </Link>
-          </nav>
+        {/* Center — page title (inner pages only) */}
+        {!isHome && pageTitle && (
+          <h1 className="flex-1 text-[16px] font-bold text-gray-900 dark:text-gray-100 text-center truncate">
+            {pageTitle}
+          </h1>
+        )}
+        {/* Spacer so right controls align on home */}
+        {isHome && <div className="flex-1" />}
+        {!isHome && !pageTitle && <div className="flex-1" />}
 
-          {/* Right Controls: Language Selector, Notification Bell, User Avatar, Logout */}
-          {/* Right Controls: Language Selector, Notification Bell, User Avatar, Logout */}
-          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-            {/* Rounded Language Selector Pill */}
-            <button
-              onClick={() => setIsLangModalOpen(true)}
-              className="flex items-center gap-1 py-1.5 px-2 sm:px-3 rounded-full bg-white border border-[#E8EDE8] text-xs font-semibold text-[#18352B] shadow-xs hover:border-[#176B3A]/40 transition-colors active:scale-95 min-h-[40px] sm:min-h-[44px] touch-target"
-              aria-label="Change language"
-            >
-              <Globe className="w-3.5 h-3.5 text-[#176B3A] shrink-0" />
-              <span className="max-w-[65px] xs:max-w-[85px] sm:max-w-none truncate">{currentLangLabel}</span>
-              <ChevronDown className="w-3 h-3 text-[#60717A] shrink-0" />
-            </button>
+        {/* Right controls */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Language selector */}
+          <button
+            onClick={() => setIsLangOpen(true)}
+            className="flex items-center gap-1.5 h-9 px-2.5 rounded-full border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface text-[13px] font-semibold text-gray-800 dark:text-gray-200 hover:border-brand-400 dark:hover:border-brand-600 transition-colors shadow-xs focus-visible:ring-2 focus-visible:ring-brand shrink-0 whitespace-nowrap"
+            aria-label={t('chooseLanguage')}
+          >
+            <Globe className="w-3.5 h-3.5 text-brand-700 dark:text-brand-400 shrink-0" aria-hidden="true" />
+            <span className="leading-none">{LANG_SHORT_CODES[language] || 'EN'}</span>
+          </button>
 
-            {/* Notification Bell */}
-            <button
-              onClick={() => setIsNotifOpen(true)}
-              className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white border border-[#E8EDE8] text-[#18352B] shadow-xs flex items-center justify-center hover:border-[#176B3A]/40 transition-colors active:scale-95 touch-target shrink-0"
-              aria-label="Notifications"
-            >
-              <Bell className="w-4 h-4 text-[#18352B]" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-[#E53935] border border-white" />
-            </button>
-
-            {/* User Avatar (Desktop & Tablet) */}
-            <button
-              onClick={() => navigate('/profile')}
-              className="hidden sm:flex w-10 h-10 rounded-full hover:scale-105 transition-transform focus:outline-none shrink-0 touch-target items-center justify-center"
-              aria-label="View Profile"
-            >
-              <div className="w-10 h-10 rounded-full bg-[#105C32] text-white flex items-center justify-center font-bold text-xs shadow-xs border border-white">
-                {user?.avatar ? (
-                  <img
-                    src={user.avatar}
-                    alt={user.name || 'User'}
-                    className="w-full h-full rounded-full object-cover"
-                  />
-                ) : user?.name ? (
-                  user.name
-                    .split(' ')
-                    .map((n) => n[0])
-                    .join('')
-                    .slice(0, 2)
-                    .toUpperCase()
-                ) : (
-                  'AU'
-                )}
-              </div>
-            </button>
-
-            {/* Quick Logout Button (Desktop & Tablet) */}
-            <button
-              onClick={handleHeaderLogout}
-              className="hidden sm:flex w-10 h-10 rounded-full bg-white border border-red-100 text-red-600 shadow-xs items-center justify-center hover:bg-red-50 hover:border-red-200 transition-colors active:scale-95 shrink-0 touch-target"
-              title="Sign Out"
-              aria-label="Logout"
-            >
-              <LogOut className="w-4 h-4" />
-            </button>
-          </div>
+          {/* Notification bell */}
+          {isHome && (
+            <div className="relative shrink-0">
+              <IconButton
+                variant="default"
+                size="md"
+                aria-label={t('notifications')}
+                onClick={() => setIsNotifOpen(true)}
+              >
+                <Bell className="w-4 h-4" strokeWidth={1.75} />
+              </IconButton>
+              {/* Unread dot */}
+              <span
+                className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-danger border-2 border-white dark:border-dark-surface"
+                aria-hidden="true"
+              />
+            </div>
+          )}
         </div>
       </header>
 
-      {/* Language Selection Modal */}
-      <Modal
-        isOpen={isLangModalOpen}
-        onClose={() => setIsLangModalOpen(false)}
-        title={t('chooseLanguage')}
-      >
-        <p className="text-sm text-[#60717A] mb-4">{t('selectLanguageComfortable')}</p>
-        <div className="grid grid-cols-2 gap-3">
+      {/* Language Modal */}
+      <Modal isOpen={isLangOpen} onClose={() => setIsLangOpen(false)} title={t('chooseLanguage')}>
+        <p className="text-[14px] text-gray-500 dark:text-gray-400 mb-4">
+          {t('selectLanguageComfortable')}
+        </p>
+        <div className="grid grid-cols-2 gap-2.5">
           {languages.map((lang) => {
             const isSelected = language === lang.code;
             return (
@@ -172,22 +173,24 @@ export const Header: React.FC = () => {
                   if (user) {
                     api.auth.updateProfile({ language: lang.code }).catch(() => {});
                   }
-                  setIsLangModalOpen(false);
+                  setIsLangOpen(false);
                 }}
-                className={`relative p-4 rounded-2xl border-2 text-left flex flex-col justify-between transition-all ${
+                className={[
+                  'relative p-4 rounded-3xl border-2 text-left flex flex-col gap-1 transition-all',
+                  'focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
                   isSelected
-                    ? 'border-[#176B3A] bg-[#E6F4E8]/50 text-[#176B3A] shadow-sm'
-                    : 'border-[#E8EDE8] bg-white hover:border-[#176B3A]/30 text-[#18352B]'
-                }`}
+                    ? 'border-brand-700 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-600'
+                    : 'border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-brand-300 dark:hover:border-brand-700',
+                ].join(' ')}
               >
-                <div>
-                  <span className="text-xl font-bold block mb-1">{lang.nativeLabel}</span>
-                  <span className="text-xs text-[#60717A]">{lang.label}</span>
-                </div>
+                <span className={['text-lg font-bold', isSelected ? 'text-brand-700 dark:text-brand-400' : 'text-gray-900 dark:text-gray-100'].join(' ')}>
+                  {lang.nativeLabel}
+                </span>
+                <span className="text-[12px] text-gray-500 dark:text-gray-400">{lang.label}</span>
                 {isSelected && (
-                  <div className="absolute top-3 right-3 w-5 h-5 rounded-full bg-[#176B3A] text-white flex items-center justify-center">
-                    <Check className="w-3.5 h-3.5" />
-                  </div>
+                  <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-brand-700 dark:bg-brand-600 flex items-center justify-center">
+                    <Check className="w-3 h-3 text-white" strokeWidth={3} aria-hidden="true" />
+                  </span>
                 )}
               </button>
             );
@@ -196,23 +199,25 @@ export const Header: React.FC = () => {
       </Modal>
 
       {/* Notification Modal */}
-      <Modal
-        isOpen={isNotifOpen}
-        onClose={() => setIsNotifOpen(false)}
-        title={t('notifications')}
-      >
+      <Modal isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} title={t('notifications')}>
         <div className="space-y-3">
-          <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200 text-xs">
-            <span className="font-bold text-amber-900 block mb-0.5">🌧️ Monsoon Advisory</span>
-            <p className="text-amber-800">
-              Rain is expected across your district this week. Inspect field drainage to prevent waterlogging.
-            </p>
+          <div className="flex gap-3 p-4 rounded-3xl bg-warning-light dark:bg-amber-900/20 border border-warning/20">
+            <Bell className="w-4 h-4 text-warning mt-0.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+            <div>
+              <p className="text-[14px] font-bold text-gray-900 dark:text-gray-100 mb-0.5">Monsoon Advisory</p>
+              <p className="text-[13px] text-gray-600 dark:text-gray-400">
+                Rain expected this week. Inspect field drainage to prevent waterlogging.
+              </p>
+            </div>
           </div>
-          <div className="p-3 bg-emerald-50 rounded-2xl border border-emerald-200 text-xs">
-            <span className="font-bold text-emerald-900 block mb-0.5">🌾 Crop Schedule Reminder</span>
-            <p className="text-emerald-800">
-              Check your active crops in Krishi Sathi to review upcoming weed and nutrient management tasks.
-            </p>
+          <div className="flex gap-3 p-4 rounded-3xl bg-brand-50 dark:bg-brand-900/20 border border-brand-100 dark:border-brand-900/30">
+            <Bell className="w-4 h-4 text-brand-600 mt-0.5 shrink-0" strokeWidth={2} aria-hidden="true" />
+            <div>
+              <p className="text-[14px] font-bold text-gray-900 dark:text-gray-100 mb-0.5">Crop Schedule Reminder</p>
+              <p className="text-[13px] text-gray-600 dark:text-gray-400">
+                Check active crops for upcoming weed and nutrient management tasks.
+              </p>
+            </div>
           </div>
         </div>
       </Modal>

@@ -84,6 +84,8 @@ class SpeechService {
   private preferCloud = true;
   private cachedVoices: SpeechSynthesisVoice[] = [];
   private voicesLoaded = false;
+  private playbackToken = 0;
+  private isCancelled = false;
 
   constructor() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -381,6 +383,7 @@ class SpeechService {
     base64Data: string,
     mimeType: string,
     provider: ActiveTtsProvider,
+    token: number,
     callbacks?: {
       onStart?: () => void;
       onEnd?: () => void;
@@ -390,7 +393,10 @@ class SpeechService {
   ): boolean {
     if (typeof window === 'undefined') return false;
 
-    this.stopSpeaking();
+    // Check token before playing
+    if (this.playbackToken !== token || this.isCancelled) {
+      return false;
+    }
 
     try {
       const audioUrl = `data:${mimeType || 'audio/mp3'};base64,${base64Data}`;
@@ -401,10 +407,12 @@ class SpeechService {
       let isFinished = false;
 
       audio.onplay = () => {
+        if (this.playbackToken !== token || this.isCancelled) return;
         callbacks?.onStart?.();
       };
 
       audio.onended = () => {
+        if (this.playbackToken !== token || this.isCancelled) return;
         if (!isFinished) {
           isFinished = true;
           this.activeAudio = null;
@@ -414,6 +422,8 @@ class SpeechService {
       };
 
       audio.onerror = (e) => {
+        // If playback was cancelled or superseded by a newer token, do NOT fire error / fallback
+        if (this.playbackToken !== token || this.isCancelled) return;
         if (!isFinished) {
           isFinished = true;
           this.activeAudio = null;
@@ -425,6 +435,7 @@ class SpeechService {
       const playPromise = audio.play();
       if (playPromise !== undefined) {
         playPromise.catch((err) => {
+          if (this.playbackToken !== token || this.isCancelled) return;
           if (!isFinished) {
             isFinished = true;
             this.activeAudio = null;
@@ -442,7 +453,9 @@ class SpeechService {
     } catch (err) {
       this.activeAudio = null;
       this.currentProvider = null;
-      callbacks?.onError?.(err);
+      if (this.playbackToken === token && !this.isCancelled) {
+        callbacks?.onError?.(err);
+      }
       return false;
     }
   }
@@ -453,14 +466,23 @@ class SpeechService {
   public speakBrowser(
     text: string,
     langCode: SupportedLanguageCode,
-    options?: SpeakOptions
+    options?: SpeakOptions,
+    token?: number
   ): boolean {
     if (!this.isSynthesisSupported()) {
       options?.onError?.(new Error('Speech synthesis is not supported in this browser.'));
       return false;
     }
 
-    this.stopSpeaking();
+    const currentToken = token !== undefined ? token : ++this.playbackToken;
+    this.isCancelled = false;
+
+    // Detach and cancel any current browser utterance or audio
+    this.stopAudioElementOnly();
+
+    if (this.playbackToken !== currentToken || this.isCancelled) {
+      return false;
+    }
 
     const cleanText = this.cleanTextForSpeech(text);
     if (!cleanText) {
@@ -471,7 +493,7 @@ class SpeechService {
     const config = LANGUAGE_LOCALE_MAP[langCode] || LANGUAGE_LOCALE_MAP.en;
     const utterance = new SpeechSynthesisUtterance(cleanText);
     utterance.lang = config.locale;
-    utterance.rate = options?.speed || (langCode === 'en' ? 1.0 : 0.95); // Slightly slower for Indic languages for rural clarity
+    utterance.rate = options?.speed || (langCode === 'en' ? 1.0 : 0.95);
     utterance.pitch = 1.0;
 
     const matchedVoice = this.findBestVoice(langCode);
@@ -485,10 +507,12 @@ class SpeechService {
     let isFinished = false;
 
     utterance.onstart = () => {
+      if (this.playbackToken !== currentToken || this.isCancelled) return;
       options?.onStart?.();
     };
 
     utterance.onend = () => {
+      if (this.playbackToken !== currentToken || this.isCancelled) return;
       if (!isFinished) {
         isFinished = true;
         this.currentUtterance = null;
@@ -498,6 +522,7 @@ class SpeechService {
     };
 
     utterance.onerror = (event: any) => {
+      if (this.playbackToken !== currentToken || this.isCancelled) return;
       if (!isFinished) {
         isFinished = true;
         this.currentUtterance = null;
@@ -533,7 +558,12 @@ class SpeechService {
     langCode: SupportedLanguageCode,
     options?: SpeakOptions
   ): Promise<boolean> {
+    // Cleanly cancel previous speech first
     this.stopSpeaking();
+
+    // Assign a new token for THIS playback session
+    const token = ++this.playbackToken;
+    this.isCancelled = false;
 
     const cleanText = this.cleanTextForSpeech(text);
     if (!cleanText) {
@@ -547,23 +577,35 @@ class SpeechService {
 
     // If user explicitly chose browser only
     if (providerChoice === 'browser') {
-      return this.speakBrowser(cleanText, langCode, options);
+      return this.speakBrowser(cleanText, langCode, options, token);
     }
 
     const shouldTryBackend = options?.preferCloud !== false && this.preferCloud;
 
     if (shouldTryBackend) {
       try {
+        const t0 = performance.now();
         const res = await api.chat.synthesizeSpeech(cleanText, langCode, gender, providerChoice, speed);
+        const t1 = performance.now();
+
+        // Check if token changed while waiting for network TTS synthesis
+        if (this.playbackToken !== token || this.isCancelled) {
+          console.log(`[Voice Perf] Speech token superseded or cancelled (${token} vs ${this.playbackToken}). Discarding TTS.`);
+          return false;
+        }
+
         if (res && res.audio && (res.provider === 'gemini-tts' || res.provider === 'edge-neural')) {
+          console.log(`[Voice Perf] TTS synthesized via ${res.provider} in ${Math.round(t1 - t0)}ms`);
           const activeProvider: ActiveTtsProvider = res.provider;
-          return this.playAudioBase64(res.audio, res.mimeType || 'audio/mp3', activeProvider, {
+          return this.playAudioBase64(res.audio, res.mimeType || 'audio/mp3', activeProvider, token, {
             onStart: () => {
+              if (this.playbackToken !== token || this.isCancelled) return;
               this.currentProvider = activeProvider;
               options?.onProviderSelected?.(activeProvider, res.voice);
               options?.onStart?.();
             },
             onEnd: () => {
+              if (this.playbackToken !== token || this.isCancelled) return;
               this.currentProvider = null;
               this.activeAudio = null;
               options?.onEnd?.();
@@ -574,18 +616,24 @@ class SpeechService {
               options?.onInterrupted?.();
             },
             onError: (err) => {
+              // Crucial: Only fall back if this playback session is still the active one!
+              if (this.playbackToken !== token || this.isCancelled) return;
               console.warn('[speechService] Backend audio playback failed, falling back to browser voice:', err);
-              this.speakBrowser(cleanText, langCode, options);
+              this.speakBrowser(cleanText, langCode, options, token);
             },
           });
         }
       } catch (err) {
+        if (this.playbackToken !== token || this.isCancelled) return false;
         console.warn('[speechService] Backend TTS request failed, gracefully falling back to browser voice:', err);
       }
     }
 
-    // Graceful fallback to browser SpeechSynthesis
-    return this.speakBrowser(cleanText, langCode, options);
+    // Graceful fallback to browser SpeechSynthesis (only if still active token)
+    if (this.playbackToken !== token || this.isCancelled) {
+      return false;
+    }
+    return this.speakBrowser(cleanText, langCode, options, token);
   }
 
   /**
@@ -598,33 +646,56 @@ class SpeechService {
   ): boolean {
     this.speakNatural(text, langCode, options).catch((err) => {
       console.warn('[speechService] speakNatural failed:', err);
-      this.speakBrowser(text, langCode, options);
     });
     return true;
   }
 
   /**
-   * Immediately cancel any active speech synthesis (both cloud audio and browser utterance)
+   * Helper to detach and stop active audio element without modifying playbackToken
    */
-  public stopSpeaking(): void {
+  private stopAudioElementOnly(): void {
     if (this.activeAudio) {
+      const audio = this.activeAudio;
+      this.activeAudio = null;
+      // Detach all handlers BEFORE pausing or clearing src to prevent error events triggering fallback
+      audio.onplay = null;
+      audio.onended = null;
+      audio.onerror = null;
+      audio.onpause = null;
+      audio.oncanplay = null;
       try {
-        this.activeAudio.pause();
-        this.activeAudio.currentTime = 0;
-        this.activeAudio.src = '';
+        audio.pause();
+        audio.currentTime = 0;
+        audio.src = '';
       } catch {
         // Best effort pause
       }
-      this.activeAudio = null;
     }
+  }
+
+  /**
+   * Immediately cancel any active speech synthesis (both cloud audio and browser utterance).
+   * Detaches all handlers before pausing or clearing src so an intentional stop never triggers fallback.
+   */
+  public stopSpeaking(): void {
+    // Invalidate any current or in-flight playback token
+    this.playbackToken++;
+    this.isCancelled = true;
+
+    this.stopAudioElementOnly();
 
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+      if (this.currentUtterance) {
+        this.currentUtterance.onstart = null;
+        this.currentUtterance.onend = null;
+        this.currentUtterance.onerror = null;
+        this.currentUtterance = null;
+      }
       try {
         window.speechSynthesis.cancel();
       } catch {
         // Best-effort cancel
       }
-      this.currentUtterance = null;
     }
 
     this.currentProvider = null;

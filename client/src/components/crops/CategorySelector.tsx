@@ -164,7 +164,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
 
   if (compact) {
     return (
-      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none flex-nowrap touch-pan-x">
         {CROP_CATEGORIES.map((cat) => {
           const isSelected =
             selectedCategory === cat.id ||
@@ -177,23 +177,25 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
             <button
               key={cat.id}
               onClick={() => onSelectCategory(cat.id === 'all' ? '' : cat.id)}
-              className={`flex-shrink-0 flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm ${
+              className={`flex-shrink-0 relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-1 cursor-pointer ${
                 isSelected
-                  ? 'bg-forest-600 text-white shadow-forest-600/20 shadow-md ring-2 ring-forest-500/30'
-                  : 'bg-white text-earth-700 hover:bg-earth-50 border border-earth-200/80 hover:border-earth-300'
+                  ? 'bg-forest text-white border border-forest shadow-sm'
+                  : 'bg-white text-dark-text border border-gray-200 hover:border-forest/40'
               }`}
             >
-              <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-mint-300' : 'text-forest-600'}`} />
-              <span>{getLabel(cat)}</span>
-              {count !== undefined && count > 0 && (
-                <span
-                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                    isSelected ? 'bg-forest-700 text-mint-200' : 'bg-earth-100 text-earth-600'
-                  }`}
-                >
-                  {count}
-                </span>
-              )}
+              <span className="relative z-10 flex items-center gap-2">
+                <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-forest'}`} />
+                <span>{getLabel(cat)}</span>
+                {count !== undefined && count > 0 && (
+                  <span
+                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                      isSelected ? 'bg-forest-dark text-white' : 'bg-gray-100 text-dark-text'
+                    }`}
+                  >
+                    {count}
+                  </span>
+                )}
+              </span>
             </button>
           );
         })}
@@ -240,17 +242,17 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
               key={cat.id}
               whileTap={{ scale: 0.97 }}
               onClick={() => onSelectCategory(cat.id === 'all' ? '' : cat.id)}
-              className={`relative flex flex-col items-start p-3 rounded-2xl text-left transition-all border ${
+              className={`relative flex flex-col items-start p-3 rounded-2xl text-left transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-1 cursor-pointer ${
                 isSelected
-                  ? 'bg-gradient-to-br from-forest-600 to-forest-700 text-white border-forest-500 shadow-md ring-2 ring-forest-400/40'
-                  : 'bg-white hover:bg-forest-50/40 text-earth-800 border-earth-200/80 hover:border-forest-300 shadow-xs'
+                  ? 'bg-forest text-white border-forest shadow-md'
+                  : 'bg-white hover:bg-forest-50/40 text-dark-text border-gray-200 hover:border-forest/40 shadow-xs'
               }`}
             >
               {cat.badge && (
                 <span
-                  className={`absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                  className={`absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full z-10 ${
                     isSelected
-                      ? 'bg-mint-400/20 text-mint-200 border border-mint-300/30'
+                      ? 'bg-white/20 text-white border border-white/30'
                       : 'bg-amber-100 text-amber-800'
                   }`}
                 >
@@ -259,20 +261,20 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
               )}
 
               <div
-                className={`w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${
-                  isSelected ? 'bg-white/15 text-mint-300' : 'bg-forest-100/70 text-forest-700'
+                className={`relative z-10 w-8 h-8 rounded-xl flex items-center justify-center mb-2 ${
+                  isSelected ? 'bg-white/20 text-white' : 'bg-forest-50 text-forest'
                 }`}
               >
                 <Icon className="w-4 h-4" />
               </div>
 
-              <div className="w-full">
+              <div className="relative z-10 w-full">
                 <div className="flex items-center justify-between gap-1">
                   <span className="text-xs font-bold leading-snug line-clamp-1">{getLabel(cat)}</span>
                   {count !== undefined && count > 0 && (
                     <span
                       className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
-                        isSelected ? 'bg-forest-800 text-mint-200' : 'bg-earth-100 text-earth-600'
+                        isSelected ? 'bg-forest-dark text-white' : 'bg-gray-100 text-dark-text'
                       }`}
                     >
                       {count}
@@ -281,7 +283,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                 </div>
                 <p
                   className={`text-[10px] mt-0.5 line-clamp-1 ${
-                    isSelected ? 'text-forest-100/80' : 'text-earth-400'
+                    isSelected ? 'text-white/80' : 'text-dark-muted'
                   }`}
                 >
                   {cat.description}

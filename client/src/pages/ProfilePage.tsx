@@ -17,11 +17,23 @@ import {
   Edit2,
   Navigation,
   Loader2,
+  Moon,
+  Sun,
+  Monitor,
+  HelpCircle,
+  Shield,
+  Ruler,
+  PhoneCall,
+  ChevronRight,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
+import { useTheme } from '../context/ThemeContext';
 import { UserAvatar } from '../components/ui/UserAvatar';
+import { ListItem } from '../components/ui/StatTile';
+import { Modal } from '../components/ui/Modal';
+import { Button } from '../components/ui/Button';
 import { api } from '../services/api';
 import {
   INDIAN_STATES,
@@ -39,11 +51,13 @@ export const ProfilePage: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
   const { currentLanguageOption, language, t } = useTranslation();
   const { showToast } = useToast();
+  const { theme, setTheme } = useTheme();
   const navigate = useNavigate();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [name, setName] = useState(user?.name || '');
   const [state, setState] = useState(user?.state || 'Karnataka');
   const [village, setVillage] = useState(user?.village || '');
@@ -203,7 +217,7 @@ export const ProfilePage: React.FC = () => {
       )}
 
       {/* Profile Header Card */}
-      <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-card flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
+      <div className="bg-white dark:bg-dark-surface rounded-3xl p-6 border border-gray-100 dark:border-dark-border shadow-card flex flex-col sm:flex-row items-center gap-5 text-center sm:text-left">
         {/* Avatar with Upload Action */}
         <div className="relative group">
           <UserAvatar user={user} size="2xl" className="shadow-md" />
@@ -220,7 +234,7 @@ export const ProfilePage: React.FC = () => {
             onClick={() => fileInputRef.current?.click()}
             disabled={isUploading}
             aria-label="Change photo"
-            className="absolute bottom-0 right-0 p-2 rounded-full bg-forest hover:bg-forest-dark text-white shadow-md border-2 border-white transition-transform active:scale-95 disabled:opacity-50"
+            className="absolute bottom-0 right-0 p-2 rounded-full bg-brand-600 hover:bg-brand-700 text-white shadow-md border-2 border-white dark:border-dark-surface transition-transform active:scale-95 disabled:opacity-50"
             title="Upload photo"
           >
             <Camera className="w-3.5 h-3.5" />
@@ -230,12 +244,12 @@ export const ProfilePage: React.FC = () => {
         <div className="flex-1">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h1 className="text-xl font-black text-dark-text">{user?.name || 'Farmer'}</h1>
-              <p className="text-xs text-dark-muted flex items-center justify-center sm:justify-start gap-1 mt-0.5">
+              <h1 className="text-xl font-black text-gray-900 dark:text-gray-50">{user?.name || 'Farmer'}</h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center sm:justify-start gap-1 mt-0.5">
                 <Phone className="w-3.5 h-3.5" />
                 <span>{user?.phone || 'No phone registered'}</span>
               </p>
-              <p className="text-xs text-dark-muted flex items-center justify-center sm:justify-start gap-1 mt-0.5">
+              <p className="text-xs text-gray-500 dark:text-gray-400 flex items-center justify-center sm:justify-start gap-1 mt-0.5">
                 <MapPin className="w-3.5 h-3.5" />
                 <span>
                   {user?.district
@@ -260,9 +274,9 @@ export const ProfilePage: React.FC = () => {
                   setLocationSource(user?.locationSource || 'manual');
                   setIsEditing(!isEditing);
                 }}
-                className="py-1.5 px-3.5 rounded-xl border border-gray-200 text-xs font-bold text-dark-text hover:bg-gray-50 flex items-center gap-1.5 transition"
+                className="py-1.5 px-3.5 rounded-xl border border-gray-200 dark:border-dark-border text-xs font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-elevated flex items-center gap-1.5 transition"
               >
-                <Edit2 className="w-3.5 h-3.5 text-forest" />
+                <Edit2 className="w-3.5 h-3.5 text-brand-600 dark:text-brand-400" />
                 <span>{isEditing ? 'Cancel' : 'Edit Profile'}</span>
               </button>
 
@@ -271,7 +285,7 @@ export const ProfilePage: React.FC = () => {
                   type="button"
                   onClick={handleRemoveAvatar}
                   disabled={isUploading}
-                  className="py-1.5 px-2.5 rounded-xl border border-red-200 text-xs font-bold text-red-600 hover:bg-red-50 flex items-center gap-1 transition disabled:opacity-50"
+                  className="py-1.5 px-2.5 rounded-xl border border-red-200 dark:border-red-900/40 text-xs font-bold text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-1 transition disabled:opacity-50"
                   title="Remove photo"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
@@ -290,12 +304,12 @@ export const ProfilePage: React.FC = () => {
           animate={{ opacity: 1, height: 'auto' }}
           exit={{ opacity: 0, height: 0 }}
           onSubmit={handleSaveProfile}
-          className="bg-white rounded-3xl p-5 border border-forest/30 shadow-card space-y-4"
+          className="bg-white dark:bg-dark-surface rounded-3xl p-5 border border-brand-500/30 dark:border-brand-500/20 shadow-card space-y-4"
         >
-          <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+          <div className="flex items-center justify-between border-b border-gray-100 dark:border-dark-border pb-2">
             <div>
-              <h2 className="text-sm font-extrabold text-forest">Edit Farmer Information</h2>
-              <span className="text-[11px] text-dark-muted">Saved to your personal account</span>
+              <h2 className="text-sm font-extrabold text-brand-700 dark:text-brand-400">Edit Farmer Information</h2>
+              <span className="text-[11px] text-gray-500 dark:text-gray-400">Saved to your personal account</span>
             </div>
 
             {/* GPS Location Refresh button */}
@@ -303,7 +317,7 @@ export const ProfilePage: React.FC = () => {
               type="button"
               onClick={detectLocation}
               disabled={isDetectingLoc}
-              className="px-2.5 py-1.5 rounded-xl bg-forest/10 hover:bg-forest hover:text-white text-forest text-xs font-bold transition flex items-center gap-1.5 min-h-[32px] cursor-pointer disabled:opacity-50"
+              className="px-2.5 py-1.5 rounded-xl bg-brand-50 dark:bg-dark-elevated hover:bg-brand-600 hover:text-white text-brand-700 dark:text-brand-400 text-xs font-bold transition flex items-center gap-1.5 min-h-[32px] cursor-pointer disabled:opacity-50"
             >
               {isDetectingLoc ? (
                 <>
@@ -321,27 +335,27 @@ export const ProfilePage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-xs font-bold text-dark-text mb-1">Full Name</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
               <input
                 type="text"
                 required
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 text-xs font-semibold focus:border-brand-600 outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-dark-text mb-1">Village / Town</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">Village / Town</label>
               <input
                 type="text"
                 value={village}
                 onChange={(e) => setVillage(e.target.value)}
                 placeholder="e.g. Koppa"
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 text-xs font-semibold focus:border-brand-600 outline-none"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-dark-text mb-1">State</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">State</label>
               <select
                 value={state}
                 onChange={(e) => {
@@ -353,7 +367,7 @@ export const ProfilePage: React.FC = () => {
                   }
                   setLocationSource('manual');
                 }}
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none bg-white"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 text-xs font-semibold focus:border-brand-600 outline-none"
               >
                 {INDIAN_STATES.map((s) => (
                   <option key={s.name} value={s.name}>
@@ -363,14 +377,14 @@ export const ProfilePage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-dark-text mb-1">District</label>
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">District</label>
               <select
                 value={district}
                 onChange={(e) => {
                   setDistrict(e.target.value);
                   setLocationSource('manual');
                 }}
-                className="w-full px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none bg-white"
+                className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 text-xs font-semibold focus:border-brand-600 outline-none"
               >
                 <option value="">Select District</option>
                 {selectedStateObj.districts.map((d) => (
@@ -381,7 +395,7 @@ export const ProfilePage: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-dark-text mb-1">
+              <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 mb-1">
                 Land Size & Indian Measurement Unit
               </label>
               <div className="flex gap-2">
@@ -391,12 +405,12 @@ export const ProfilePage: React.FC = () => {
                   min="0.1"
                   value={farmSize}
                   onChange={(e) => setFarmSize(e.target.value)}
-                  className="w-24 px-3 py-2 rounded-xl border border-gray-200 text-xs font-bold focus:border-forest outline-none"
+                  className="w-24 px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 text-xs font-bold focus:border-brand-600 outline-none"
                 />
                 <select
                   value={farmUnit}
                   onChange={(e) => setFarmUnit(e.target.value)}
-                  className="flex-1 px-3 py-2 rounded-xl border border-gray-200 text-xs font-semibold focus:border-forest outline-none bg-white"
+                  className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 text-xs font-semibold focus:border-brand-600 outline-none"
                 >
                   {LAND_UNIT_OPTIONS.map((opt) => (
                     <option key={opt.id} value={opt.id}>
@@ -406,8 +420,9 @@ export const ProfilePage: React.FC = () => {
                 </select>
               </div>
               {conversionHint && (
-                <p className="text-[10px] text-forest font-semibold mt-1">
-                  📐 {conversionHint}
+                <p className="text-[10px] text-brand-600 dark:text-brand-400 font-semibold mt-1 flex items-center gap-1">
+                  <Ruler className="w-3 h-3" />
+                  <span>{conversionHint}</span>
                 </p>
               )}
             </div>
@@ -434,69 +449,156 @@ export const ProfilePage: React.FC = () => {
       )}
 
       {/* Farm Details Card */}
-      <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card space-y-3">
-        <h2 className="text-sm font-bold text-dark-text flex items-center gap-2">
-          <Sprout className="w-4 h-4 text-forest" />
+      <div className="bg-white dark:bg-dark-surface rounded-3xl p-5 border border-gray-100 dark:border-dark-border shadow-card space-y-3">
+        <h2 className="text-sm font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <Sprout className="w-4 h-4 text-brand-600 dark:text-brand-400" />
           <span>Farm Profile & Landholdings</span>
         </h2>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-          <div className="bg-cream-light p-3.5 rounded-2xl border border-gray-100">
-            <span className="text-dark-muted block mb-0.5">Total Land Size</span>
+          <div className="bg-gray-50 dark:bg-dark-elevated p-3.5 rounded-2xl border border-gray-100 dark:border-dark-border">
+            <span className="text-gray-500 dark:text-gray-400 block mb-0.5">Total Land Size</span>
             <div className="flex items-baseline gap-2">
-              <span className="font-extrabold text-dark-text text-base">
+              <span className="font-extrabold text-gray-900 dark:text-gray-100 text-base">
                 {user?.farmSize ? `${user.farmSize} ${getLocalizedUnitLabel(user.farmUnit || 'Acres', language)}` : '2 Acres'}
               </span>
             </div>
             {conversionHint && (
-              <span className="text-[10px] text-forest font-bold block mt-0.5">
-                {conversionHint}
+              <span className="text-[10px] text-brand-700 dark:text-brand-400 font-bold flex items-center gap-1 mt-0.5">
+                <Ruler className="w-3 h-3" />
+                <span>{conversionHint}</span>
               </span>
             )}
           </div>
-          <div className="bg-cream-light p-3.5 rounded-2xl border border-gray-100">
-            <span className="text-dark-muted block mb-0.5">Registered Location</span>
-            <span className="font-extrabold text-dark-text text-base capitalize block">
+          <div className="bg-gray-50 dark:bg-dark-elevated p-3.5 rounded-2xl border border-gray-100 dark:border-dark-border">
+            <span className="text-gray-500 dark:text-gray-400 block mb-0.5">Registered Location</span>
+            <span className="font-extrabold text-gray-900 dark:text-gray-100 text-base capitalize block">
               {user?.district ? `${user.district}, ${user.state || 'Karnataka'}` : 'Karnataka'}
             </span>
-            <span className="text-[10px] text-dark-muted block mt-0.5">
+            <span className="text-[10px] text-gray-500 dark:text-gray-400 block mt-0.5">
               Region: {user?.village ? `${user.village} Hobli` : 'South Karnataka Agro-Climatic Zone'}
             </span>
           </div>
         </div>
       </div>
 
-      {/* Language Setting */}
-      <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-mint flex items-center justify-center text-forest">
-            <Globe className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-dark-text">{t('chooseLanguage')}</h3>
-            <p className="text-xs text-dark-muted">
-              {currentLanguageOption.nativeLabel} ({currentLanguageOption.label})
-            </p>
-          </div>
+      {/* App Preferences & Settings Group */}
+      <div className="bg-white dark:bg-dark-surface rounded-3xl border border-gray-100 dark:border-dark-border shadow-card overflow-hidden">
+        <div className="px-5 py-3 border-b border-gray-100 dark:border-dark-border">
+          <h3 className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+            Preferences & Information
+          </h3>
         </div>
-        <button
-          onClick={() => navigate('/language')}
-          className="text-xs font-bold text-forest bg-mint hover:bg-forest hover:text-white px-3.5 py-2 rounded-xl transition"
-        >
-          Change
-        </button>
+
+        <div>
+          {/* Language Item */}
+          <ListItem
+            icon={<Globe className="w-4 h-4 text-brand-600 dark:text-brand-400" />}
+            title={t('chooseLanguage')}
+            subtitle={`${currentLanguageOption.nativeLabel} (${currentLanguageOption.label})`}
+            right={<ChevronRight className="w-4 h-4 text-gray-400" />}
+            onPress={() => navigate('/language')}
+          />
+
+          {/* Theme Mode Selector Row */}
+          <div className="flex items-center justify-between px-4 py-3.5 border-b border-gray-100 dark:border-dark-border">
+            <div className="flex items-center gap-3">
+              <span className="w-9 h-9 flex items-center justify-center rounded-2xl bg-gray-100 dark:bg-dark-elevated text-gray-600 dark:text-gray-400 shrink-0">
+                {theme === 'dark' ? <Moon className="w-4 h-4" /> : <Sun className="w-4 h-4" />}
+              </span>
+              <div>
+                <span className="block text-[15px] font-semibold text-gray-900 dark:text-gray-100">
+                  Theme Appearance
+                </span>
+                <span className="block text-[13px] text-gray-500 dark:text-gray-400 mt-0.5 capitalize">
+                  {theme} mode
+                </span>
+              </div>
+            </div>
+
+            <div className="flex bg-gray-100 dark:bg-dark-elevated p-1 rounded-xl gap-1">
+              {[
+                { id: 'light', label: 'Light', icon: Sun },
+                { id: 'dark', label: 'Dark', icon: Moon },
+              ].map((opt) => {
+                const Icon = opt.icon;
+                const isSelected = theme === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setTheme(opt.id as 'light' | 'dark')}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition ${
+                      isSelected
+                        ? 'bg-white dark:bg-dark-surface text-brand-700 dark:text-brand-400 shadow-xs'
+                        : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    <span>{opt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Agricultural Helpline / Support */}
+          <ListItem
+            icon={<PhoneCall className="w-4 h-4 text-emerald-600" />}
+            title="Kisan Call Center (KCC)"
+            subtitle="Toll Free: 1800-180-1551 (6 AM - 10 PM)"
+            right={<span className="text-xs font-bold text-brand-600 dark:text-brand-400">Call Now</span>}
+            onPress={() => window.open('tel:18001801551')}
+          />
+
+          {/* About Krushi Sathi */}
+          <ListItem
+            icon={<Shield className="w-4 h-4 text-blue-600" />}
+            title="Krushi Sathi"
+            subtitle="Version 2.0 • ICAR Agricultural Advisor"
+            divider={false}
+          />
+        </div>
       </div>
 
-      {/* Logout Button */}
+      {/* Logout Action */}
       <div className="pt-2">
         <button
-          onClick={handleLogout}
-          className="w-full flex items-center justify-center gap-2 bg-red-50 hover:bg-red-100 text-red-700 font-bold py-3.5 px-4 rounded-2xl transition border border-red-200"
+          onClick={() => setShowLogoutConfirm(true)}
+          className="w-full flex items-center justify-center gap-2 bg-red-50 dark:bg-red-950/30 hover:bg-red-100 dark:hover:bg-red-950/50 text-red-700 dark:text-red-400 font-bold py-3.5 px-4 rounded-2xl transition border border-red-200 dark:border-red-900/40 cursor-pointer min-h-[48px]"
         >
           <LogOut className="w-4 h-4" />
           <span>{t('logout')}</span>
         </button>
       </div>
+
+      {/* Logout Confirmation Modal */}
+      <Modal
+        isOpen={showLogoutConfirm}
+        onClose={() => setShowLogoutConfirm(false)}
+        title="Log out of Krushi Sathi?"
+        maxWidth="sm"
+      >
+        <div className="space-y-4">
+          <p className="text-sm text-gray-600 dark:text-gray-300">
+            You can log back in at any time with your registered mobile number. Your field assessments and crop plans will remain safely saved.
+          </p>
+          <div className="flex gap-2 justify-end pt-2">
+            <Button
+              variant="secondary"
+              onClick={() => setShowLogoutConfirm(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={handleLogout}
+            >
+              Log Out
+            </Button>
+          </div>
+        </div>
+      </Modal>
     </div>
   );
 };

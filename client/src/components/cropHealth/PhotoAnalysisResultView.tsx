@@ -19,6 +19,13 @@ import {
   X,
   ExternalLink,
   Layers,
+  Camera,
+  Sprout,
+  Leaf,
+  FlaskConical,
+  ThumbsUp,
+  ThumbsDown,
+  Phone,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useTranslation } from '../../context/LanguageContext';
@@ -191,7 +198,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
       <div className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-sm sm:text-base font-extrabold text-dark-text flex items-center gap-2">
-            <span>📷</span>
+            <Camera className="w-4 h-4 text-brand-600" />
             <span>
               {language === 'kn' && 'ಫೋಟೋ ಹೋಲಿಕೆ (ನಿಮ್ಮ ಫೋಟೋ vs ಪರಿಶೀಲಿಸಿದ ಲೈಬ್ರರಿ)'}
               {language === 'ta' && 'புகைப்பட ஒப்பீடு (உங்கள் படம் vs நூலக குறிப்பு படம்)'}
@@ -304,8 +311,9 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
               {result.retakeAdvice || 'The photo symptoms do not clearly match any single threat in our verified catalog for this crop. Please inspect look-alikes or contact your local expert.'}
             </p>
             {result.followUpQuestion && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-900 font-bold max-w-md mx-auto">
-                ❓ Follow-up Check: {result.followUpQuestion}
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3 text-xs text-amber-900 font-bold max-w-md mx-auto flex items-start gap-1.5">
+                <HelpCircle className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
+                <span>Follow-up Check: {result.followUpQuestion}</span>
               </div>
             )}
             <div className="pt-2 flex flex-wrap gap-2 justify-center">
@@ -410,7 +418,8 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
             {/* Tier 1: Cultural Practices */}
             <div className="border border-emerald-100 bg-emerald-50/50 rounded-2xl p-3.5 space-y-1">
               <span className="text-xs font-black text-emerald-900 flex items-center gap-1.5">
-                <span>🌱</span> Step 1: Cultural & Agronomic Practices
+                <Sprout className="w-4 h-4 text-emerald-600" />
+                <span>Step 1: Cultural & Agronomic Practices</span>
               </span>
               <p className="text-xs text-emerald-950 leading-relaxed">
                 {topCandidate.culturalControl}
@@ -420,7 +429,8 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
             {/* Tier 2: Biological & Bio-agents */}
             <div className="border border-teal-100 bg-teal-50/50 rounded-2xl p-3.5 space-y-1">
               <span className="text-xs font-black text-teal-900 flex items-center gap-1.5">
-                <span>🦠</span> Step 2: Biological Control (Bio-pesticides)
+                <ShieldAlert className="w-4 h-4 text-teal-600" />
+                <span>Step 2: Biological Control (Bio-pesticides)</span>
               </span>
               <p className="text-xs text-teal-950 leading-relaxed">
                 {topCandidate.biologicalControl}
@@ -430,7 +440,8 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
             {/* Tier 3: Organic Remedies */}
             <div className="border border-amber-100 bg-amber-50/50 rounded-2xl p-3.5 space-y-1">
               <span className="text-xs font-black text-amber-900 flex items-center gap-1.5">
-                <span>🌿</span> Step 3: Organic Concoctions & Traps
+                <Leaf className="w-4 h-4 text-amber-600" />
+                <span>Step 3: Organic Concoctions & Traps</span>
               </span>
               <p className="text-xs text-amber-950 leading-relaxed">
                 {topCandidate.organicControl}
@@ -440,13 +451,15 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
             {/* Tier 4: Chemical Controls (generic active ingredients ONLY) */}
             <div className="border border-purple-100 bg-purple-50/50 rounded-2xl p-3.5 space-y-1.5">
               <span className="text-xs font-black text-purple-900 flex items-center gap-1.5">
-                <span>🧪</span> Step 4: Chemical Intervention (Targeted Actives Only)
+                <FlaskConical className="w-4 h-4 text-purple-600" />
+                <span>Step 4: Chemical Intervention (Targeted Actives Only)</span>
               </span>
               <p className="text-xs text-purple-950 leading-relaxed">
                 {topCandidate.chemicalControl}
               </p>
-              <div className="bg-purple-100/70 text-purple-900 text-[11px] p-2 rounded-xl font-medium">
-                ⚠️ Statutory Warning: Always check registered product container label for approved water volume and Pre-Harvest Interval (PHI). Follow local KVK / Raitha Samparka Kendra advisory.
+              <div className="bg-purple-100/70 text-purple-900 text-[11px] p-2 rounded-xl font-medium flex items-start gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5 text-purple-700 shrink-0 mt-0.5" />
+                <span>Statutory Warning: Always check registered product container label for approved water volume and Pre-Harvest Interval (PHI). Follow local KVK / Raitha Samparka Kendra advisory.</span>
               </div>
             </div>
           </div>
@@ -461,8 +474,9 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
             <span>Was this photo diagnosis correct?</span>
           </span>
           {feedbackSubmitted && (
-            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-              ✓ Feedback Logged
+            <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full inline-flex items-center gap-1">
+              <Check className="w-3 h-3 text-emerald-600" />
+              <span>Feedback Logged</span>
             </span>
           )}
         </div>
@@ -480,7 +494,8 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                     : 'bg-gray-50 hover:bg-emerald-50 text-gray-700 border-gray-200'
                 }`}
               >
-                <span>👍 Yes</span>
+                <ThumbsUp className="w-3.5 h-3.5" />
+                <span>Yes</span>
               </button>
 
               <button
@@ -493,7 +508,8 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                     : 'bg-gray-50 hover:bg-rose-50 text-gray-700 border-gray-200'
                 }`}
               >
-                <span>👎 No</span>
+                <ThumbsDown className="w-3.5 h-3.5" />
+                <span>No</span>
               </button>
 
               <button
@@ -506,7 +522,8 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                     : 'bg-gray-50 hover:bg-amber-50 text-gray-700 border-gray-200'
                 }`}
               >
-                <span>❓ Not Sure</span>
+                <HelpCircle className="w-3.5 h-3.5" />
+                <span>Not Sure</span>
               </button>
             </div>
 
@@ -580,7 +597,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
           className="btn-secondary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5 text-forest"
         >
           <BookmarkCheck className="w-4 h-4" />
-          <span>{historySaved ? '✓ Saved!' : 'Save History'}</span>
+          <span>{historySaved ? 'Saved!' : 'Save History'}</span>
         </button>
 
         <button
@@ -589,13 +606,14 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
           className="btn-secondary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5 text-gray-700"
         >
           <Share2 className="w-4 h-4" />
-          <span>{shareCopied ? '✓ Copied!' : 'Share'}</span>
+          <span>{shareCopied ? 'Copied!' : 'Share'}</span>
         </button>
       </div>
 
       {/* KVK Helpline Notice */}
-      <div className="bg-gray-100 rounded-2xl p-3 text-center text-xs text-gray-600 font-medium">
-        📞 Raitha Samparka Kendra & KVK Kisan Call Centre: <strong>1800-180-1551</strong> (Toll Free, 6 AM - 10 PM)
+      <div className="bg-gray-100 rounded-2xl p-3 text-center text-xs text-gray-600 font-medium flex items-center justify-center gap-1.5">
+        <Phone className="w-3.5 h-3.5 text-brand-600" />
+        <span>Raitha Samparka Kendra & KVK Kisan Call Centre: <strong>1800-180-1551</strong> (Toll Free, 6 AM - 10 PM)</span>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 
 export interface ModalProps {
@@ -17,18 +17,16 @@ export const Modal: React.FC<ModalProps> = ({
   children,
   maxWidth = 'md',
 }) => {
+  const shouldReduceMotion = useReducedMotion();
+  const dialogRef = useRef<HTMLDivElement>(null);
+
   // Prevent body scrolling and handle Android back button when modal is open
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
-
-      // Push history state so Android/browser back button closes the modal
       window.history.pushState({ modalOpen: true }, '');
 
-      const handlePopState = () => {
-        onClose();
-      };
-
+      const handlePopState = () => { onClose(); };
       window.addEventListener('popstate', handlePopState);
 
       return () => {
@@ -43,6 +41,25 @@ export const Modal: React.FC<ModalProps> = ({
     }
   }, [isOpen, onClose]);
 
+  // Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handler);
+    return () => document.removeEventListener('keydown', handler);
+  }, [isOpen, onClose]);
+
+  // Focus trap
+  useEffect(() => {
+    if (!isOpen || !dialogRef.current) return;
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+    );
+    focusable[0]?.focus();
+  }, [isOpen]);
+
   const widths = {
     sm: 'max-w-sm',
     md: 'max-w-md',
@@ -50,41 +67,68 @@ export const Modal: React.FC<ModalProps> = ({
     xl: 'max-w-xl',
   };
 
+  const spring = shouldReduceMotion
+    ? { duration: 0 }
+    : { type: 'spring' as const, damping: 28, stiffness: 340 };
+
   return (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.18 }}
             onClick={onClose}
-            className="fixed inset-0 bg-dark-text/40 backdrop-blur-sm"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm"
+            aria-hidden="true"
           />
 
-          {/* Dialog Container */}
+          {/* Dialog */}
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby={title ? 'modal-title' : undefined}
+            initial={{ opacity: 0, scale: 0.96, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 15 }}
-            transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-            className={`relative z-10 w-full ${widths[maxWidth]} bg-white rounded-3xl p-6 shadow-2xl border border-gray-100 max-h-[90vh] overflow-y-auto`}
+            exit={{ opacity: 0, scale: 0.96, y: 16 }}
+            transition={spring}
+            className={[
+              'relative z-10 w-full',
+              widths[maxWidth],
+              'bg-white dark:bg-dark-surface rounded-4xl p-0 shadow-card',
+              'border border-gray-100 dark:border-dark-border',
+              'max-h-[90dvh] overflow-hidden flex flex-col',
+            ].join(' ')}
           >
             {/* Header */}
-            <div className="flex items-center justify-between pb-4 border-b border-gray-100 mb-4">
-              {title && <h3 className="text-xl font-bold text-dark-text">{title}</h3>}
+            <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b border-gray-100 dark:border-dark-border shrink-0">
+              {title && (
+                <h3 id="modal-title" className="text-[17px] font-bold text-gray-900 dark:text-gray-100">
+                  {title}
+                </h3>
+              )}
               <button
                 onClick={onClose}
-                className="p-2 -mr-2 rounded-full text-gray-400 hover:text-dark-text hover:bg-gray-100 transition-colors"
-                aria-label="Close modal"
+                className={[
+                  'w-8 h-8 flex items-center justify-center rounded-xl',
+                  'text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-elevated',
+                  'transition-colors focus-visible:ring-2 focus-visible:ring-brand',
+                  !title ? 'ml-auto' : '',
+                ].join(' ')}
+                aria-label="Close"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" strokeWidth={2} />
               </button>
             </div>
 
             {/* Content */}
-            <div>{children}</div>
+            <div className="overflow-y-auto px-5 py-5">
+              {children}
+            </div>
           </motion.div>
         </div>
       )}

@@ -85,7 +85,7 @@ export const DurationFilter: React.FC<DurationFilterProps> = ({
   };
 
   return (
-    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+    <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-nowrap touch-pan-x">
       {DURATION_OPTIONS.map((opt) => {
         const isSelected =
           selectedDuration === opt.id || (selectedDuration === '' && opt.id === 'all');
@@ -95,14 +95,16 @@ export const DurationFilter: React.FC<DurationFilterProps> = ({
           <button
             key={opt.id}
             onClick={() => onSelectDuration(opt.id === 'all' ? '' : opt.id)}
-            className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border ${
+            className={`flex-shrink-0 relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-1 cursor-pointer ${
               isSelected
-                ? 'bg-forest-600 text-white border-forest-600 shadow-sm'
-                : 'bg-white text-earth-700 hover:bg-earth-50 border-earth-200'
+                ? 'bg-forest text-white border-forest shadow-sm'
+                : 'bg-white text-dark-text border-gray-200 hover:border-forest/40'
             }`}
           >
-            <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-mint-300' : 'text-earth-500'}`} />
-            <span>{getLabel(opt)}</span>
+            <span className="relative z-10 flex items-center gap-1.5">
+              <Icon className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-forest'}`} />
+              <span>{getLabel(opt)}</span>
+            </span>
           </button>
         );
       })}

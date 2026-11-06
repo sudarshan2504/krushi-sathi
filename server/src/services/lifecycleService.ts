@@ -12,7 +12,7 @@ export async function createCropPlan(data: {
     where: { id: data.cropId },
   });
 
-  const cropKnowledge = CROPS_DATA.find(c => c.id === data.cropId);
+  const cropKnowledge = CROPS_DATA.find(c => c.id === data.cropId) || CROPS_DATA.find(c => c.name.toLowerCase() === crop?.name.toLowerCase()) || CROPS_DATA[0];
 
   if (!crop) {
     if (!cropKnowledge) {

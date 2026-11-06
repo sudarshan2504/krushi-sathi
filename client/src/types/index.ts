@@ -54,6 +54,7 @@ export interface WeatherData {
   lastUpdated: string;
   isDemoFallback: boolean;
   dataSource: string;
+  isStale?: boolean;
   agroZone?: string;
   agroZoneCode?: string;
   agroZoneDescription?: string;

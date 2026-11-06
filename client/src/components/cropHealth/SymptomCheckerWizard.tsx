@@ -22,6 +22,20 @@ import {
   X,
   Clock,
   RefreshCw,
+  Leaf,
+  Trees,
+  Flower2,
+  Wheat,
+  CircleDot,
+  Milestone,
+  AlignJustify,
+  Sun,
+  Flame,
+  TrendingDown,
+  Circle,
+  Cloud,
+  Droplets,
+  Bug,
 } from 'lucide-react';
 import { api } from '../../services/api';
 import { useTranslation } from '../../context/LanguageContext';
@@ -46,16 +60,16 @@ interface PlantPartOption {
   labelKn: string;
   labelTa: string;
   labelTe: string;
-  iconName: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const PLANT_PARTS: PlantPartOption[] = [
-  { key: 'leaf', labelEn: 'Leaves', labelKn: 'ಎಲೆಗಳು', labelTa: 'இலைகள்', labelTe: 'ఆకులు', iconName: '🌿' },
-  { key: 'stem', labelEn: 'Stem / Shoot', labelKn: 'ಕಾಂಡ / ಚಿಗುರು', labelTa: 'தண்டு / குருத்து', labelTe: 'కాండం / కొమ్మ', iconName: '🎋' },
-  { key: 'root', labelEn: 'Roots / Collar', labelKn: 'ಬೇರು / ಬುಡ', labelTa: 'வேர் / தரைமட்டம்', labelTe: 'వేర్లు / మొదలు', iconName: '🌱' },
-  { key: 'fruit_grain', labelEn: 'Fruit / Grain / Pod', labelKn: 'ಕಾಯಿ / ಕಾಳು / ತೆನೆ', labelTa: 'காய் / தானியம்', labelTe: 'కాయ / గింజ / కంకి', iconName: '🌾' },
-  { key: 'flower', labelEn: 'Flower / Bud', labelKn: 'ಹೂವು / ಮೊಗ್ಗು', labelTa: 'பூ / மொட்டு', labelTe: 'పువ్వు / మొగ్గ', iconName: '🌸' },
-  { key: 'whole_plant', labelEn: 'Whole Plant', labelKn: 'ಸಂಪೂರ್ಣ ಸಸ್ಯ', labelTa: 'முழு செடி', labelTe: 'మొత్తం మొక్క', iconName: '🌳' },
+  { key: 'leaf', labelEn: 'Leaves', labelKn: 'ಎಲೆಗಳು', labelTa: 'இலைகள்', labelTe: 'ఆకులు', icon: Leaf },
+  { key: 'stem', labelEn: 'Stem / Shoot', labelKn: 'ಕಾಂಡ / ಚಿಗುರು', labelTa: 'தண்டு / குருத்து', labelTe: 'కాండం / కొమ్మ', icon: Milestone },
+  { key: 'root', labelEn: 'Roots / Collar', labelKn: 'ಬೇರು / ಬುಡ', labelTa: 'வேர் / தரைமட்டம்', labelTe: 'వేర్లు / మొదలు', icon: Sprout },
+  { key: 'fruit_grain', labelEn: 'Fruit / Grain / Pod', labelKn: 'ಕಾಯಿ / ಕಾಳು / ತೆನೆ', labelTa: 'காய் / தானியம்', labelTe: 'కాయ / గింజ / కంకి', icon: Wheat },
+  { key: 'flower', labelEn: 'Flower / Bud', labelKn: 'ಹೂವು / ಮೊಗ್ಗು', labelTa: 'பூ / மொட்டு', labelTe: 'పువ్వు / మొగ్గ', icon: Flower2 },
+  { key: 'whole_plant', labelEn: 'Whole Plant', labelKn: 'ಸಂಪೂರ್ಣ ಸಸ್ಯ', labelTa: 'முழு செடி', labelTe: 'మొత్తం మొక్క', icon: Trees },
 ];
 
 interface PatternOption {
@@ -64,22 +78,22 @@ interface PatternOption {
   labelKn: string;
   labelTa: string;
   labelTe: string;
-  visual: string;
+  icon: React.ComponentType<{ className?: string }>;
 }
 
 const PATTERNS: PatternOption[] = [
-  { key: 'spots', labelEn: 'Spots / Lesions', labelKn: 'ಚುಕ್ಕೆಗಳು / ಕಲೆಗಳು', labelTa: 'புள்ளிகள்', labelTe: 'మచ్చలు', visual: '🔘' },
-  { key: 'streaks', labelEn: 'Streaks / Stripes', labelKn: 'ಗೆರೆಗಳು / ಪಟ್ಟಿಗಳು', labelTa: 'வரிகள்', labelTe: 'గీతలు', visual: '〰️' },
-  { key: 'yellowing', labelEn: 'Yellowing / Chlorosis', labelKn: 'ಹಳದಿ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುವುದು', labelTa: 'மஞ்சள் நிறமாதல்', labelTe: 'పసుపు పచ్చగా మారడం', visual: '🟡' },
-  { key: 'browning', labelEn: 'Browning / Scorching', labelKn: 'ಕಂದು ಬಣ್ಣ / ಸುಟ್ಟಂತೆ', labelTa: 'பழுப்பு / கருகல்', labelTe: 'ఎండిపోయినట్లు / గోధుమ', visual: '🟤' },
-  { key: 'wilting', labelEn: 'Wilting / Drooping', labelKn: 'ಬಾಡುವಿಕೆ / ಒಣಗುವುದು', labelTa: 'வாடல்', labelTe: 'వాడిపోవడం', visual: '🥀' },
-  { key: 'holes', labelEn: 'Holes / Borer tunnels', labelKn: 'ರಂಧ್ರಗಳು / ಕೊರೆದಂತೆ', labelTa: 'துளைகள்', labelTe: 'రంధ్రాలు / తొలుచుట', visual: '🕳️' },
-  { key: 'rolling_curling', labelEn: 'Curling / Wrinkling', labelKn: 'ಎಲೆ ಮುದುಡು / ಸುರುಳಿ', labelTa: 'இலை சுருட்டு', labelTe: 'ఆకు ముడుచుకోవడం', visual: '🌀' },
-  { key: 'powdery_mould', labelEn: 'White / Grey Powder', labelKn: 'ಬೂದಿ ಅಥವಾ ಶಿಲೀಂಧ್ರ', labelTa: 'சாம்பல் பூஞ்சணம்', labelTe: 'బూడిద తెగులు', visual: '⚪' },
-  { key: 'rot', labelEn: 'Rotting / Wet decay', labelKn: 'ಕೊಳೆಯುವುದು / ದುರ್ವಾಸನೆ', labelTa: 'அழுகல்', labelTe: 'కుళ్లు తెగులు', visual: '💧' },
-  { key: 'dead_heart', labelEn: 'Dead Heart / Shoot drying', labelKn: 'ಸುಳಿ ಒಣಗುವಿಕೆ (ಡೆಡ್ ಹಾರ್ಟ್)', labelTa: 'குருத்து காய்வு', labelTe: 'ఎండిన మొవ్వు', visual: '⚠️' },
-  { key: 'stunting', labelEn: 'Stunted Growth', labelKn: 'ಬೆಳವಣಿಗೆ ಕುಂಠಿತ', labelTa: 'வளர்ச்சி குன்றுதல்', labelTe: 'ఎదుగుదల లోపం', visual: '📉' },
-  { key: 'insects_visible', labelEn: 'Insects / Worms visible', labelKn: 'ಹುಳುಗಳು / ಕೀಟಗಳು ಕಾಣಿಸುತ್ತಿವೆ', labelTa: 'பூச்சிகள் / புழுக்கள்', labelTe: 'పురుగులు కనిపిస్తున్నాయి', visual: '🐛' },
+  { key: 'spots', labelEn: 'Spots / Lesions', labelKn: 'ಚುಕ್ಕೆಗಳು / ಕಲೆಗಳು', labelTa: 'புள்ளிகள்', labelTe: 'మచ్చలు', icon: CircleDot },
+  { key: 'streaks', labelEn: 'Streaks / Stripes', labelKn: 'ಗೆರೆಗಳು / ಪಟ್ಟಿಗಳು', labelTa: 'வரிகள்', labelTe: 'గీతలు', icon: AlignJustify },
+  { key: 'yellowing', labelEn: 'Yellowing / Chlorosis', labelKn: 'ಹಳದಿ ಬಣ್ಣಕ್ಕೆ ತಿರುಗುವುದು', labelTa: 'மஞ்சள் நிறமாதல்', labelTe: 'పసుపు పచ్చగా మారడం', icon: Sun },
+  { key: 'browning', labelEn: 'Browning / Scorching', labelKn: 'ಕಂದು ಬಣ್ಣ / ಸುಟ್ಟಂತೆ', labelTa: 'பழுப்பு / கருகல்', labelTe: 'ఎండిపోయినట్లు / గోధుమ', icon: Flame },
+  { key: 'wilting', labelEn: 'Wilting / Drooping', labelKn: 'ಬಾಡುವಿಕೆ / ಒಣಗುವುದು', labelTa: 'வாடல்', labelTe: 'వాడిపోవడం', icon: TrendingDown },
+  { key: 'holes', labelEn: 'Holes / Borer tunnels', labelKn: 'ರಂಧ್ರಗಳು / ಕೊರೆದಂತೆ', labelTa: 'துளைகள்', labelTe: 'రంధ్రాలు / తొలుచుట', icon: Circle },
+  { key: 'rolling_curling', labelEn: 'Curling / Wrinkling', labelKn: 'ಎಲೆ ಮುದುಡು / ಸುರುಳಿ', labelTa: 'இலை சுருட்டு', labelTe: 'ఆకు ముడుచుకోవడం', icon: RefreshCw },
+  { key: 'powdery_mould', labelEn: 'White / Grey Powder', labelKn: 'ಬೂದಿ ಅಥವಾ ಶಿಲೀಂಧ್ರ', labelTa: 'சாம்பல் பூஞ்சணம்', labelTe: 'బూడిద తెగులు', icon: Cloud },
+  { key: 'rot', labelEn: 'Rotting / Wet decay', labelKn: 'ಕೊಳೆಯುವುದು / ದುರ್ವಾಸನೆ', labelTa: 'அழுகல்', labelTe: 'కుళ్లు తెగులు', icon: Droplets },
+  { key: 'dead_heart', labelEn: 'Dead Heart / Shoot drying', labelKn: 'ಸುಳಿ ಒಣಗುವಿಕೆ (ಡೆಡ್ ಹಾರ್ಟ್)', labelTa: 'குருத்து காய்வு', labelTe: 'ఎండిన మొవ్వు', icon: AlertTriangle },
+  { key: 'stunting', labelEn: 'Stunted Growth', labelKn: 'ಬೆಳವಣಿಗೆ ಕುಂಠಿತ', labelTa: 'வளர்ச்சி குன்றுதல்', labelTe: 'ఎదుగుదల లోపం', icon: TrendingDown },
+  { key: 'insects_visible', labelEn: 'Insects / Worms visible', labelKn: 'ಹುಳುಗಳು / ಕೀಟಗಳು ಕಾಣಿಸುತ್ತಿವೆ', labelTa: 'பூச்சிகள் / புழுக்கள்', labelTe: 'పురుగులు కనిపిస్తున్నాయి', icon: Bug },
 ];
 
 const COLOURS = [
@@ -647,6 +661,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 {PLANT_PARTS.map((part) => {
                   const isSelected = plantPart === part.key;
+                  const PartIcon = part.icon;
                   return (
                     <button
                       key={part.key}
@@ -658,7 +673,9 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                           : 'bg-white border-gray-200 text-dark-text hover:border-gray-300'
                       }`}
                     >
-                      <span className="text-2xl">{part.iconName}</span>
+                      <span className="w-8 h-8 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center">
+                        <PartIcon className="w-4 h-4" />
+                      </span>
                       <span className="text-xs font-semibold leading-tight">{getLocalizedLabel(part)}</span>
                     </button>
                   );
@@ -699,6 +716,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {PATTERNS.map((pat) => {
                   const isSelected = pattern === pat.key;
+                  const PatIcon = pat.icon;
                   return (
                     <button
                       key={pat.key}
@@ -710,7 +728,9 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                           : 'bg-white border-gray-200 text-dark-text hover:border-gray-300'
                       }`}
                     >
-                      <span className="text-xl">{pat.visual}</span>
+                      <span className="w-7 h-7 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center">
+                        <PatIcon className="w-4 h-4" />
+                      </span>
                       <span className="text-xs font-semibold leading-tight line-clamp-2">
                         {getLocalizedLabel(pat)}
                       </span>

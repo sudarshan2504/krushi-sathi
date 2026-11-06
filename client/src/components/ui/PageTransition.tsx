@@ -9,24 +9,17 @@ interface PageTransitionProps {
 export const PageTransition: React.FC<PageTransitionProps> = ({ children, className = '' }) => {
   const shouldReduceMotion = useReducedMotion();
 
-  // Short fade + 8px slide, under 250ms (180ms)
-  const variants = {
-    initial: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 8 },
-    animate: { opacity: 1, y: 0 },
-    exit: shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -8 },
-  };
+  if (shouldReduceMotion) {
+    return <div className={className}>{children}</div>;
+  }
 
   return (
     <motion.div
-      initial="initial"
-      animate="animate"
-      exit="exit"
-      variants={variants}
-      transition={{
-        duration: shouldReduceMotion ? 0.08 : 0.18,
-        ease: [0.25, 0.1, 0.25, 1],
-      }}
-      className={`w-full ${className}`}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+      className={['w-full', className].filter(Boolean).join(' ')}
     >
       {children}
     </motion.div>

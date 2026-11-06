@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Check, HelpCircle, Sparkles } from 'lucide-react';
+import { Check, HelpCircle, Sparkles, Layers, Sprout, Droplets, Mountain, Waves, Sun, Box } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
 import { SoilHelpModal } from './SoilHelpModal';
 
@@ -13,8 +13,8 @@ export interface SoilTypeOption {
   desc: string;
   descKn: string;
   colorSwatch: string;
-  icon: string;
   bestCrops: string;
+  iconComponent: React.ElementType;
 }
 
 export const SOIL_TYPE_OPTIONS: SoilTypeOption[] = [
@@ -27,8 +27,8 @@ export const SOIL_TYPE_OPTIONS: SoilTypeOption[] = [
     desc: 'Porous, well-drained, iron-rich',
     descKn: 'ಸಡಿಲವಾದ, ನೀರು ಬಸಿಯುವ, ಕಬ್ಬಿಣ ಸಮೃದ್ಧ ಮಣ್ಣು',
     colorSwatch: 'bg-red-600',
-    icon: '🧱',
     bestCrops: 'Ragi, Groundnut, Tomato, Mango',
+    iconComponent: Box,
   },
   {
     id: 'black',
@@ -39,8 +39,8 @@ export const SOIL_TYPE_OPTIONS: SoilTypeOption[] = [
     desc: 'High clay, moisture-dense, cracks in summer',
     descKn: 'ತೇವಾಂಶ ಹಿಡಿದಿಡುವ, ಬೇಸಿಗೆಯಲ್ಲಿ ಬಿರುಕು ಬಿಡುವ ಮಣ್ಣು',
     colorSwatch: 'bg-stone-800',
-    icon: '🌑',
     bestCrops: 'Cotton, Jowar, Red Gram, Chickpea',
+    iconComponent: Layers,
   },
   {
     id: 'loamy',
@@ -51,8 +51,8 @@ export const SOIL_TYPE_OPTIONS: SoilTypeOption[] = [
     desc: 'Balanced sand, silt & clay; super fertile',
     descKn: 'ಮರಳು ಮತ್ತು ಜೇಡಿಯ ಸಮತೋಲನ; ಅತಿ ಫಲವತ್ತಾದ ಮಣ್ಣು',
     colorSwatch: 'bg-amber-800',
-    icon: '🌱',
     bestCrops: 'Vegetables, Maize, Banana, Papaya',
+    iconComponent: Sprout,
   },
   {
     id: 'clay',
@@ -63,8 +63,8 @@ export const SOIL_TYPE_OPTIONS: SoilTypeOption[] = [
     desc: 'Dense, sticky, holds standing water',
     descKn: 'ಅಂಟಂಟಾದ, ನೀರು ಇಂಗದೆ ನಿಲ್ಲುವ ಗದ್ದೆ ಮಣ್ಣು',
     colorSwatch: 'bg-yellow-900',
-    icon: '🏺',
     bestCrops: 'Paddy (Rice), Wheat, Sugarcane',
+    iconComponent: Droplets,
   },
   {
     id: 'sandy',
@@ -74,9 +74,9 @@ export const SOIL_TYPE_OPTIONS: SoilTypeOption[] = [
     nameTe: 'ఇసుక నేలలు',
     desc: 'Gritty, fast drainage, warm soil',
     descKn: 'ತರಿಯಾದ, ಬೇಗ ನೀರು ಇಂಗುವ ಹಗುರ ಮಣ್ಣು',
-    colorSwatch: 'bg-amber-300',
-    icon: '🏖️',
+    colorSwatch: 'bg-amber-400',
     bestCrops: 'Watermelon, Bajra, Groundnut',
+    iconComponent: Sun,
   },
   {
     id: 'alluvial',
@@ -87,8 +87,8 @@ export const SOIL_TYPE_OPTIONS: SoilTypeOption[] = [
     desc: 'River silt deposit, extremely fertile',
     descKn: 'ನದಿ ಮತ್ತು ಕಾಲುವೆ ಪಾತ್ರದ ರೇಷ್ಮೆಯಂತಹ ಫಲವತ್ತಾದ ಮಣ್ಣು',
     colorSwatch: 'bg-stone-500',
-    icon: '🌊',
     bestCrops: 'Sugarcane, Paddy, Banana, Wheat',
+    iconComponent: Waves,
   },
   {
     id: 'laterite',
@@ -99,8 +99,8 @@ export const SOIL_TYPE_OPTIONS: SoilTypeOption[] = [
     desc: 'Western Ghats porous acidic hill soil',
     descKn: 'ಮಲೆನಾಡು-ಕರಾವಳಿಯ ಮುರಕಲ್ಲು ಮಿಶ್ರಿತ ಆಮ್ಲೀಯ ಮಣ್ಣು',
     colorSwatch: 'bg-orange-700',
-    icon: '⛰️',
     bestCrops: 'Arecanut, Coffee, Pepper, Rubber',
+    iconComponent: Mountain,
   },
 ];
 
@@ -132,10 +132,10 @@ export const SoilTypeSelector: React.FC<SoilTypeSelectorProps> = ({
   return (
     <div className="space-y-3">
       {/* Help Banner */}
-      <div className="flex items-center justify-between bg-gradient-to-r from-mint/30 to-leaf/20 p-3 rounded-2xl border border-leaf/30">
+      <div className="flex items-center justify-between bg-brand-50 dark:bg-brand-900/20 p-3.5 rounded-3xl border border-brand-100 dark:border-brand-900/30">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-forest" />
-          <span className="text-xs font-bold text-dark-text">
+          <Sparkles className="w-4 h-4 text-brand-600" />
+          <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-200">
             {language === 'kn' ? 'ಮಣ್ಣಿನ ವಿಧ ತಿಳಿದಿಲ್ಲವೇ?' : 'Not sure which soil you have?'}
           </span>
         </div>
@@ -145,7 +145,7 @@ export const SoilTypeSelector: React.FC<SoilTypeSelectorProps> = ({
             if (onOpenHelp) onOpenHelp();
             else setIsHelpOpen(true);
           }}
-          className="text-xs font-bold text-white bg-forest hover:bg-forest-dark px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow-sm"
+          className="text-xs font-bold text-white bg-brand-700 hover:bg-brand-800 px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow-xs"
         >
           <HelpCircle className="w-3.5 h-3.5" />
           <span>{language === 'kn' ? 'ಗುರುತಿಸಲು ಸಹಾಯ' : 'Help Me Identify'}</span>
@@ -153,9 +153,10 @@ export const SoilTypeSelector: React.FC<SoilTypeSelectorProps> = ({
       </div>
 
       {/* Grid of Soil Types */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {SOIL_TYPE_OPTIONS.map((opt) => {
           const isSelected = currentSelected.toLowerCase() === opt.id.toLowerCase();
+          const Icon = opt.iconComponent;
           const localizedName =
             language === 'kn' ? opt.nameKn : language === 'ta' ? opt.nameTa : language === 'te' ? opt.nameTe : opt.name;
           const localizedDesc = language === 'kn' ? opt.descKn : opt.desc;
@@ -166,36 +167,41 @@ export const SoilTypeSelector: React.FC<SoilTypeSelectorProps> = ({
               type="button"
               whileTap={{ scale: 0.98 }}
               onClick={() => handleSelectSoil(opt.id)}
-              className={`p-3.5 rounded-2xl border-2 text-left transition flex items-start justify-between gap-3 relative ${
+              className={[
+                'p-4 rounded-4xl border-2 text-left transition flex items-start justify-between gap-3 relative shadow-xs',
                 isSelected
-                  ? 'bg-forest/5 border-forest shadow-md'
-                  : 'bg-white border-gray-200 hover:border-gray-300 hover:bg-gray-50/50'
-              }`}
+                  ? 'bg-brand-50/70 border-brand-700 dark:bg-brand-900/30 dark:border-brand-500 shadow-sm'
+                  : 'bg-white dark:bg-dark-surface border-gray-200 dark:border-dark-border hover:border-brand-400',
+              ].join(' ')}
             >
-              <div className="flex items-start gap-3">
-                <span className="text-2xl mt-0.5">{opt.icon}</span>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-sm text-dark-text">
+              <div className="flex items-start gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-2xl bg-gray-100 dark:bg-dark-elevated flex items-center justify-center shrink-0">
+                  <Icon className="w-5 h-5 text-gray-700 dark:text-gray-300" strokeWidth={1.75} />
+                </div>
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className={`w-2.5 h-2.5 rounded-full ${opt.colorSwatch} shrink-0`} />
+                    <span className="font-bold text-[15px] text-gray-900 dark:text-gray-100 leading-tight">
                       {localizedName}
                     </span>
                   </div>
-                  <p className="text-xs text-dark-muted mt-0.5 leading-snug">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-snug">
                     {localizedDesc}
                   </p>
-                  <p className="text-[10px] text-harvest font-semibold mt-1">
+                  <p className="text-[11px] text-brand-700 dark:text-brand-400 font-semibold mt-1.5">
                     Best: {opt.bestCrops}
                   </p>
                 </div>
               </div>
 
-              {/* Selection radio/check */}
+              {/* Selection radio */}
               <div
-                className={`w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition ${
+                className={[
+                  'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5 transition',
                   isSelected
-                    ? 'border-forest bg-forest text-white'
-                    : 'border-gray-300 bg-white'
-                }`}
+                    ? 'border-brand-700 bg-brand-700 text-white dark:border-brand-500 dark:bg-brand-500'
+                    : 'border-gray-300 dark:border-dark-border bg-white dark:bg-dark-surface',
+                ].join(' ')}
               >
                 {isSelected && <Check className="w-3 h-3 stroke-[3]" />}
               </div>

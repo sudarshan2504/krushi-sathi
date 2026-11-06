@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, CloudRain, Sun, Droplets, Wind, Sparkles, Compass } from 'lucide-react';
+import { MapPin, CloudRain, Sun, Droplets, Wind, Sparkles, Compass, Sprout } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
 import { WeatherData } from '../../types';
 
@@ -51,7 +51,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
               </span>
             </div>
             <p className="text-[11px] font-bold text-forest mt-0.5 flex items-center gap-1">
-              <span>🌾</span>
+              <Sprout className="w-3.5 h-3.5 text-forest" />
               <span>{agroZone}</span>
             </p>
           </div>
@@ -118,7 +118,9 @@ export const LocationCard: React.FC<LocationCardProps> = ({
       {/* Live Weather Strip */}
       <div className="flex items-center justify-between p-3 rounded-2xl bg-forest/5 border border-forest/15">
         <div className="flex items-center gap-3">
-          <div className="text-xl">☀️</div>
+          <div className="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+            <Sun className="w-5 h-5 text-amber-500" strokeWidth={2} />
+          </div>
           <div>
             <div className="flex items-baseline gap-1.5">
               <span className="text-lg font-black text-forest">

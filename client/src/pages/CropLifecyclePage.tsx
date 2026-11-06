@@ -224,9 +224,9 @@ export const CropLifecyclePage: React.FC = () => {
 
                 {/* Important Tip Callout */}
                 {stageGroup.importantTip && (
-                  <div className="mt-3 p-3 rounded-2xl bg-cream border border-harvest/30 flex items-start gap-2">
-                    <span className="text-base">💡</span>
-                    <span className="text-xs text-dark-text/90 font-medium leading-relaxed">
+                  <div className="mt-3 p-3 rounded-2xl bg-brand-50/60 dark:bg-brand-900/20 border border-brand-200/50 dark:border-brand-800/40 flex items-start gap-2.5">
+                    <Sprout className="w-4 h-4 text-brand-600 shrink-0 mt-0.5" />
+                    <span className="text-xs text-gray-700 dark:text-gray-300 font-medium leading-relaxed">
                       {language === 'kn' ? (stageGroup.importantTipKn || stageGroup.importantTip) : stageGroup.importantTip}
                     </span>
                   </div>

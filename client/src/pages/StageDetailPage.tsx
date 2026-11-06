@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, CheckCircle2, Circle, Wrench, Lightbulb, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Circle, Wrench, Lightbulb, ArrowRight, ChevronLeft, ChevronRight, Sprout } from 'lucide-react';
 import { api } from '../services/api';
 import { CropPlan, CropStageGroup } from '../types';
 import { useTranslation } from '../context/LanguageContext';
@@ -145,8 +145,9 @@ export const StageDetailPage: React.FC = () => {
               }}
             />
           ) : (
-            <div className="w-full h-full bg-gradient-to-br from-forest to-forest-dark flex items-center justify-center text-mint">
-              <span className="text-3xl font-black">{plan?.cropName || '🌾'}</span>
+            <div className="w-full h-full bg-gradient-to-br from-brand-700 to-brand-900 flex flex-col items-center justify-center text-brand-100 gap-1">
+              <Sprout className="w-8 h-8 text-brand-200" />
+              <span className="text-sm font-bold">{plan?.cropName || 'Crop'}</span>
             </div>
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-dark-text/80 via-dark-text/20 to-transparent pointer-events-none" />

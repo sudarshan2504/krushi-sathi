@@ -42,6 +42,7 @@ export interface WeatherData {
   typicalSoils?: string[];
   taluk?: string;
   seasonInfo?: any;
+  isStale?: boolean;
 }
 
 // Map WMO codes to human labels and friendly icons
@@ -76,6 +77,16 @@ export const DISTRICT_COORDINATES: Record<string, { lat: number; lon: number; st
 
 import { getLocationConditions } from './seasonService';
 import { findLocationByName, findLocationByCoords } from '../data/indiaLocations';
+
+interface WeatherCacheEntry {
+  data: WeatherData;
+  timestamp: number;
+}
+
+const WEATHER_CACHE_TTL_MS = 20 * 60 * 1000; // 20 minutes
+const MAX_WEATHER_CACHE_SIZE = 100;
+const weatherMemoryCache = new Map<string, WeatherCacheEntry>();
+const inFlightWeatherRequests = new Map<string, Promise<WeatherData>>();
 
 export async function fetchWeatherData(districtName?: string, customLat?: number, customLon?: number): Promise<WeatherData> {
   // Never silently default to Mandya! Check explicit coords or district
@@ -116,107 +127,153 @@ export async function fetchWeatherData(districtName?: string, customLat?: number
     }
   }
 
-  const { location, season } = getLocationConditions(lat, lon, state, district);
+  const finalLat = lat ?? 12.5244;
+  const finalLon = lon ?? 76.8969;
+  const roundedLat = Math.round(finalLat * 100) / 100;
+  const roundedLon = Math.round(finalLon * 100) / 100;
+  const cacheKey = `${roundedLat.toFixed(2)},${roundedLon.toFixed(2)}`;
 
-  const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum&timezone=auto&forecast_days=14`;
-
-  try {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 4000); // 4 sec timeout
-
-    const res = await fetch(url, { signal: controller.signal });
-    clearTimeout(timeout);
-
-    if (!res.ok) {
-      throw new Error(`Open-Meteo HTTP ${res.status}`);
-    }
-
-    const data = (await res.json()) as any;
-    const current = data.current;
-    const daily = data.daily;
-
-    const { condition, icon } = interpretWmoCode(current.weather_code);
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    const allDays: WeatherDay[] = daily.time.map((t: string, idx: number) => {
-      const d = new Date(t);
-      const code = daily.weather_code[idx] || 0;
-      const { condition: dayCond, icon: dayIcon } = interpretWmoCode(code);
-      return {
-        date: t,
-        dayName: idx === 0 ? 'Today' : dayNames[d.getDay()],
-        weatherCode: code,
-        condition: dayCond,
-        icon: dayIcon,
-        tempMax: Math.round(daily.temperature_2m_max[idx] || 30),
-        tempMin: Math.round(daily.temperature_2m_min[idx] || 22),
-        rainChance: Math.round(daily.precipitation_probability_max[idx] || 0),
-        precipitationMm: parseFloat((daily.precipitation_sum[idx] || 0).toFixed(1)),
-      };
-    });
-
-    const forecast7Days = allDays.slice(0, 7);
-    const forecast8To14Days = allDays.slice(7, 14);
-
-    const minT = Math.min(...forecast7Days.map(d => d.tempMin));
-    const maxT = Math.max(...forecast7Days.map(d => d.tempMax));
-    const nextMinT = Math.min(...forecast8To14Days.map(d => d.tempMin));
-    const nextMaxT = Math.max(...forecast8To14Days.map(d => d.tempMax));
-
-    // Determine upcoming rain advisory
-    const rainyDay = forecast7Days.find(d => d.rainChance >= 45);
-    let farmingAlert = 'Weather is favorable for standard field operations and weeding.';
-    let farmingAlertKn = 'ಸಾಮಾನ್ಯ ಕೃಷಿ ಕೆಲಸಗಳಿಗೆ ಮತ್ತು ಕಳೆ ತೆಗೆಯಲು ಹವಾಮಾನ ಅನುಕೂಲಕರವಾಗಿದೆ.';
-    let farmingAlertTa = 'நில உழவு மற்றும் களை எடுப்பதற்கு வானிலை சாதகமாக உள்ளது.';
-    let farmingAlertTe = 'పొలం పనులకు మరియు కలుపు తీతకు వాతావరణం అనుకూలంగా ఉంది.';
-
-    if (rainyDay) {
-      farmingAlert = `Rain expected on ${rainyDay.dayName} (${rainyDay.rainChance}% chance). Consider completing field spraying before rain.`;
-      farmingAlertKn = `${rainyDay.dayName} ರಂದು ಮಳೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ (${rainyDay.rainChance}% ಸಂಭವ). ಮಳೆ ಬರುವ ಮುನ್ನ ಸಿಂಪಡಣೆ ಕಾರ್ಯ ಮುಗಿಸಿ.`;
-      farmingAlertTa = `${rainyDay.dayName} அன்று மழை பெய்ய வாய்ப்புள்ளது (${rainyDay.rainChance}%). மழைக்கு முன் தெளிப்பு பணிகளை முடிக்கவும்.`;
-      farmingAlertTe = `${rainyDay.dayName} నాడు వర్షం పడే అవకాశం ఉంది (${rainyDay.rainChance}%). వర్షానికి ముందే మందుల పిచికారీ పూర్తి చేయండి.`;
-    }
-
-    const effectiveDistrict = district || 'Mandya';
-    const effectiveState = state || 'Karnataka';
-
-    return {
-      location: `${effectiveDistrict}, ${effectiveState}`,
-      state: effectiveState,
-      district: effectiveDistrict,
-      latitude: lat || 12.5244,
-      longitude: lon || 76.8969,
-      temperature: Math.round(current.temperature_2m),
-      condition,
-      weatherCode: current.weather_code,
-      icon,
-      humidity: Math.round(current.relative_humidity_2m),
-      windSpeedKmH: Math.round(current.wind_speed_10m),
-      rainfallProbability: forecast7Days[0]?.rainChance || 0,
-      expectedPrecipitationMm: forecast7Days[0]?.precipitationMm || 0,
-      weekRange: `${minT}° - ${maxT}°`,
-      nextWeekRange: `${nextMinT}° - ${nextMaxT}°`,
-      nextWeekSummary: forecast8To14Days.some(d => d.rainChance > 40) ? 'Light Rain' : 'Partly Cloudy',
-      forecast7Days,
-      forecast8To14Days,
-      farmingAlert,
-      farmingAlertKn,
-      farmingAlertTa,
-      farmingAlertTe,
-      lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      isDemoFallback: false,
-      dataSource: 'Live Open-Meteo API',
-      agroZone: location?.agroZone,
-      agroZoneCode: location?.agroZoneCode,
-      agroZoneDescription: location?.agroZoneDescription,
-      typicalSoils: location?.typicalSoils,
-      taluk: location?.taluk,
-      seasonInfo: season || undefined,
-    };
-  } catch (err) {
-    // Return high-fidelity local demo fallback clearly labeled
-    return getDemoFallbackWeather(district || 'Mandya', state || 'Karnataka', lat || 12.5244, lon || 76.8969);
+  const cached = weatherMemoryCache.get(cacheKey);
+  const now = Date.now();
+  if (cached && now - cached.timestamp < WEATHER_CACHE_TTL_MS) {
+    return cached.data;
   }
+
+  // Deduplicate in-flight requests
+  const existingInFlight = inFlightWeatherRequests.get(cacheKey);
+  if (existingInFlight) {
+    return existingInFlight;
+  }
+
+  const fetchPromise = (async () => {
+    try {
+      const { location, season } = getLocationConditions(finalLat, finalLon, state, district);
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${finalLat}&longitude=${finalLon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum&timezone=auto&forecast_days=14`;
+
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 4000); // 4 sec timeout
+
+      try {
+        const res = await fetch(url, { signal: controller.signal });
+        clearTimeout(timeout);
+
+        if (!res.ok) {
+          throw new Error(`Open-Meteo HTTP ${res.status}`);
+        }
+
+        const data = (await res.json()) as any;
+        const current = data.current;
+        const daily = data.daily;
+
+        const { condition, icon } = interpretWmoCode(current.weather_code);
+        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+        const allDays: WeatherDay[] = daily.time.map((t: string, idx: number) => {
+          const d = new Date(t);
+          const code = daily.weather_code[idx] || 0;
+          const { condition: dayCond, icon: dayIcon } = interpretWmoCode(code);
+          return {
+            date: t,
+            dayName: idx === 0 ? 'Today' : dayNames[d.getDay()],
+            weatherCode: code,
+            condition: dayCond,
+            icon: dayIcon,
+            tempMax: Math.round(daily.temperature_2m_max[idx] || 30),
+            tempMin: Math.round(daily.temperature_2m_min[idx] || 22),
+            rainChance: Math.round(daily.precipitation_probability_max[idx] || 0),
+            precipitationMm: parseFloat((daily.precipitation_sum[idx] || 0).toFixed(1)),
+          };
+        });
+
+        const forecast7Days = allDays.slice(0, 7);
+        const forecast8To14Days = allDays.slice(7, 14);
+
+        const minT = Math.min(...forecast7Days.map(d => d.tempMin));
+        const maxT = Math.max(...forecast7Days.map(d => d.tempMax));
+        const nextMinT = Math.min(...forecast8To14Days.map(d => d.tempMin));
+        const nextMaxT = Math.max(...forecast8To14Days.map(d => d.tempMax));
+
+        // Determine upcoming rain advisory
+        const rainyDay = forecast7Days.find(d => d.rainChance >= 45);
+        let farmingAlert = 'Weather is favorable for standard field operations and weeding.';
+        let farmingAlertKn = 'ಸಾಮಾನ್ಯ ಕೃಷಿ ಕೆಲಸಗಳಿಗೆ ಮತ್ತು ಕಳೆ ತೆಗೆಯಲು ಹವಾಮಾನ ಅನುಕೂಲಕರವಾಗಿದೆ.';
+        let farmingAlertTa = 'நில உழவு மற்றும் களை எடுப்பதற்கு வானிலை சாதகமாக உள்ளது.';
+        let farmingAlertTe = 'పొలం పనులకు మరియు కలుపు తీతకు వాతావరణం అనుకూలంగా ఉంది.';
+
+        if (rainyDay) {
+          farmingAlert = `Rain expected on ${rainyDay.dayName} (${rainyDay.rainChance}% chance). Consider completing field spraying before rain.`;
+          farmingAlertKn = `${rainyDay.dayName} ರಂದು ಮಳೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ (${rainyDay.rainChance}% ಸಂಭವ). ಮಳೆ ಬರುವ ಮುನ್ನ ಸಿಂಪಡಣೆ ಕಾರ್ಯ ಮುಗಿಸಿ.`;
+          farmingAlertTa = `${rainyDay.dayName} அன்று மழை பெய்ய வாய்ப்புள்ளது (${rainyDay.rainChance}%). மழைக்கு முன் தெளிப்பு பணிகளை முடிக்கவும்.`;
+          farmingAlertTe = `${rainyDay.dayName} నాడు వర్షం పడే అవకాశం ఉంది (${rainyDay.rainChance}%). వర్షానికి ముందే మందుల పిచికారీ పూర్తి చేయండి.`;
+        }
+
+        const effectiveDistrict = district || 'Mandya';
+        const effectiveState = state || 'Karnataka';
+
+        const liveResult: WeatherData = {
+          location: `${effectiveDistrict}, ${effectiveState}`,
+          state: effectiveState,
+          district: effectiveDistrict,
+          latitude: finalLat,
+          longitude: finalLon,
+          temperature: Math.round(current.temperature_2m),
+          condition,
+          weatherCode: current.weather_code,
+          icon,
+          humidity: Math.round(current.relative_humidity_2m),
+          windSpeedKmH: Math.round(current.wind_speed_10m),
+          rainfallProbability: forecast7Days[0]?.rainChance || 0,
+          expectedPrecipitationMm: forecast7Days[0]?.precipitationMm || 0,
+          weekRange: `${minT}° - ${maxT}°`,
+          nextWeekRange: `${nextMinT}° - ${nextMaxT}°`,
+          nextWeekSummary: forecast8To14Days.some(d => d.rainChance > 40) ? 'Light Rain' : 'Partly Cloudy',
+          forecast7Days,
+          forecast8To14Days,
+          farmingAlert,
+          farmingAlertKn,
+          farmingAlertTa,
+          farmingAlertTe,
+          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          isDemoFallback: false,
+          dataSource: 'Live Open-Meteo API',
+          agroZone: location?.agroZone,
+          agroZoneCode: location?.agroZoneCode,
+          agroZoneDescription: location?.agroZoneDescription,
+          typicalSoils: location?.typicalSoils,
+          taluk: location?.taluk,
+          seasonInfo: season || undefined,
+        };
+
+        // Cache live result
+        weatherMemoryCache.set(cacheKey, { data: liveResult, timestamp: Date.now() });
+        if (weatherMemoryCache.size > MAX_WEATHER_CACHE_SIZE) {
+          const oldestKey = weatherMemoryCache.keys().next().value;
+          if (oldestKey) weatherMemoryCache.delete(oldestKey);
+        }
+
+        return liveResult;
+      } finally {
+        clearTimeout(timeout);
+      }
+    } catch (err) {
+      // If live call fails or times out, return the last cached value (even if expired)
+      const staleCached = weatherMemoryCache.get(cacheKey);
+      if (staleCached) {
+        return {
+          ...staleCached.data,
+          isStale: true,
+          dataSource: `${staleCached.data.dataSource} (Cached, Offline/Stale)`
+        };
+      }
+      // Return high-fidelity local demo fallback clearly labeled
+      return getDemoFallbackWeather(district || 'Mandya', state || 'Karnataka', finalLat, finalLon);
+    } finally {
+      inFlightWeatherRequests.delete(cacheKey);
+    }
+  })();
+
+  inFlightWeatherRequests.set(cacheKey, fetchPromise);
+  return fetchPromise;
 }
 
 function getDemoFallbackWeather(district: string, state: string, lat: number, lon: number): WeatherData {

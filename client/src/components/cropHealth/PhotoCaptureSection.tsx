@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { Camera, Upload, X, AlertTriangle, CheckCircle2, RotateCcw, Info, Sparkles, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, X, AlertTriangle, CheckCircle2, RotateCcw, Info, Sparkles, Image as ImageIcon, Search, Sprout, Eye } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
 import { checkAndCompressPlantPhoto, QualityCheckResult } from '../../utils/photoQualityChecker';
 
@@ -28,7 +28,7 @@ interface PhotoSlotGuide {
   descKn: string;
   descTa: string;
   descTe: string;
-  icon: string;
+  icon: React.ReactNode;
   badgeEn: string;
   badgeKn: string;
   badgeTa: string;
@@ -47,7 +47,7 @@ const PHOTO_SLOTS: PhotoSlotGuide[] = [
     descKn: 'ಕ್ಯಾಮೆರಾವನ್ನು ೧೫-೨೦ ಸೆಂ.ಮೀ ದೂರದಲ್ಲಿಡಿ. ಚುಕ್ಕೆಗಳು, ಬೂದಿ ಅಥವಾ ರಂಧ್ರಗಳು ಸ್ಪಷ್ಟವಾಗಿರಲಿ.',
     descTa: 'கேமராவை 15-20 செ.மீ தூரத்தில் பிடிக்கவும். புள்ளிகள் அல்லது பூஞ்சணம் தெளிவாக தெரிய வேண்டும்.',
     descTe: 'కెమెరాను 15-20 సెం.మీ దూరంలో ఉంచండి. మచ్చలు లేదా బూడిద స్పష్టంగా కనిపించాలి.',
-    icon: '🔍🍃',
+    icon: <Search className="w-4 h-4 text-brand-600" />,
     badgeEn: 'Recommended Angle 1',
     badgeKn: 'ಶಿಫಾರಸು ಮಾಡಿದ ಕೋನ ೧',
     badgeTa: 'பரிந்துரைக்கப்பட்ட கோணம் 1',
@@ -64,7 +64,7 @@ const PHOTO_SLOTS: PhotoSlotGuide[] = [
     descKn: 'ಇಡೀ ಗಿಡದ ಬಾಡುವಿಕೆ, ಬೆಳವಣಿಗೆ ಕುಂಠಿತ ಅಥವಾ ಹಳದಿ ಬಣ್ಣವನ್ನು ನೋಡಲು ಹಿಂತಿರುಗಿ ಪೂರ್ಣ ಗಿಡದ ಫೋಟೋ ತೆಗೆಯಿರಿ.',
     descTa: 'செடியின் வளர்ச்சி குன்றுதல் அல்லது வாடலைச் சரிபார்க்க முழு செடியையும் படம் பிடிக்கவும்.',
     descTe: 'మొక్క పెరుగుదల లోపం లేదా వాడిపోవడాన్ని గుర్తించడానికి మొత్తం మొక్క ఫోటో తీయండి.',
-    icon: '🌿',
+    icon: <Sprout className="w-4 h-4 text-emerald-600" />,
     badgeEn: 'Recommended Angle 2',
     badgeKn: 'ಶಿಫಾರಸು ಮಾಡಿದ ಕೋನ ೨',
     badgeTa: 'பரிந்துரைக்கப்பட்ட கோணம் 2',
@@ -81,7 +81,7 @@ const PHOTO_SLOTS: PhotoSlotGuide[] = [
     descKn: 'ರಸ ಹೀರುವ ಕೀಟಗಳು, ಮರಿಗಳು, ತುಕ್ಕು ಅಥವಾ ಕಾಂಡ ಕೊರೆಯುವ ಹುಳುಗಳನ್ನು ಪರೀಕ್ಷಿಸಲು ಎಲೆ ತಿರುಗಿಸಿ.',
     descTa: 'சாறு உறிஞ்சும் பூச்சிகள், முட்டைகள் அல்லது தண்டு புழுக்களைக் காண இலையை திருப்பிப் பிடிக்கவும்.',
     descTe: 'రసం పీల్చే పురుగులు, కాండం తొలిచే పురుగులను గుర్తించడానికి ఆకు వెనుక లేదా కాండం తీయండి.',
-    icon: '🔬🎋',
+    icon: <Eye className="w-4 h-4 text-teal-600" />,
     badgeEn: 'Recommended Angle 3',
     badgeKn: 'ಶಿಫಾರಸು ಮಾಡಿದ ಕೋನ ೩',
     badgeTa: 'பரிந்துரைக்கப்பட்ட கோணம் 3',

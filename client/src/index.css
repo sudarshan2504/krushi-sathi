@@ -2,125 +2,240 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ═══════════════════════════════════════════════════════════════
+   KRUSHI SATHI — DESIGN TOKENS
+   All CSS custom properties (tokens) that can't be expressed as
+   Tailwind utilities. Tailwind classes remain the primary API.
+═══════════════════════════════════════════════════════════════ */
+
+/* ── Motion tokens ─────────────────────────────────────────── */
 :root {
-  font-family: 'Plus Jakarta Sans', 'Noto Sans Kannada', 'Noto Sans Tamil', 'Noto Sans Telugu', system-ui, -apple-system, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-  font-size: 16px;
-  color-scheme: light;
+  /* Spring-like transitions for interactive elements */
+  --motion-spring:   cubic-bezier(0.34, 1.56, 0.64, 1);
+  /* Smooth ease-out for fades / slide-ins */
+  --motion-ease:     cubic-bezier(0.16, 1, 0.3, 1);
+  /* Duration tokens */
+  --duration-fast:   150ms;
+  --duration-base:   220ms;
+  --duration-slow:   350ms;
+  /* Press scale */
+  --press-scale:     0.97;
+
+  /* Typography: base sizes */
+  --text-display: 32px;
+  --text-title:   22px;
+  --text-heading: 18px;
+  --text-body:    16px;
+  --text-caption: 13px;
+
+  /* Spacing */
+  --screen-x:  20px;
+  --section-y: 24px;
+
+  /* Indic scripts line-height bump */
+  --lh-indic-bump: 2px;
+
+  /* Brand palette references (matches tailwind tokens) */
+  --color-brand:         #1F6B3A;
+  --color-brand-light:   #257F45;
+  --color-bg:            #FAF9F6;
+  --color-surface:       #FFFFFF;
+  --color-border:        #E5E7EB;
+  --color-border-subtle: #F3F4F6;
+  --color-text-strong:   #111827;
+  --color-text-default:  #1F2937;
+  --color-text-muted:    #4B5563;
+  --color-focus-ring:    #1F6B3A;
 }
 
-html, body {
-  margin: 0;
-  padding: 0;
-  width: 100%;
-  max-width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  overflow-x: hidden;
-  background-color: #FFFCF5;
-  color: #20352A;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  -webkit-tap-highlight-color: transparent;
-  overscroll-behavior-y: contain;
+/* ── Dark mode token overrides (Soft Charcoal + Muted Green) ─ */
+.dark {
+  --color-bg:            #1E2320;
+  --color-surface:       #272E2A;
+  --color-border:        #3A463F;
+  --color-border-subtle: #313B35;
+  --color-text-strong:   #F0F4F1;
+  --color-text-default:  #DCE4DE;
+  --color-text-muted:    #A3B8AA;
+  --color-focus-ring:    #3E9B5E;
+  color-scheme: dark;
 }
 
-#root {
-  width: 100%;
-  max-width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
+/* ════════════════════════════════════════════════════════════
+   BASE RESET & GLOBAL STYLES
+════════════════════════════════════════════════════════════ */
+
+@layer base {
+  html {
+    font-family: 'Plus Jakarta Sans', 'Noto Sans Kannada', 'Noto Sans Tamil',
+                 'Noto Sans Telugu', system-ui, -apple-system, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    -webkit-tap-highlight-color: transparent;
+    overscroll-behavior-y: contain;
+    scroll-behavior: smooth;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    overflow-x: hidden;
+    background-color: var(--color-bg);
+    color: var(--color-text-default);
+    transition: background-color var(--duration-base) var(--motion-ease),
+                color var(--duration-base) var(--motion-ease);
+  }
+
+  #root {
+    width: 100%;
+    max-width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── Headings use strong color by default ── */
+  h1, h2, h3, h4, h5, h6 {
+    color: var(--color-text-strong);
+    font-weight: 700;
+  }
+
+  /* ── Focus-visible ring — brand color ── */
+  :focus-visible {
+    outline: 2px solid var(--color-focus-ring);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* ── Button / link press feedback ── */
+  button, a, [role="button"] {
+    transition: transform var(--duration-fast) var(--motion-ease),
+                opacity   var(--duration-fast) var(--motion-ease);
+  }
+  button:active, a:active, [role="button"]:active {
+    transform: scale(var(--press-scale));
+  }
+
+  /* ── Tabular numbers for stats ── */
+  .tabular {
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ── Indic script styles ── */
+  :lang(kn), :lang(ta), :lang(te) {
+    line-height: calc(1.5em + var(--lh-indic-bump));
+    font-size: max(14px, 1em);
+  }
 }
 
-/* Safe area insets for notches, dynamic islands, home bars */
-.pt-safe {
-  padding-top: env(safe-area-inset-top, 0px);
-}
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom, 0px);
-}
-.pl-safe {
-  padding-left: env(safe-area-inset-left, 0px);
-}
-.pr-safe {
-  padding-right: env(safe-area-inset-right, 0px);
-}
-.top-safe {
-  top: env(safe-area-inset-top, 0px);
-}
-.bottom-safe {
-  bottom: env(safe-area-inset-bottom, 0px);
+/* ════════════════════════════════════════════════════════════
+   SAFE-AREA UTILITIES
+════════════════════════════════════════════════════════════ */
+
+@layer utilities {
+  .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
+  .pb-safe { padding-bottom: env(safe-area-inset-bottom, 0px); }
+  .pl-safe { padding-left: env(safe-area-inset-left, 0px); }
+  .pr-safe { padding-right: env(safe-area-inset-right, 0px); }
+  .top-safe { top: env(safe-area-inset-top, 0px); }
+  .bottom-safe { bottom: env(safe-area-inset-bottom, 0px); }
+
+  .min-h-dvh { min-height: 100dvh; }
+  .h-dvh     { height: 100dvh; }
+  .max-h-dvh { max-height: 100dvh; }
+
+  /* Desktop centering shell */
+  .app-column {
+    width: 100%;
+    max-width: 440px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Minimum 48px touch target */
+  .touch-target {
+    min-width: 48px;
+    min-height: 48px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Hairline border utility */
+  .border-hairline {
+    border-width: 1px;
+    border-color: var(--color-border-subtle);
+  }
+
+  /* Subtle gradient backgrounds */
+  .bg-app { background-color: var(--color-bg); }
+  .bg-surface { background-color: var(--color-surface); }
+
+  /* Dark mode shimmer track */
+  .dark .skeleton-shimmer { background-color: #243327; }
+
+  /* Reduced motion helpers */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    button:active, a:active, [role="button"]:active {
+      transform: none;
+    }
+  }
 }
 
-/* Dynamic viewport height utilities */
-.min-h-dvh {
-  min-height: 100vh;
-  min-height: 100dvh;
-}
-.h-dvh {
-  height: 100vh;
-  height: 100dvh;
-}
-.max-h-dvh {
-  max-height: 100vh;
-  max-height: 100dvh;
-}
+/* ════════════════════════════════════════════════════════════
+   SKELETON SHIMMER
+════════════════════════════════════════════════════════════ */
 
-/* Mobile minimum touch target 44px */
-.touch-target {
-  min-width: 44px;
-  min-height: 44px;
-}
-
-/* Focus-visible ring for keyboard accessibility & clear affordance */
-:focus-visible {
-  outline: 2px solid #176B3A;
-  outline-offset: 2px;
-}
-
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #C8E6CE;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #3EB070;
-}
-
-/* Skeleton shimmer utility */
 .skeleton-shimmer {
   position: relative;
   overflow: hidden;
   background-color: #EBF4EC;
+  border-radius: 8px;
+}
+
+.dark .skeleton-shimmer {
+  background-color: #243327;
 }
 
 .skeleton-shimmer::after {
   position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
+  inset: 0;
   transform: translateX(-100%);
   background-image: linear-gradient(
     90deg,
-    rgba(255, 255, 255, 0) 0,
-    rgba(255, 255, 255, 0.45) 25%,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 30%,
     rgba(255, 255, 255, 0.7) 50%,
-    rgba(255, 255, 255, 0.45) 75%,
+    rgba(255, 255, 255, 0.5) 70%,
     rgba(255, 255, 255, 0) 100%
   );
   animation: shimmer 1.8s infinite;
   content: '';
+}
+
+.dark .skeleton-shimmer::after {
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.06) 30%,
+    rgba(255, 255, 255, 0.1) 50%,
+    rgba(255, 255, 255, 0.06) 70%,
+    rgba(255, 255, 255, 0) 100%
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -128,4 +243,129 @@ html, body {
     animation: none;
     background-image: none;
   }
+}
+
+/* ════════════════════════════════════════════════════════════
+   CUSTOM SCROLLBAR
+════════════════════════════════════════════════════════════ */
+
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: #D1FAE5;
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover { background: #86EFAC; }
+
+.dark ::-webkit-scrollbar-thumb { background: #2D4233; }
+.dark ::-webkit-scrollbar-thumb:hover { background: #374151; }
+
+/* ════════════════════════════════════════════════════════════
+   CUSTOM SCROLLBAR HORIZONTAL (chip rows)
+════════════════════════════════════════════════════════════ */
+
+.chips-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.chips-scroll::-webkit-scrollbar { display: none; }
+
+/* ════════════════════════════════════════════════════════════
+   TYPING DOTS (chat)
+════════════════════════════════════════════════════════════ */
+
+.typing-dot:nth-child(1) { animation: dot-bounce 1.2s ease-in-out infinite; }
+.typing-dot:nth-child(2) { animation: dot-bounce 1.2s ease-in-out 0.2s infinite; }
+.typing-dot:nth-child(3) { animation: dot-bounce 1.2s ease-in-out 0.4s infinite; }
+
+@keyframes dot-bounce {
+  0%, 80%, 100% { transform: translateY(0); }
+  40%           { transform: translateY(-6px); }
+}
+
+/* ════════════════════════════════════════════════════════════
+   MARKDOWN PROSE (chat answers)
+════════════════════════════════════════════════════════════ */
+
+.prose-chat {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--color-text-default);
+}
+.prose-chat strong { color: var(--color-text-strong); font-weight: 700; }
+.prose-chat ul { padding-left: 1.25rem; list-style: disc; }
+.prose-chat ol { padding-left: 1.25rem; list-style: decimal; }
+.prose-chat li { margin-block: 0.25rem; }
+.prose-chat p  { margin-block: 0.5rem; }
+.prose-chat p:first-child { margin-top: 0; }
+.prose-chat p:last-child  { margin-bottom: 0; }
+.prose-chat code {
+  font-size: 0.85em;
+  background: #F0FDF4;
+  border-radius: 4px;
+  padding: 0.1em 0.3em;
+}
+.dark .prose-chat { color: var(--color-text-default); }
+.dark .prose-chat strong { color: var(--color-text-strong); }
+.dark .prose-chat code { background: #1A2B1E; }
+
+/* ════════════════════════════════════════════════════════════
+   DESKTOP SHELL — ambient background
+════════════════════════════════════════════════════════════ */
+
+@media (min-width: 640px) {
+  .desktop-shell {
+    background: radial-gradient(ellipse at top left, #F0FDF4 0%, #FAF9F6 50%, #F0FDF4 100%);
+  }
+  .dark .desktop-shell {
+    background: radial-gradient(ellipse at top left, #0F1A12 0%, #111827 50%, #0F1A12 100%);
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   PAGE TRANSITION — View Transitions API progressive enhancement
+════════════════════════════════════════════════════════════ */
+
+@media (prefers-reduced-motion: no-preference) {
+  @supports (view-transition-name: root) {
+    ::view-transition-old(root) {
+      animation: 200ms ease-out both fade-out-slide;
+    }
+    ::view-transition-new(root) {
+      animation: 220ms ease-out both fade-in-slide;
+    }
+    @keyframes fade-out-slide {
+      from { opacity: 1; transform: translateX(0); }
+      to   { opacity: 0; transform: translateX(-16px); }
+    }
+    @keyframes fade-in-slide {
+      from { opacity: 0; transform: translateX(16px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════════════
+   BOTTOM SHEET backdrop
+════════════════════════════════════════════════════════════ */
+
+.sheet-backdrop {
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.dark .sheet-backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* ════════════════════════════════════════════════════════════
+   WAVEFORM bars
+════════════════════════════════════════════════════════════ */
+
+.waveform-bar {
+  transform-origin: bottom center;
+  transition: transform 80ms linear;
+  will-change: transform;
 }

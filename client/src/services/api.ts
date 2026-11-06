@@ -767,24 +767,119 @@ export const api = {
   },
 
   chat: {
-    async sendMessage(message: string, language: string, conversationId?: string) {
+    /**
+     * Sends a chat message and returns the complete response via SSE streaming.
+     *
+     * Calls onChunk(text) for each incremental text chunk while the AI streams.
+     * Returns the full structured response once the "done" event arrives.
+     *
+     * For the rule-based local fallback, onChunk is never called and the response
+     * arrives directly as a "done" event — the caller treats both paths identically.
+     *
+     * Pass an AbortSignal via options.signal to cancel the stream (e.g. on page leave).
+     */
+    async sendMessage(
+      message: string,
+      language: string,
+      conversationId?: string,
+      options?: {
+        onChunk?: (text: string) => void;
+        signal?: AbortSignal;
+      }
+    ): Promise<{
+      conversationId: string;
+      message: ChatMessage;
+      speechContent?: string;
+      suggestedQuestions: string[];
+    }> {
       if (!navigator.onLine) {
         throw new Error('You are currently offline. Raitha Mitra AI chat requires an active internet connection to reply.');
       }
-      const res = await fetch(`${API_BASE}/chat/messages`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeader(),
-        },
-        body: JSON.stringify({ message, language, conversationId }),
+
+      return new Promise((resolve, reject) => {
+        const controller = new AbortController();
+
+        // Allow external cancellation
+        if (options?.signal) {
+          options.signal.addEventListener('abort', () => controller.abort());
+        }
+
+        fetch(`${API_BASE}/chat/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+          body: JSON.stringify({ message, language, conversationId }),
+          signal: controller.signal,
+        })
+          .then(async (res) => {
+            // Handle non-SSE error responses (4xx before headers flushed)
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({ message: `Request failed ${res.status}` }));
+              return reject(new Error(errData.message || `Request failed ${res.status}`));
+            }
+
+            const reader = res.body!.getReader();
+            // Use a TextDecoder with stream:true so multi-byte UTF-8 (Kannada/Tamil/Telugu)
+            // is never split across chunk boundaries.
+            const decoder = new TextDecoder('utf-8', { fatal: false });
+            let buffer = '';
+
+            const processBuffer = () => {
+              const events = buffer.split('\n\n');
+              // Keep the last (possibly incomplete) fragment in the buffer
+              buffer = events.pop() ?? '';
+
+              for (const eventBlock of events) {
+                if (!eventBlock.trim()) continue;
+                let eventName = 'message';
+                let dataLine = '';
+                for (const line of eventBlock.split('\n')) {
+                  if (line.startsWith('event: ')) eventName = line.slice(7).trim();
+                  if (line.startsWith('data: ')) dataLine = line.slice(6).trim();
+                }
+                if (!dataLine) continue;
+
+                try {
+                  const payload = JSON.parse(dataLine);
+                  if (eventName === 'chunk') {
+                    options?.onChunk?.(payload.text ?? '');
+                  } else if (eventName === 'done') {
+                    resolve(payload);
+                    controller.abort(); // stop reading
+                  } else if (eventName === 'error') {
+                    reject(new Error(payload.message || 'Chat error from server'));
+                    controller.abort();
+                  }
+                } catch {
+                  // Ignore malformed JSON in a chunk
+                }
+              }
+            };
+
+            const pump = async () => {
+              while (true) {
+                let done: boolean, value: Uint8Array | undefined;
+                try {
+                  ({ done, value } = await reader.read());
+                } catch {
+                  break; // AbortError or network error
+                }
+                if (done) break;
+                buffer += decoder.decode(value, { stream: true });
+                processBuffer();
+              }
+              // Flush any remaining bytes
+              buffer += decoder.decode();
+              if (buffer.trim()) processBuffer();
+            };
+
+            pump().catch((err) => {
+              if (err?.name !== 'AbortError') reject(err);
+            });
+          })
+          .catch((err) => {
+            if (err?.name !== 'AbortError') reject(err);
+          });
       });
-      return handleResponse<{
-        conversationId: string;
-        message: ChatMessage;
-        speechContent?: string;
-        suggestedQuestions: string[];
-      }>(res);
     },
 
     async synthesizeSpeech(

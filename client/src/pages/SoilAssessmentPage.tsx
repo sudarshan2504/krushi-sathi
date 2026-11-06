@@ -19,6 +19,7 @@ import {
   FileText,
   Activity,
   Trees,
+  Sun,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { StickyBottomBar } from '../components/ui/StickyBottomBar';
@@ -832,7 +833,7 @@ export const SoilAssessmentPage: React.FC = () => {
 
                 {conversionSummary && (
                   <p className="text-[11px] font-bold text-forest-700 mt-2 flex items-center gap-1.5">
-                    <span>📐</span>
+                    <Compass className="w-3.5 h-3.5" />
                     <span>{conversionSummary}</span>
                   </p>
                 )}
@@ -1048,11 +1049,12 @@ export const SoilAssessmentPage: React.FC = () => {
                         </span>
                         <div className="grid grid-cols-3 gap-2">
                           {[
-                            { id: 'Kharif', label: 'Kharif', sub: 'Jun - Oct (Monsoon)', icon: '🌧️' },
-                            { id: 'Rabi', label: 'Rabi', sub: 'Oct - Mar (Winter)', icon: '❄️' },
-                            { id: 'Zaid', label: 'Zaid', sub: 'Mar - Jun (Summer)', icon: '☀️' },
+                            { id: 'Kharif', label: 'Kharif', sub: 'Jun - Oct (Monsoon)', iconComponent: CloudRain },
+                            { id: 'Rabi', label: 'Rabi', sub: 'Oct - Mar (Winter)', iconComponent: Activity },
+                            { id: 'Zaid', label: 'Zaid', sub: 'Mar - Jun (Summer)', iconComponent: Sun },
                           ].map((s) => {
                             const isSelected = formData.season === s.id;
+                            const SeasonIcon = s.iconComponent;
                             return (
                               <button
                                 key={s.id}
@@ -1067,7 +1069,7 @@ export const SoilAssessmentPage: React.FC = () => {
                                     : 'border-earth-200 bg-white/70 text-earth-800 hover:bg-white'
                                 }`}
                               >
-                                <span className="text-base block mb-0.5">{s.icon}</span>
+                                <SeasonIcon className="w-5 h-5 mx-auto mb-1 text-forest-600" />
                                 <span className="text-xs block font-bold">{s.label}</span>
                                 <span className="text-[10px] text-earth-500 block">{s.sub}</span>
                               </button>
