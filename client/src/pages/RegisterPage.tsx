@@ -319,27 +319,27 @@ export const RegisterPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-gradient-to-b from-cream via-white to-mint-light flex flex-col justify-between pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] px-3 sm:px-6 max-w-lg mx-auto">
+    <div className="min-h-screen min-h-dvh bg-[#FAF8F2] dark:bg-[#1E2320] flex flex-col justify-between pt-[max(1rem,env(safe-area-inset-top,0px))] pb-[max(1.5rem,env(safe-area-inset-bottom,0px))] px-4 max-w-[430px] mx-auto relative overflow-x-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -15 }}
         animate={{ opacity: 1, y: 0 }}
         className="pt-2 text-center"
       >
-        <Link to="/" className="inline-block group focus:outline-none mb-1">
+        <Link to="/" className="inline-block group focus:outline-none mb-2">
           <picture>
-            <source srcSet="/krushi-sathi-logo.webp" type="image/webp" />
+            <source srcSet="/design/krushi-sathi-logo.webp" type="image/webp" />
             <img
-              src="/krushi-sathi-logo.png"
+              src="/design/krushi-sathi-logo.png"
               alt="Krushi Sathi Logo"
               width="160"
               height="80"
-              className="h-16 sm:h-20 w-auto object-contain mx-auto drop-shadow-sm transition-transform group-hover:scale-105"
+              className="h-14 sm:h-16 w-auto object-contain mx-auto drop-shadow-sm transition-transform group-hover:scale-105"
             />
           </picture>
         </Link>
-        <h1 className="text-2xl font-extrabold text-dark-text">{t('createAccount')}</h1>
-        <p className="text-xs text-dark-muted font-medium">
+        <h1 className="text-2xl font-extrabold text-[#0D2B18] dark:text-cream">{t('createAccount')}</h1>
+        <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
           {t('joinKrishiSathi')} — No password or Gmail needed
         </p>
       </motion.div>

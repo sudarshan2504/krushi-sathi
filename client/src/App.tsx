@@ -52,6 +52,7 @@ const ChatPage = lazyWithRetry(() => import('./pages/ChatPage').then(m => ({ def
 const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const CropLibraryPage = lazyWithRetry(() => import('./pages/CropLibraryPage').then(m => ({ default: m.CropLibraryPage })));
 const ImageCreditsPage = lazyWithRetry(() => import('./pages/ImageCreditsPage').then(m => ({ default: m.ImageCreditsPage })));
+const MarketPricesPage = lazyWithRetry(() => import('./pages/MarketPricesPage').then(m => ({ default: m.MarketPricesPage })));
 
 // Realistic layout skeleton fallback with timeout warning and retry button
 const PageFallback: React.FC = () => {
@@ -166,6 +167,7 @@ const AppRoutes: React.FC = () => {
           <Route path="/crops/:cropId" element={<PageTransition><CropDetailsPage /></PageTransition>} />
 
           <Route path="/diseases" element={<PageTransition><DiseasePreventionPage /></PageTransition>} />
+          <Route path="/market-prices" element={<PageTransition><MarketPricesPage /></PageTransition>} />
           <Route path="/chat" element={<PageTransition><ChatPage /></PageTransition>} />
           <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />
         </Route>
