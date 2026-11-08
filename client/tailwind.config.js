@@ -26,18 +26,35 @@ export default {
       colors: {
         // ── Brand / Primary (Deep Forest Green #1F6B3A) ─────────────────
         brand: {
-          DEFAULT: '#1F6B3A',
+          DEFAULT: '#144D29',
           50:  '#F0FDF4',
           100: '#DCFCE7',
           200: '#BBF7D0',
           300: '#86EFAC',
           400: '#4ADE80',
           500: '#2E9753',
-          600: '#257F45',
-          700: '#1F6B3A',
-          800: '#18542D',
-          900: '#113E21',
+          600: '#228B22',
+          700: '#165B32',
+          800: '#144D29',
+          900: '#0E381C',
           950: '#0B2916',
+        },
+        // ── Mockup specific semantic tokens ────────────────────────────
+        theme: {
+          forest: '#144D29',
+          forestDark: '#0D2B18',
+          forestLight: '#165B32',
+          mediumGreen: '#228B22',
+          lime: '#84CC16',
+          limeLight: '#A3E635',
+          mint: '#DCFCE7',
+          mintSubtle: '#F0FDF4',
+          cream: '#FAF8F2',
+          creamLight: '#FFFDF9',
+          peach: '#FEF3C7',
+          peachDark: '#92400E',
+          lightBlue: '#E0F2FE',
+          blueAccent: '#0284C7',
         },
         // ── Accent (lime/leaf) — used sparingly ────────────────────────
         accent: {

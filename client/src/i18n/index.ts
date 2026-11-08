@@ -14,9 +14,9 @@ export interface LanguageOption {
 
 export const LANGUAGES: LanguageOption[] = [
   { code: 'en', label: 'English', nativeLabel: 'English', symbol: 'A' },
-  { code: 'kn', label: 'Kannada', nativeLabel: 'ಕನ್ನಡ', symbol: 'ಪ' },
+  { code: 'kn', label: 'Kannada', nativeLabel: 'ಕನ್ನಡ', symbol: 'ಕ' },
   { code: 'ta', label: 'Tamil', nativeLabel: 'தமிழ்', symbol: 'அ' },
-  { code: 'te', label: 'Telugu', nativeLabel: 'తెలుగు', symbol: 'తె' },
+  { code: 'te', label: 'Telugu', nativeLabel: 'తెలుగు', symbol: 'త' },
 ];
 
 export const translations: Record<LanguageCode, typeof en> = {

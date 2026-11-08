@@ -1,10 +1,7 @@
 /**
- * BottomNav — floating rounded bottom navigation bar.
- *
- * 4 items: Home, Crops, AI Chat, Profile.
- * Active indicator: brand-filled pill animates with framer-motion layoutId.
- * Hides when virtual keyboard is open.
- * Safe-area aware for iPhone/Android gesture bars.
+ * BottomNav — Floating white pill navigation bar matching Krushi Sathi redesign mockups.
+ * 4 tabs: Home, Crops, AI Chat, Profile.
+ * Active tab: Solid Forest-Green rounded pill with white icon and bold white text.
  */
 import React from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
@@ -22,10 +19,10 @@ export const BottomNav: React.FC = () => {
   const { isKeyboardOpen } = useVirtualKeyboard();
 
   const navItems = [
-    { to: '/home',    label: t('navHome'),    icon: Home,          exact: true },
-    { to: '/crops',   label: t('navCrops'),   icon: Sprout,        exact: false },
-    { to: '/chat',    label: t('navAiChat'),  icon: MessageCircle, exact: true },
-    { to: '/profile', label: t('navProfile'), icon: User,          exact: true },
+    { to: '/home', label: t('navHome'), icon: Home, exact: true },
+    { to: '/crops', label: t('navCrops'), icon: Sprout, exact: false },
+    { to: '/chat', label: t('navAiChat'), icon: MessageCircle, exact: true },
+    { to: '/profile', label: t('navProfile'), icon: User, exact: true },
   ];
 
   if (HIDDEN_ROUTES.includes(location.pathname)) return null;
@@ -34,20 +31,15 @@ export const BottomNav: React.FC = () => {
     <nav
       aria-label="Main navigation"
       className={[
-        'fixed bottom-0 left-0 right-0 z-40',
-        // Solid surface — 100% opaque, no see-through content behind it
-        'bg-white dark:bg-dark-surface border-t border-gray-200 dark:border-dark-border shadow-card',
-        // Visibility during keyboard
+        'fixed bottom-0 inset-x-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))] pt-1',
+        // Keyboard auto-hide
         isKeyboardOpen ? 'translate-y-full opacity-0 pointer-events-none' : 'translate-y-0 opacity-100',
-        'transition-all duration-200',
-        // Safe area padding
-        'pt-1.5 pb-[max(0.6rem,env(safe-area-inset-bottom,0px))]',
-        'px-2 sm:px-4',
-        // Desktop centering
-        'sm:max-w-[440px] sm:mx-auto sm:left-1/2 sm:-translate-x-1/2 sm:border-x',
+        'transition-all duration-200 pointer-events-none',
+        // Max mobile width centering
+        'max-w-[430px] mx-auto',
       ].join(' ')}
     >
-      <div className="grid grid-cols-4 gap-1 max-w-full">
+      <div className="pointer-events-auto rounded-full bg-white/95 dark:bg-[#272E2A]/95 backdrop-blur-md border border-zinc-200/70 dark:border-zinc-700/60 shadow-[0_10px_30px_rgba(0,0,0,0.14)] p-1.5 flex items-center justify-around gap-1">
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = item.exact
@@ -60,37 +52,35 @@ export const BottomNav: React.FC = () => {
               to={item.to}
               aria-label={item.label}
               aria-current={isActive ? 'page' : undefined}
-              className="relative flex flex-col items-center justify-center min-h-[52px] py-1 px-1 rounded-2xl gap-1 select-none focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-1"
+              className={`relative flex items-center justify-center gap-1.5 px-3 py-2 rounded-full min-h-[44px] transition-all duration-150 select-none flex-1 ${
+                isActive
+                  ? 'text-white'
+                  : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
+              }`}
             >
-              {/* Animated active background pill */}
+              {/* Active pill background */}
               {isActive && (
                 <motion.div
-                  layoutId="bottom-nav-pill"
-                  className="absolute inset-0 bg-brand-50 dark:bg-brand-900/35 rounded-2xl"
+                  layoutId="active-floating-nav-pill"
+                  className="absolute inset-0 bg-[#144D29] dark:bg-[#165B32] rounded-full shadow-sm"
                   transition={
                     shouldReduceMotion
                       ? { duration: 0 }
-                      : { type: 'spring', stiffness: 400, damping: 35 }
+                      : { type: 'spring', stiffness: 450, damping: 35 }
                   }
                 />
               )}
 
               <Icon
-                className={[
-                  'relative z-10 w-5 h-5 transition-colors',
-                  isActive
-                    ? 'text-brand-700 dark:text-brand-400 stroke-[2.25]'
-                    : 'text-gray-500 dark:text-gray-400 stroke-[1.75]',
-                ].join(' ')}
+                className={`relative z-10 w-4 h-4 transition-transform shrink-0 ${
+                  isActive ? 'text-white stroke-[2.2]' : 'stroke-[1.8]'
+                }`}
                 aria-hidden="true"
               />
               <span
-                className={[
-                  'relative z-10 text-[12px] leading-none transition-colors whitespace-nowrap',
-                  isActive
-                    ? 'font-bold text-brand-700 dark:text-brand-400'
-                    : 'font-semibold text-gray-500 dark:text-gray-400',
-                ].join(' ')}
+                className={`relative z-10 text-[11px] sm:text-xs tracking-tight transition-colors whitespace-nowrap ${
+                  isActive ? 'font-bold text-white' : 'font-medium'
+                }`}
               >
                 {item.label}
               </span>
@@ -101,5 +91,3 @@ export const BottomNav: React.FC = () => {
     </nav>
   );
 };
-
-export default BottomNav;
