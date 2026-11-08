@@ -16,6 +16,7 @@
     "prisma:seed": "npm --workspace=server run prisma:seed"
   },
   "devDependencies": {
-    "concurrently": "^9.1.2"
+    "concurrently": "^9.1.2",
+    "puppeteer-core": "^25.16.0"
   }
 }

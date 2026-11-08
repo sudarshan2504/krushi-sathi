@@ -20,6 +20,7 @@ import { LanguagePill } from '../components/ui/LanguagePill';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { OutlineButton } from '../components/ui/OutlineButton';
 import { WaveFooter } from '../components/ui/WaveFooter';
+import { LeafCorners } from '../components/ui/LeafCorners';
 
 export const SplashPage: React.FC = () => {
   const navigate = useNavigate();
@@ -123,9 +124,12 @@ export const SplashPage: React.FC = () => {
           />
         </motion.div>
 
-        {/* 2. Top White Fade Gradient (top 52% of screen for optimal text legibility) */}
+        {/* Leaf corner accent */}
+        <LeafCorners showLeft showRight={false} className="z-10" />
+
+        {/* 2. Top subtle gradient scrim */}
         <div
-          className="absolute inset-x-0 top-0 h-[56%] bg-gradient-to-b from-white/95 via-white/85 to-transparent pointer-events-none z-1"
+          className="absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-white/30 via-white/10 to-transparent pointer-events-none z-1"
           aria-hidden="true"
         />
 

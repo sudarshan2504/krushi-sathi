@@ -175,7 +175,7 @@ export const MarketPricesPage: React.FC = () => {
             </button>
           </div>
 
-          <h2 className="text-xl font-extrabold tracking-tight">
+          <h2 className="text-xl font-extrabold tracking-tight text-white">
             Daily Mandi Rate Tracker
           </h2>
           <p className="text-xs text-emerald-100/90 mt-1">

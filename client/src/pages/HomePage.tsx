@@ -154,19 +154,19 @@ export const HomePage: React.FC = () => {
         </header>
 
         {/* 2. GREETING & SUNRISE FARMER SCENE STRIP */}
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#FAF8F2] via-[#FAF8F2]/90 to-transparent pt-3 pb-2 flex items-center justify-between">
-          <div className="z-10 max-w-[65%]">
-            <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0D2B18] dark:text-cream inline-flex items-center gap-1.5">
+        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#FAF8F2] via-[#FAF8F2]/90 to-transparent pt-3 pb-2 flex items-center justify-between gap-2">
+          <div className="z-10 flex-1 min-w-0">
+            <h1 className="text-[20px] xs:text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0D2B18] dark:text-cream inline-flex items-center gap-1.5 whitespace-nowrap">
               <span>{t('helloGreeting', { name: farmerName })}</span>
               <Sprout className="w-5 h-5 text-[#228B22] dark:text-emerald-400 rotate-12 inline-block shrink-0 -mt-1" />
             </h1>
-            <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-medium mt-0.5">
+            <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 truncate">
               {t('goodDayForFarming')}
             </p>
           </div>
 
           {/* Farmer Looking toward Sunrise (Flipped to right side matching mockup) */}
-          <div className="w-28 sm:w-32 h-20 overflow-hidden select-none shrink-0 rounded-2xl">
+          <div className="w-24 xs:w-28 sm:w-32 h-18 xs:h-20 overflow-hidden select-none shrink-0 rounded-2xl shadow-xs">
             <img
               src="/design/farmer-home-strip.webp"
               alt="Farmer looking over field"

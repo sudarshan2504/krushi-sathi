@@ -16,6 +16,9 @@ import { PwaInstallPrompt } from '../ui/PwaInstallPrompt';
 // Routes where the shell (header + bottom nav) is hidden (fullscreen pages)
 const FULLSCREEN_ROUTES = ['/', '/language', '/login', '/register'];
 
+// Routes that manage their own mockup-exact integrated top bar
+const HIDE_HEADER_ROUTES = ['/home', '/profile', '/market-prices'];
+
 // Routes that use full width (chat page needs no horizontal padding)
 const FULL_WIDTH_ROUTES = ['/chat'];
 
@@ -23,6 +26,7 @@ export const Layout: React.FC = () => {
   const location = useLocation();
   const isFullscreen = FULLSCREEN_ROUTES.includes(location.pathname);
   const isFullWidth = FULL_WIDTH_ROUTES.includes(location.pathname);
+  const showHeader = !HIDE_HEADER_ROUTES.includes(location.pathname);
 
   if (isFullscreen) {
     return (
@@ -40,7 +44,7 @@ export const Layout: React.FC = () => {
 
       {/* App column — max 440px on desktop, full width on mobile */}
       <div className="flex-1 w-full sm:max-w-[440px] sm:mx-auto flex flex-col relative">
-        <Header />
+        {showHeader && <Header />}
 
         <main
           className={[

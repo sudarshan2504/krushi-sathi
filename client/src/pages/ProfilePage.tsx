@@ -258,7 +258,7 @@ export const ProfilePage: React.FC = () => {
                 <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 block mb-1">
                   {t('totalLandSize')}
                 </span>
-                <span className="text-lg font-extrabold text-[#0D2B18] dark:text-zinc-100 block">
+                <span className="text-xl font-extrabold text-[#0D2B18] dark:text-zinc-100 block leading-tight">
                   {landSize} Acres
                 </span>
               </div>
@@ -273,11 +273,11 @@ export const ProfilePage: React.FC = () => {
                 <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 block mb-1">
                   {t('registeredLocation')}
                 </span>
-                <span className="text-sm font-extrabold text-[#0D2B18] dark:text-zinc-100 block truncate">
-                  {user?.district || 'Mandya'}, {user?.state || 'Karnataka'}
+                <span className="text-base font-extrabold text-[#0D2B18] dark:text-zinc-100 block leading-tight">
+                  {user?.district || 'Mandya'},<br />{user?.state || 'Karnataka'}
                 </span>
               </div>
-              <div className="mt-2 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium truncate">
+              <div className="mt-2 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
                 Region: {user?.village || 'Koppa'}, {user?.taluk || 'Maddur'} Hobli
               </div>
             </div>
