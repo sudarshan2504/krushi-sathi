@@ -31,6 +31,19 @@ export const te = {
   goodDayForFarming: 'వ్యవసాయానికి మంచి రోజు',
   notificationsTitle: 'నోటిఫికేషన్లు',
 
+  // Profile & Preferences
+  farmProfileLandholdings: 'వ్యవసాయ ప్రొఫైల్ & భూమి హోల్డింగ్స్',
+  totalLandSize: 'మొత్తం భూమి విస్తీర్ణం',
+  registeredLocation: 'నమోదైన ప్రాంతం',
+  regionKoppaHobli: 'ప్రాంతం: కొప్పా, మద్దూరు హోబ్లి',
+  preferencesInformation: 'ప్రాధాన్యతలు & సమాచారం',
+  accountSecurity: 'ఖాతా & భద్రత',
+  manageAccountSecurity: 'మీ ఖాతా, గోప్యత మరియు లాగిన్‌ను నిర్వహించండి',
+  weatherCropAlertsMore: 'వాతావరణం, పంట హెచ్చరికలు & మరిన్ని',
+  editProfileBtn: 'ప్రొఫైల్ సవరించండి',
+  logoutConfirmTitle: 'సైన్ అవుట్',
+  logoutConfirmMessage: 'మీరు ఖచ్చితంగా కృషి సాథి నుండి సైన్ అవుట్ చేయాలనుకుంటున్నారా?',
+
   // Navigation
   navHome:'హోమ్',
   navCrops:'పంటలు',

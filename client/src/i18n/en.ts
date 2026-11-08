@@ -31,6 +31,19 @@ export const en = {
   goodDayForFarming: 'Good day for farming',
   notificationsTitle: 'Notifications',
 
+  // Profile & Preferences
+  farmProfileLandholdings: 'Farm Profile & Landholdings',
+  totalLandSize: 'Total Land Size',
+  registeredLocation: 'Registered Location',
+  regionKoppaHobli: 'Region: Koppa, Maddur Hobli',
+  preferencesInformation: 'Preferences & Information',
+  accountSecurity: 'Account & Security',
+  manageAccountSecurity: 'Manage your account, privacy and login',
+  weatherCropAlertsMore: 'Weather, crop alerts & more',
+  editProfileBtn: 'Edit Profile',
+  logoutConfirmTitle: 'Sign Out',
+  logoutConfirmMessage: 'Are you sure you want to sign out of Krushi Sathi?',
+
   // Navigation
   navHome: 'Home',
   navCrops: 'Crops',

@@ -31,6 +31,19 @@ export const kn = {
   goodDayForFarming: 'ಕೃಷಿಗೆ ಶುಭ ದಿನ',
   notificationsTitle: 'ಅಧಿಸೂಚನೆಗಳು',
 
+  // Profile & Preferences
+  farmProfileLandholdings: 'ಕೃಷಿ ವಿವರ & ಜಮೀನು ಹಿಡುವಳಿ',
+  totalLandSize: 'ಒಟ್ಟು ಜಮೀನಿನ ವಿಸ್ತೀರ್ಣ',
+  registeredLocation: 'ನೋಂದಾಯಿತ ಸ್ಥಳ',
+  regionKoppaHobli: 'ಪ್ರದೇಶ: ಕೊಪ್ಪ, ಮದ್ದೂರು ಹೋಬಳಿ',
+  preferencesInformation: 'ಆದ್ಯತೆಗಳು & ಮಾಹಿತಿ',
+  accountSecurity: 'ಖಾತೆ & ಭದ್ರತೆ',
+  manageAccountSecurity: 'ನಿಮ್ಮ ಖಾತೆ, ಗೌಪ್ಯತೆ ಮತ್ತು ಲಾಗಿನ್ ನಿರ್ವಹಿಸಿ',
+  weatherCropAlertsMore: 'ಹವಾಮಾನ, ಬೆಳೆ ಎಚ್ಚರಿಕೆಗಳು ಮತ್ತು ಇನ್ನಷ್ಟು',
+  editProfileBtn: 'ಪ್ರೊಫೈಲ್ ಸಂಪಾದಿಸಿ',
+  logoutConfirmTitle: 'ಸೈನ್ ಔಟ್',
+  logoutConfirmMessage: 'ನೀವು ಖಚಿತವಾಗಿ ಕೃಷಿ ಸಾಥಿಯಿಂದ ಸೈನ್ ಔಟ್ ಮಾಡಲು ಬಯಸುವಿರಾ?',
+
   // Navigation
   navHome:'ಮುಖಪುಟ',
   navCrops:'ಬೆಳೆಗಳು',

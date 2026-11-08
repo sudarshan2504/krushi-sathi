@@ -31,6 +31,19 @@ export const ta = {
   goodDayForFarming: 'விவசாயத்திற்கு நல்ல நாள்',
   notificationsTitle: 'அறிவிப்புகள்',
 
+  // Profile & Preferences
+  farmProfileLandholdings: 'பண்ணை விவரம் & நில உடமைகள்',
+  totalLandSize: 'மொத்த நில அளவு',
+  registeredLocation: 'பதிவு செய்யப்பட்ட இடம்',
+  regionKoppaHobli: 'பகுதி: கொப்பா, மத்தூர் ஹோப்ளி',
+  preferencesInformation: 'விருப்பத்தேர்வுகள் & தகவல்',
+  accountSecurity: 'கணக்கு & பாதுகாப்பு',
+  manageAccountSecurity: 'உங்கள் கணக்கு, தனியுரிமை மற்றும் உள்நுழைவை நிர்வகிக்கவும்',
+  weatherCropAlertsMore: 'வானிலை, பயிர் எச்சரிக்கைகள் & பல',
+  editProfileBtn: 'சுயவிவரத்தைத் திருத்து',
+  logoutConfirmTitle: 'வெளியேறு',
+  logoutConfirmMessage: 'கிஷி சாதியிலிருந்து நிச்சயமாக வெளியேற விரும்புகிறீர்களா?',
+
   // Navigation
   navHome:'முகப்பு',
   navCrops:'பயிர்கள்',
