@@ -18,6 +18,19 @@ export const en = {
   loadingGreener: 'Loading a greener tomorrow...',
   getStarted: 'Get Started',
 
+  // Dashboard & Quick Actions
+  quickActions: 'QUICK ACTIONS',
+  viewAll: 'View All >',
+  nutrientsPhTest: 'Nutrients & pH test',
+  recommendACrop: 'Recommend a Crop',
+  seasonalSuggestions: 'Seasonal suggestions',
+  detectPests: 'Detect Pests',
+  identifyGetRemedy: 'Identify & get remedy',
+  liveCropPrices: 'Live crop prices',
+  helloGreeting: 'Hello {name}!',
+  goodDayForFarming: 'Good day for farming',
+  notificationsTitle: 'Notifications',
+
   // Navigation
   navHome: 'Home',
   navCrops: 'Crops',

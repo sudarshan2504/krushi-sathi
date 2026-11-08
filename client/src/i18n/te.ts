@@ -18,6 +18,19 @@ export const te = {
   loadingGreener:'పచ్చని రేపటి వైపు సాగుతున్నాం...',
   getStarted:'ప్రారంభించండి',
 
+  // Dashboard & Quick Actions
+  quickActions: 'త్వరిత చర్యలు',
+  viewAll: 'అన్నీ చూడండి >',
+  nutrientsPhTest: 'పోషకాలు & pH పరీక్ష',
+  recommendACrop: 'పంట సిఫార్సు',
+  seasonalSuggestions: 'సీజనల్ సలహాలు',
+  detectPests: 'పురుగులను గుర్తించండి',
+  identifyGetRemedy: 'గుర్తించి నివారణ పొందండి',
+  liveCropPrices: 'ప్రత్యక్ష పంట ధరలు',
+  helloGreeting: 'నమస్కారం {name}!',
+  goodDayForFarming: 'వ్యవసాయానికి మంచి రోజు',
+  notificationsTitle: 'నోటిఫికేషన్లు',
+
   // Navigation
   navHome:'హోమ్',
   navCrops:'పంటలు',

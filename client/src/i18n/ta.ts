@@ -18,6 +18,19 @@ export const ta = {
   loadingGreener:'பசுமையான நாளை நோக்கி பயணிக்கிறோம்...',
   getStarted:'தொடங்குங்கள்',
 
+  // Dashboard & Quick Actions
+  quickActions: 'விரைவுச் செயல்கள்',
+  viewAll: 'அனைத்தையும் காண்க >',
+  nutrientsPhTest: 'ஊட்டச்சத்துக்கள் & pH சோதனை',
+  recommendACrop: 'பயிர் பரிந்துரை',
+  seasonalSuggestions: 'பருவகால ஆலோசனைகள்',
+  detectPests: 'பூச்சிகளைக் கண்டறிதல்',
+  identifyGetRemedy: 'அறிந்து தீர்வு காணுங்கள்',
+  liveCropPrices: 'நேரலை பயிர் விலைகள்',
+  helloGreeting: 'வணக்கம் {name}!',
+  goodDayForFarming: 'விவசாயத்திற்கு நல்ல நாள்',
+  notificationsTitle: 'அறிவிப்புகள்',
+
   // Navigation
   navHome:'முகப்பு',
   navCrops:'பயிர்கள்',

@@ -18,6 +18,19 @@ export const kn = {
   loadingGreener:'ಹಸಿರು ಕೃಷಿಯತ್ತ ಸಾಗುತ್ತಿದ್ದೇವೆ...',
   getStarted:'ಪ್ರಾರಂಭಿಸಿ',
 
+  // Dashboard & Quick Actions
+  quickActions: 'ತ್ವರಿತ ಕ್ರಿಯೆಗಳು',
+  viewAll: 'ಎಲ್ಲವನ್ನೂ ವೀಕ್ಷಿಸಿ >',
+  nutrientsPhTest: 'ಪೋಷಕಾಂಶಗಳು & pH ಪರೀಕ್ಷೆ',
+  recommendACrop: 'ಬೆಳೆ ಶಿಫಾರಸು',
+  seasonalSuggestions: 'ಋತುವಿನ ಸಲಹೆಗಳು',
+  detectPests: 'ಕೀಟಗಳನ್ನು ಪತ್ತೆಹಚ್ಚಿ',
+  identifyGetRemedy: 'ಗುರುತಿಸಿ & ಪರಿಹಾರ ಪಡೆಯಿರಿ',
+  liveCropPrices: 'ಲೈವ್ ಬೆಳೆ ಮಾರುಕಟ್ಟೆ ದರಗಳು',
+  helloGreeting: 'ನಮಸ್ಕಾರ {name}!',
+  goodDayForFarming: 'ಕೃಷಿಗೆ ಶುಭ ದಿನ',
+  notificationsTitle: 'ಅಧಿಸೂಚನೆಗಳು',
+
   // Navigation
   navHome:'ಮುಖಪುಟ',
   navCrops:'ಬೆಳೆಗಳು',
