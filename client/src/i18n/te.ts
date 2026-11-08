@@ -44,6 +44,13 @@ export const te = {
   // Auth
   welcomeBack:'పునఃస్వాగతం',
   loginToAccount:'మీ ఖాతాలోకి ప్రవేశించండి',
+  instantDemoBadge: 'తక్షణ డెమో',
+  quickDemoTitle: 'త్వరిత డెమో లాగిన్ (రమేష్ కుమార్)',
+  quickDemoDesc: 'రమేష్ కుమార్ (మండ్య, కర్ణాటక) గా ఒకే ట్యాప్‌లో లాగిన్ అవ్వండి.',
+  enterAsRamesh: 'రమేష్ కుమార్‌గా ప్రవేశించండి',
+  orWithPhoneOtp: 'లేదా ఫోన్ నంబర్ & OTP ద్వారా',
+  sendVerificationCode: 'ధృవీకరణ కోడ్ పంపండి',
+  demoModeActiveNotice: 'డెమో మోడ్ యాక్టివ్‌గా ఉంది. ఏదైనా 10 అంకెల నంబర్ చెల్లుబాటు అవుతుంది.',
   phoneNumber:'మొబైల్ నంబర్',
   phonePlaceholder:'10 అంకెల మొబైల్ నంబర్ నమోదు చేయండి',
   demoOtpNotice:'డెమో OTP: 123456 — స్థానిక పరీక్ష కొరకు మాత్రమే',

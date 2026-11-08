@@ -44,6 +44,13 @@ export const kn = {
   // Auth
   welcomeBack:'ಮರಳಿ ಸ್ವಾಗತ',
   loginToAccount:'ನಿಮ್ಮ ಖಾತೆಗೆ ಲಾಗಿನ್ ಆಗಿ',
+  instantDemoBadge: 'ತ್ವರಿತ ಡೆಮೊ',
+  quickDemoTitle: 'ತ್ವರಿತ ಡೆಮೊ ಲಾಗಿನ್ (ರಮೇಶ್ ಕುಮಾರ್)',
+  quickDemoDesc: 'ರಮೇಶ್ ಕುಮಾರ್ (ಮಂಡ್ಯ, ಕರ್ನಾಟಕ) ಅವರಾಗಿ ಒಂದೇ ಸ್ಪರ್ಶದಲ್ಲಿ ಪ್ರವೇಶಿಸಿ.',
+  enterAsRamesh: 'ರಮೇಶ್ ಕುಮಾರ್ ಆಗಿ ಪ್ರವೇಶಿಸಿ',
+  orWithPhoneOtp: 'ಅಥವಾ ಮೊಬೈಲ್ ಮತ್ತು OTP ಮೂಲಕ',
+  sendVerificationCode: 'ದೃಢೀಕರಣ ಕೋಡ್ ಕಳುಹಿಸಿ',
+  demoModeActiveNotice: 'ಡೆಮೊ ಮೋಡ್ ಸಕ್ರಿಯವಾಗಿದೆ. ಯಾವುದೇ 10 ಅಂಕಿಯ ಸಂಖ್ಯೆ ಸ್ವೀಕಾರಾರ್ಹ.',
   phoneNumber:'ಮೊಬೈಲ್ ಸಂಖ್ಯೆ',
   phonePlaceholder:'10 ಅಂಕಿಯ ಸಂಖ್ಯೆಯನ್ನು ನಮೂದಿಸಿ',
   demoOtpNotice:'ಡೆಮೊ OTP: 123456 — ಸ್ಥಳೀಯ ಪರೀಕ್ಷೆಗಾಗಿ ಮಾತ್ರ',

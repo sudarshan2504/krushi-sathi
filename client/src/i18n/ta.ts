@@ -44,6 +44,13 @@ export const ta = {
   // Auth
   welcomeBack:'மீண்டும் நல்வரவு',
   loginToAccount:'உங்கள் கணக்கில் உள்நுழைக',
+  instantDemoBadge: 'உடனடி டெமோ',
+  quickDemoTitle: 'விரைவு டெமோ உள்நுழைவு (ரமேஷ் குமார்)',
+  quickDemoDesc: 'ரமேஷ் குமார் (மண்டியா, கர்நாடகா) ஆக ஒரே தட்டலில் நுழையுங்கள்.',
+  enterAsRamesh: 'ரமேஷ் குமாராக நுழையுங்கள்',
+  orWithPhoneOtp: 'அல்லது போன் எண் & OTP மூலம்',
+  sendVerificationCode: 'சரிபார்ப்புக் குறியீட்டை அனுப்பவும்',
+  demoModeActiveNotice: 'டெமோ பயன்முறை செயலில் உள்ளது. எந்த 10 இலக்க எண்ணும் ஏற்றுக்கொள்ளப்படும்.',
   phoneNumber:'கைப்பேசி எண்',
   phonePlaceholder:'10 இலக்க எண்ணை உள்ளிடவும்',
   demoOtpNotice:'டெமோ OTP: 123456 — உள்ளூர் சோதனைக்கு மட்டும்',

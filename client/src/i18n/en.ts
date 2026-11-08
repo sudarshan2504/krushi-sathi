@@ -44,6 +44,13 @@ export const en = {
   // Auth
   welcomeBack: 'Welcome Back',
   loginToAccount: 'Login to your account',
+  instantDemoBadge: 'INSTANT DEMO',
+  quickDemoTitle: 'Quick Demo Login (Ramesh Kumar)',
+  quickDemoDesc: 'One-tap instant access as Ramesh Kumar (Mandya, Karnataka).',
+  enterAsRamesh: 'Enter as Ramesh Kumar',
+  orWithPhoneOtp: 'OR WITH PHONE & OTP',
+  sendVerificationCode: 'Send Verification Code',
+  demoModeActiveNotice: 'Demo mode active. Any 10-digit number accepted.',
   phoneNumber: 'Mobile Number',
   phonePlaceholder: 'Enter 10-digit number',
   demoOtpNotice: 'Demo OTP: 123456 — Local testing only',
