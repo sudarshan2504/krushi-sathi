@@ -24,6 +24,7 @@ import { BrandLogo } from '../components/ui/BrandLogo';
 import { LanguagePill } from '../components/ui/LanguagePill';
 import { IconTile } from '../components/ui/IconTile';
 import { SectionHeader } from '../components/ui/SectionHeader';
+import { LeafCorners } from '../components/ui/LeafCorners';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -77,36 +78,36 @@ export const HomePage: React.FC = () => {
       id: 'soil',
       title: t('checkMySoil'),
       subtitle: t('nutrientsPhTest'),
-      icon: <Layers className="w-5 h-5 text-[#144D29]" />,
-      variant: 'mint' as const,
-      buttonBg: 'bg-emerald-100 text-[#144D29]',
+      icon: <Layers className="w-5 h-5 text-[#144D29]" strokeWidth={2.2} />,
+      tileBg: 'bg-[#DCFCE7] text-[#144D29]',
+      buttonBg: 'bg-[#DCFCE7] text-[#144D29]',
       action: () => navigate('/soil'),
     },
     {
       id: 'crops',
       title: t('recommendACrop'),
       subtitle: t('seasonalSuggestions'),
-      icon: <Sprout className="w-5 h-5 text-[#228B22]" />,
-      variant: 'green' as const,
-      buttonBg: 'bg-emerald-100 text-[#228B22]',
+      icon: <Sprout className="w-5 h-5 text-[#16A34A]" strokeWidth={2.2} />,
+      tileBg: 'bg-[#E8F8EE] text-[#16A34A]',
+      buttonBg: 'bg-[#E8F8EE] text-[#16A34A]',
       action: () => navigate('/crops'),
     },
     {
       id: 'pests',
       title: t('detectPests'),
       subtitle: t('identifyGetRemedy'),
-      icon: <Bug className="w-5 h-5 text-[#D97706]" />,
-      variant: 'peach' as const,
-      buttonBg: 'bg-amber-100 text-[#D97706]',
+      icon: <Bug className="w-5 h-5 text-[#DC2626]" strokeWidth={2.2} />,
+      tileBg: 'bg-[#FEE2E2] text-[#DC2626]',
+      buttonBg: 'bg-[#FEE2E2] text-[#DC2626]',
       action: () => navigate('/diseases'),
     },
     {
       id: 'market',
       title: t('marketPrices'),
       subtitle: t('liveCropPrices'),
-      icon: <TrendingUp className="w-5 h-5 text-[#0284C7]" />,
-      variant: 'blue' as const,
-      buttonBg: 'bg-sky-100 text-[#0284C7]',
+      icon: <TrendingUp className="w-5 h-5 text-[#0284C7]" strokeWidth={2.2} />,
+      tileBg: 'bg-[#E0F2FE] text-[#0284C7]',
+      buttonBg: 'bg-[#E0F2FE] text-[#0284C7]',
       action: () => navigate('/market-prices'),
     },
   ];
@@ -115,17 +116,37 @@ export const HomePage: React.FC = () => {
   const farmerName = user?.name ? user.name.split(' ')[0] : 'Ramesh';
 
   return (
-    <div className="min-h-screen min-h-dvh w-full bg-[#FAF8F2] dark:bg-[#1E2320] flex justify-center pb-28 selection:bg-emerald-100 selection:text-forest-dark overflow-x-hidden">
-      <div className="w-full max-w-[430px] min-h-screen min-h-dvh flex flex-col px-4 pt-3 space-y-4">
+    <div
+      className="min-h-screen min-h-dvh w-full flex justify-center pb-36 safe-bottom selection:bg-emerald-100 selection:text-forest-dark overflow-x-hidden relative"
+      style={{
+        background: 'linear-gradient(180deg, #E6F0F8 0%, #F5F9F6 18%, #FAF8F2 38%, #FAF8F2 100%)',
+      }}
+    >
+      {/* 1. Full-Bleed Hero Background Layer (covers ~46% of viewport height at top) */}
+      <div className="absolute top-0 inset-x-0 h-[46vh] min-h-[360px] max-h-[440px] pointer-events-none overflow-hidden select-none z-0">
+        <img
+          src="/design/home-hero-bg.webp"
+          alt=""
+          className="w-full h-full object-cover object-top"
+          loading="eager"
+        />
+        {/* Soft top gradient scrim so header text stays crisp */}
+        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/70 via-white/20 to-transparent pointer-events-none" />
+      </div>
+
+      <div className="w-full max-w-[430px] min-h-screen min-h-dvh flex flex-col px-4 pt-3 space-y-4 relative z-10">
+        {/* Leaf corner branches hanging in the top corners */}
+        <LeafCorners showLeft showRight className="z-10" />
+
         {/* 1. TOP BAR (3-7% screen height): Logo + Language Pill + Bell with unread dot */}
-        <header className="flex items-center justify-between py-1.5 z-20">
+        <header className="flex items-center justify-between py-1.5 relative z-20">
           <div className="flex items-center gap-2">
             <BrandLogo size="sm" variant="emblem" />
             <div className="flex flex-col">
               <span className="font-extrabold text-sm sm:text-base text-forest-dark dark:text-cream leading-tight">
                 Krushi Sathi
               </span>
-              <span className="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400">
+              <span className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-400">
                 AI Farming Companion
               </span>
             </div>
@@ -153,27 +174,15 @@ export const HomePage: React.FC = () => {
           </div>
         </header>
 
-        {/* 2. GREETING & SUNRISE FARMER SCENE STRIP */}
-        <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#FAF8F2] via-[#FAF8F2]/90 to-transparent pt-3 pb-2 flex items-center justify-between gap-2">
-          <div className="z-10 flex-1 min-w-0">
-            <h1 className="text-[20px] xs:text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0D2B18] dark:text-cream inline-flex items-center gap-1.5 whitespace-nowrap">
-              <span>{t('helloGreeting', { name: farmerName })}</span>
-              <Sprout className="w-5 h-5 text-[#228B22] dark:text-emerald-400 rotate-12 inline-block shrink-0 -mt-1" />
-            </h1>
-            <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 truncate">
-              {t('goodDayForFarming')}
-            </p>
-          </div>
-
-          {/* Farmer Looking toward Sunrise (Flipped to right side matching mockup) */}
-          <div className="w-24 xs:w-28 sm:w-32 h-18 xs:h-20 overflow-hidden select-none shrink-0 rounded-2xl shadow-xs">
-            <img
-              src="/design/farmer-home-strip.webp"
-              alt="Farmer looking over field"
-              className="w-full h-full object-cover object-right"
-              loading="eager"
-            />
-          </div>
+        {/* 2. GREETING: placed over the sky area on the left */}
+        <div className="pt-5 sm:pt-7 pb-1 relative z-20 max-w-[62%]">
+          <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0D2B18] dark:text-cream inline-flex items-center gap-1.5 leading-tight">
+            <span>{t('helloGreeting', { name: farmerName })}</span>
+            <Sprout className="w-5 h-5 text-[#228B22] dark:text-emerald-400 rotate-12 inline-block shrink-0 -mt-1" />
+          </h1>
+          <p className="text-xs sm:text-sm text-zinc-600 dark:text-zinc-400 font-medium mt-1">
+            {t('goodDayForFarming')}
+          </p>
         </div>
 
         {/* 3. WEATHER CARD (Curved Forest Green Header + 5-Day Strip + Peach Alert) */}
@@ -199,24 +208,24 @@ export const HomePage: React.FC = () => {
                 whileHover={shouldReduceMotion ? {} : { scale: 1.01 }}
                 whileTap={shouldReduceMotion ? {} : { scale: 0.97 }}
                 onClick={item.action}
-                className="p-4 rounded-3xl bg-white dark:bg-zinc-800/95 border border-zinc-100 dark:border-zinc-700/60 shadow-card flex flex-col justify-between min-h-[120px] text-left transition select-none cursor-pointer"
+                className="p-3.5 sm:p-4 rounded-3xl bg-white dark:bg-zinc-800 border border-zinc-100 dark:border-zinc-700/60 shadow-card flex items-center justify-between text-left transition select-none cursor-pointer hover:shadow-md"
               >
-                <div className="flex items-center justify-between w-full mb-3">
-                  <IconTile variant={item.variant} size="md">
+                <div className="flex flex-col min-w-0 pr-1">
+                  <div className={`w-10 h-10 rounded-2xl flex items-center justify-center mb-2 shrink-0 ${item.tileBg}`}>
                     {item.icon}
-                  </IconTile>
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center ${item.buttonBg}`}>
-                    <ChevronRight className="w-4 h-4 stroke-[2.5]" />
+                  </div>
+                  <div className="min-w-0">
+                    <h3 className="text-[13px] sm:text-sm font-bold text-[#0D2B18] dark:text-zinc-100 leading-snug">
+                      {item.title}
+                    </h3>
+                    <p className="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 line-clamp-1">
+                      {item.subtitle}
+                    </p>
                   </div>
                 </div>
 
-                <div>
-                  <h3 className="text-sm font-bold text-[#0D2B18] dark:text-zinc-100 leading-tight">
-                    {item.title}
-                  </h3>
-                  <p className="text-[11px] text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 line-clamp-1">
-                    {item.subtitle}
-                  </p>
+                <div className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 self-center ml-1.5 ${item.buttonBg}`}>
+                  <ChevronRight className="w-4 h-4 stroke-[2.5]" />
                 </div>
               </motion.button>
             ))}

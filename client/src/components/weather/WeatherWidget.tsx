@@ -116,15 +116,15 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
   ];
 
   return (
-    <div className="w-full select-none">
+    <div className="w-full select-none relative z-20">
       <motion.div
         initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.25 }}
         className="rounded-3xl overflow-hidden shadow-card border border-zinc-200/60 dark:border-zinc-700/60 bg-white dark:bg-zinc-800"
       >
-        {/* 1. UPPER SECTION: Deep Forest Green Container */}
-        <div className="bg-gradient-to-b from-[#144D29] to-[#0E3A1E] text-white p-4 sm:p-5 relative overflow-hidden">
+        {/* 1. UPPER SECTION: Deep Forest Green Container with Curved Waves */}
+        <div className="bg-gradient-to-b from-[#144D29] to-[#0D351B] text-white p-4 sm:p-5 pb-8 relative overflow-hidden">
           {/* Subtle curved background overlay */}
           <div
             className="absolute -right-6 -bottom-10 w-44 h-44 opacity-10 pointer-events-none"
@@ -136,7 +136,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
           </div>
 
           {/* Location row with Map Pin + "Mandya, Karnataka" + "Change" pill + Refresh */}
-          <div className="flex items-center justify-between pb-3">
+          <div className="flex items-center justify-between pb-3 relative z-10">
             <div className="flex items-center gap-2 min-w-0">
               <MapPin className="w-4 h-4 text-emerald-300 shrink-0" strokeWidth={2.2} />
               <span className="font-bold text-sm tracking-tight truncate">
@@ -162,7 +162,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
           </div>
 
           {/* Temperature + Condition & Inline Stats */}
-          <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center justify-between pt-1 pb-2 relative z-10">
             <div className="flex items-center gap-3">
               <CloudSun className="w-12 h-12 text-amber-400 shrink-0" strokeWidth={1.8} />
               <div>
@@ -175,47 +175,64 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
               </div>
             </div>
 
+            {/* Subtle Vertical Divider */}
+            <div className="h-10 w-px bg-white/20 mx-2 shrink-0" />
+
             {/* Right Stats: Humidity & Wind */}
-            <div className="flex flex-col items-end gap-1.5 text-xs text-emerald-100/90 font-medium tabular-nums">
+            <div className="flex flex-col items-start gap-1 text-xs text-emerald-100/90 font-medium tabular-nums">
               <div className="inline-flex items-center gap-1.5">
-                <Droplets className="w-4 h-4 text-sky-300 shrink-0" strokeWidth={2} />
+                <Droplets className="w-3.5 h-3.5 text-sky-300 shrink-0" strokeWidth={2} />
                 <span>
                   <AnimatedCounter value={weather?.humidity ?? 59} suffix="%" /> Humidity
                 </span>
               </div>
               <div className="inline-flex items-center gap-1.5">
-                <Wind className="w-4 h-4 text-emerald-300 shrink-0" strokeWidth={2} />
+                <Wind className="w-3.5 h-3.5 text-emerald-300 shrink-0" strokeWidth={2} />
                 <span>
                   <AnimatedCounter value={weather?.windSpeedKmH ?? 8} suffix=" km/h" /> Wind
                 </span>
               </div>
             </div>
           </div>
+
+          {/* Hill-shaped wave bottom edge with lighter green highlight curves */}
+          <div className="absolute inset-x-0 bottom-0 pointer-events-none select-none z-0">
+            <svg viewBox="0 0 400 36" fill="none" preserveAspectRatio="none" className="w-full h-8">
+              <path
+                d="M 0 36 Q 100 12 200 24 T 400 16 L 400 36 L 0 36 Z"
+                fill="rgba(34, 139, 34, 0.35)"
+              />
+              <path
+                d="M 0 36 Q 120 20 240 10 T 400 26 L 400 36 L 0 36 Z"
+                fill="rgba(132, 204, 22, 0.22)"
+              />
+            </svg>
+          </div>
         </div>
 
-        {/* 2. LOWER SECTION: 5-Day Forecast Strip + Peach Alert */}
-        <div className="p-3 sm:p-4 bg-white dark:bg-zinc-800 space-y-3">
-          {/* 5-Day Forecast Horizontal Strip */}
-          <div className="relative">
-            <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
+        {/* 2. LOWER SECTION: Overlapping White Forecast Tray + Peach Alert */}
+        <div className="px-3 sm:px-4 pb-4 pt-0 bg-white dark:bg-zinc-800 space-y-3 relative z-10">
+          {/* Overlapping White Forecast Tray (negative top margin overlaps green section) */}
+          <div className="-mt-5 rounded-2xl bg-white dark:bg-zinc-850 p-2 sm:p-2.5 shadow-md border border-zinc-100 dark:border-zinc-700/70">
+            <div className="grid grid-cols-5 divide-x divide-zinc-100 dark:divide-zinc-700/60">
               {forecastDays.map((day, idx) => {
                 const isToday = idx === 0;
                 return (
                   <div
                     key={idx}
-                    className={`py-2 px-1 rounded-2xl flex flex-col items-center justify-center text-center transition-colors ${
+                    className={`py-1.5 px-0.5 flex flex-col items-center justify-center text-center transition-colors ${
                       isToday
-                        ? 'bg-[#DCFCE7] dark:bg-emerald-950/50 text-[#144D29] dark:text-emerald-300 font-bold shadow-xs'
+                        ? 'rounded-xl bg-[#DCFCE7] dark:bg-emerald-950/60 text-[#144D29] dark:text-emerald-300 font-bold shadow-xs'
                         : 'bg-transparent text-zinc-600 dark:text-zinc-400'
                     }`}
                   >
-                    <span className="text-[11px] mb-1 font-semibold block">
+                    <span className="text-[11px] mb-1 font-semibold block leading-tight">
                       {isToday ? 'Today' : day.dayName}
                     </span>
                     <div className="my-0.5">
                       {getWeatherIcon(day.icon, 'w-4 h-4 sm:w-5 sm:h-5')}
                     </div>
-                    <span className="text-[11px] sm:text-xs font-bold text-zinc-800 dark:text-zinc-100 tabular-nums">
+                    <span className="text-[10px] sm:text-[11px] font-bold text-zinc-800 dark:text-zinc-100 tabular-nums whitespace-nowrap tracking-tight">
                       {day.tempMax}° / {day.tempMin || Math.round(day.tempMax * 0.7)}°
                     </span>
                     <span className="text-[10px] text-blue-600 dark:text-blue-400 font-semibold tabular-nums mt-0.5">
@@ -227,16 +244,20 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
             </div>
           </div>
 
-          {/* 3. Peach Alert Banner */}
-          <div className="rounded-2xl bg-[#FEF3C7] dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-800/40 p-3 flex items-start gap-2.5 text-left shadow-xs">
-            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+          {/* 3. Soft Peach Alert Banner (#FDEBD3) */}
+          <div className="rounded-2xl bg-[#FDEBD3] dark:bg-[#382818] border border-[#FAD6A5]/80 dark:border-[#5C3D1E] p-3 flex items-center gap-3 text-left shadow-xs">
+            <div className="w-8 h-8 rounded-full bg-[#F6C68F] dark:bg-[#5C3D1E] flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-4 h-4 text-[#C05621] dark:text-[#F6AD55]" strokeWidth={2.2} />
+            </div>
             <div className="flex-1 min-w-0">
-              <p className="text-xs text-amber-900 dark:text-amber-200 leading-snug font-medium">
-                <strong className="font-bold">Rain expected today (60% chance).</strong> Consider
-                completing field spraying or harvesting early.
+              <p className="text-xs text-[#0D2B18] dark:text-zinc-100 font-bold leading-tight">
+                Rain expected today (60% chance).
+              </p>
+              <p className="text-[11px] text-zinc-600 dark:text-zinc-300 font-medium leading-tight mt-0.5">
+                Consider completing field spraying or harvesting early.
               </p>
             </div>
-            <ChevronRight className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0 self-center" />
+            <ChevronRight className="w-4 h-4 text-zinc-500 shrink-0" />
           </div>
         </div>
       </motion.div>

@@ -19,8 +19,8 @@ const FULLSCREEN_ROUTES = ['/', '/language', '/login', '/register'];
 // Routes that manage their own mockup-exact integrated top bar
 const HIDE_HEADER_ROUTES = ['/home', '/profile', '/market-prices'];
 
-// Routes that use full width (chat page needs no horizontal padding)
-const FULL_WIDTH_ROUTES = ['/chat'];
+// Routes that use full width (chat and home page manage their own edge-to-edge layout)
+const FULL_WIDTH_ROUTES = ['/chat', '/home'];
 
 export const Layout: React.FC = () => {
   const location = useLocation();
