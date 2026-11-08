@@ -1,5 +1,6 @@
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import authRoutes from './routes/authRoutes';
 import weatherRoutes from './routes/weatherRoutes';
@@ -11,11 +12,15 @@ import chatRoutes from './routes/chatRoutes';
 import profileRoutes from './routes/profileRoutes';
 import locationRoutes from './routes/locationRoutes';
 import seasonRoutes from './routes/seasonRoutes';
+import marketRoutes from './routes/marketRoutes';
 
 import path from 'path';
 import { config } from './config';
 
 const app = express();
+
+// Security HTTP headers
+app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 
 // Middleware
 // Dynamically configurable CORS supporting localhost, LAN IPs, Tunnels, Capacitor & Production URLs
@@ -119,6 +124,7 @@ app.use('/api/soil', soilRoutes);
 app.use('/api/crops', cropRoutes);
 app.use('/api/lifecycle', lifecycleRoutes);
 app.use('/api/diseases', diseaseRoutes);
+app.use('/api/market-prices', marketRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/location', locationRoutes);

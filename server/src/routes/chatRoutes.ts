@@ -1,4 +1,4 @@
-import { Router, Response } from 'express';
+import { Router, Request, Response } from 'express';
 import { optionalAuthMiddleware, AuthRequest, authMiddleware } from '../middleware/auth';
 import prisma from '../utils/prisma';
 import {
@@ -392,7 +392,17 @@ router.post('/messages', optionalAuthMiddleware, async (req: AuthRequest, res: R
 });
 
 // Synthesize natural regional speech using Gemini 3.8 Flash TTS or Edge Regional Neural TTS with graceful browser fallback
-router.post('/tts', async (req, res) => {
+router.post('/tts', async (req: Request, res: Response) => {
+  const rateLimitKey = `tts-${req.ip || 'anon'}`;
+  if (isRateLimited(rateLimitKey)) {
+    return res.status(429).json({
+      success: false,
+      fallbackToBrowser: true,
+      message: 'Rate limit exceeded for speech synthesis. Falling back to browser audio.',
+      data: { provider: 'browser' },
+    });
+  }
+
   try {
     const { text, language = 'en', gender = 'female', provider = 'auto', speed = 1.0 } = req.body;
     if (!text || typeof text !== 'string' || text.trim() === '') {
@@ -533,8 +543,15 @@ router.get('/status', (req, res) => {
   });
 });
 
-// Update AI Keys dynamically (Backend only - never exposed to client)
-router.post('/keys', (req, res) => {
+// Update AI Keys dynamically (Protected - disabled in production)
+router.post('/keys', (req: Request, res: Response) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({
+      success: false,
+      message: 'Modifying API keys via HTTP is disabled in production environments.',
+    });
+  }
+
   try {
     const { geminiApiKey, geminiModel } = req.body;
 

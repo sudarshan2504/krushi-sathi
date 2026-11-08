@@ -29,6 +29,7 @@ export interface WeatherData {
   nextWeekSummary: string;
   forecast7Days: WeatherDay[];
   forecast8To14Days: WeatherDay[];
+  fiveDayRainProbability?: number[];
   farmingAlert: string;
   farmingAlertKn: string;
   farmingAlertTa: string;
@@ -229,6 +230,7 @@ export async function fetchWeatherData(districtName?: string, customLat?: number
           nextWeekSummary: forecast8To14Days.some(d => d.rainChance > 40) ? 'Light Rain' : 'Partly Cloudy',
           forecast7Days,
           forecast8To14Days,
+          fiveDayRainProbability: forecast7Days.slice(0, 5).map((d) => d.rainChance),
           farmingAlert,
           farmingAlertKn,
           farmingAlertTa,
@@ -319,6 +321,7 @@ function getDemoFallbackWeather(district: string, state: string, lat: number, lo
     nextWeekSummary: 'Light Rain',
     forecast7Days: sampleDays,
     forecast8To14Days: sampleNextWeek,
+    fiveDayRainProbability: sampleDays.slice(0, 5).map((d) => d.rainChance),
     farmingAlert: 'Rain expected on Monday & Tuesday (65-70% chance). Consider completing field spraying and harvesting before rain.',
     farmingAlertKn: 'ಸೋಮವಾರ ಮತ್ತು ಮಂಗಳವಾರ ಮಳೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ (65-70% ಸಂಭವ). ಮಳೆ ಬರುವ ಮುನ್ನ ಸಿಂಪಡಣೆ ಕಾರ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ.',
     farmingAlertTa: 'திங்கள் மற்றும் செவ்வாய்க்கிழமைகளில் மழை வாய்ப்பு (65-70%). மழைக்கு முன் தெளிப்பு பணிகளை முடிக்கவும்.',

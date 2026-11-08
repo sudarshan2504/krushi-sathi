@@ -371,3 +371,59 @@ export async function guestLogin(preferredPhone?: string, preferredName?: string
     isNewUser,
   };
 }
+
+/**
+ * Instant Demo Login as Ramesh Kumar (Mandya, Karnataka)
+ * Explicitly provisions 2.5 Acres, Maddur Taluk, Koppa Hobli
+ */
+export async function demoLogin() {
+  const phone = '9876543210';
+  const name = 'Ramesh Kumar';
+
+  let user = await prisma.user.findFirst({
+    where: { phone },
+  });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        phone,
+        name,
+        language: 'en',
+        state: 'Karnataka',
+        district: 'Mandya',
+        taluk: 'Maddur',
+        hobli: 'Koppa',
+        village: 'Koppa',
+        farmSize: 2.5,
+        farmUnit: 'Acres',
+      },
+    });
+  } else if (!user.taluk || !user.hobli) {
+    user = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        taluk: user.taluk || 'Maddur',
+        hobli: user.hobli || 'Koppa',
+        village: user.village || 'Koppa',
+      },
+    });
+  }
+
+  const token = jwt.sign(
+    {
+      userId: user.id,
+      phone: user.phone,
+      name: user.name,
+      language: user.language,
+    },
+    config.jwtSecret,
+    { expiresIn: '7d' }
+  );
+
+  return {
+    token,
+    user,
+    isNewUser: false,
+  };
+}

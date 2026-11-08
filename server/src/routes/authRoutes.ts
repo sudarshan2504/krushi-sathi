@@ -7,6 +7,7 @@ import {
   registerFarmer,
   verifyFirebaseLogin,
   guestLogin,
+  demoLogin,
 } from '../services/authService';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { authRateLimiter } from '../middleware/rateLimiter';
@@ -17,6 +18,39 @@ const router = Router();
 
 // Apply simple rate limiting (10 requests per minute per IP) to all /api/auth routes
 router.use(authRateLimiter);
+
+/**
+ * POST /api/auth/demo-login
+ * - Instant one-tap demo login as Ramesh Kumar (Mandya, Karnataka).
+ * - Guarded by DEMO_MODE !== 'false'.
+ */
+router.post('/demo-login', async (req: Request, res: Response) => {
+  if (process.env.DEMO_MODE === 'false') {
+    return res.status(403).json({ success: false, message: 'Demo mode is disabled in production.' });
+  }
+
+  try {
+    const result = await demoLogin();
+
+    res.cookie('token', result.token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+      sameSite: 'lax',
+    });
+
+    res.json({
+      success: true,
+      data: result,
+      message: 'Logged in as Ramesh Kumar (Mandya, Karnataka).',
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      success: false,
+      message: err.message || 'Demo login failed',
+    });
+  }
+});
 
 /**
  * POST /api/auth/guest-login

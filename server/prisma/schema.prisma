@@ -21,6 +21,7 @@ model User {
   latitude            Float?
   longitude           Float?
   taluk               String?
+  hobli               String?
   locationAccuracy    Float?               // metres
   locationSource      String?              // gps | ip | manual
   createdAt           DateTime             @default(now())
@@ -48,6 +49,7 @@ model SoilAssessment {
   moistureLevel       String?              // dry, slightly_moist, optimal, wet_waterlogged
   organicMatter       String?              // low, medium, high
   taluk               String?
+  hobli               String?
   landSizeGuntas      Float?
   category            String?              // preferred crop category
   ph                  Float?
