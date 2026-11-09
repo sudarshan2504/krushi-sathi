@@ -254,30 +254,56 @@ export const api = {
   },
 
   weather: {
-    async get(district = 'Mandya', lat?: number, lon?: number): Promise<WeatherData> {
-      const cacheKey = `weather_${district}_${lat ?? 0}_${lon ?? 0}`;
-      const cached = getCachedData<WeatherData>(cacheKey, 30 * 60 * 1000); // 30 min freshness
+    async get(district?: string, lat?: number, lon?: number, allowDemo?: boolean): Promise<WeatherData> {
+      const cacheKey = `weather_${district || 'gps'}_${lat !== undefined ? lat.toFixed(2) : 0}_${lon !== undefined ? lon.toFixed(2) : 0}`;
+      const cached = getCachedData<WeatherData>(cacheKey, 20 * 60 * 1000); // 20 min freshness
 
       if (!navigator.onLine && cached) {
-        return cached;
+        return {
+          ...cached,
+          isStale: true,
+          dataSource: `${cached.dataSource} (Offline Client Cache)`
+        };
       }
 
-      const params = new URLSearchParams({ district });
+      const params = new URLSearchParams();
+      if (district) {
+        params.append('district', district);
+      }
       if (lat !== undefined && lon !== undefined) {
         params.append('lat', String(lat));
         params.append('lon', String(lon));
       }
+      if (allowDemo) {
+        params.append('demo', 'true');
+      }
 
       try {
-        const data = await fetchWithRetry<WeatherData>(`${API_BASE}/weather?${params.toString()}`, {}, 2, 8000);
+        const data = await fetchWithRetry<WeatherData>(`${API_BASE}/weather?${params.toString()}`, {}, 1, 8000);
         setCachedData(cacheKey, data);
         return data;
       } catch (err) {
         if (cached) {
-          return cached;
+          return {
+            ...cached,
+            isStale: true,
+            dataSource: `${cached.dataSource} (Offline Client Cache)`
+          };
         }
         throw err;
       }
+    },
+
+    async reverseGeocode(lat: number, lon: number): Promise<{
+      location: string;
+      villageOrTown?: string;
+      district?: string;
+      state?: string;
+      country?: string;
+      lat: number;
+      lon: number;
+    }> {
+      return await fetchWithRetry(`${API_BASE}/weather/reverse?lat=${lat}&lon=${lon}`, {}, 1, 6000);
     },
 
     async getDistricts(): Promise<{ name: string; state: string; lat: number; lon: number }[]> {

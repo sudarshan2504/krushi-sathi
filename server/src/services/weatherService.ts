@@ -79,6 +79,142 @@ export const DISTRICT_COORDINATES: Record<string, { lat: number; lon: number; st
 import { getLocationConditions } from './seasonService';
 import { findLocationByName, findLocationByCoords } from '../data/indiaLocations';
 
+export interface ReverseGeocodeResult {
+  location: string;
+  villageOrTown?: string;
+  district?: string;
+  state?: string;
+  country?: string;
+  lat: number;
+  lon: number;
+}
+
+const REVERSE_GEOCODE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
+const reverseGeocodeCache = new Map<string, { data: ReverseGeocodeResult; timestamp: number }>();
+
+let lastNominatimTimestamp = 0;
+const NOMINATIM_MIN_INTERVAL_MS = 1100; // 1.1s spacing to respect Nominatim 1 req/sec policy
+
+async function throttleNominatim(): Promise<void> {
+  const elapsed = Date.now() - lastNominatimTimestamp;
+  if (elapsed < NOMINATIM_MIN_INTERVAL_MS) {
+    await new Promise((resolve) => setTimeout(resolve, NOMINATIM_MIN_INTERVAL_MS - elapsed));
+  }
+  lastNominatimTimestamp = Date.now();
+}
+
+/**
+ * Reverse geocodes coordinates to a human-readable location label
+ * format: village/town, district, state.
+ * If reverse geocode fails, returns "Your location (lat, lon)" instead of a wrong district name.
+ */
+export async function reverseGeocodeCoords(lat: number, lon: number): Promise<ReverseGeocodeResult> {
+  const roundedLat = Math.round(lat * 1000) / 1000;
+  const roundedLon = Math.round(lon * 1000) / 1000;
+  const cacheKey = `${roundedLat.toFixed(3)},${roundedLon.toFixed(3)}`;
+
+  const cached = reverseGeocodeCache.get(cacheKey);
+  if (cached && Date.now() - cached.timestamp < REVERSE_GEOCODE_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  const coordFallback = `Your location (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`;
+
+  try {
+    await throttleNominatim();
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000); // 6s timeout
+
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=14&addressdetails=1`;
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'KrushiSathiApp/2.0 (contact: support@krushisathi.in; agricultural advisory)',
+        'Accept': 'application/json',
+      },
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = (await res.json()) as any;
+      const addr = data.address || {};
+
+      const villageOrTown =
+        addr.village ||
+        addr.town ||
+        addr.city ||
+        addr.suburb ||
+        addr.hamlet ||
+        addr.municipality ||
+        addr.county ||
+        '';
+
+      const district = addr.state_district || addr.district || addr.county || '';
+      const state = addr.state || addr.region || addr.province || '';
+      const country = addr.country || '';
+
+      let formattedLocation = '';
+      if (villageOrTown && district && villageOrTown.toLowerCase() !== district.toLowerCase()) {
+        formattedLocation = `${villageOrTown}, ${district}`;
+      } else if (villageOrTown && state) {
+        formattedLocation = `${villageOrTown}, ${state}`;
+      } else if (district && state) {
+        formattedLocation = `${district}, ${state}`;
+      } else if (villageOrTown) {
+        formattedLocation = `${villageOrTown}${country ? `, ${country}` : ''}`;
+      } else if (district) {
+        formattedLocation = `${district}${country ? `, ${country}` : ''}`;
+      } else if (state) {
+        formattedLocation = `${state}${country ? `, ${country}` : ''}`;
+      } else if (data.name) {
+        formattedLocation = `${data.name}${country ? `, ${country}` : ''}`;
+      } else {
+        formattedLocation = coordFallback;
+      }
+
+      const result: ReverseGeocodeResult = {
+        location: formattedLocation,
+        villageOrTown: villageOrTown || undefined,
+        district: district || undefined,
+        state: state || undefined,
+        country: country || undefined,
+        lat,
+        lon,
+      };
+
+      reverseGeocodeCache.set(cacheKey, { data: result, timestamp: Date.now() });
+      return result;
+    }
+  } catch (err) {
+    console.warn(`[WeatherService] Reverse geocode lookup failed for (${lat}, ${lon}):`, (err as any)?.message || err);
+  }
+
+  // Fallback 1: match known India locations database
+  const locByCoord = findLocationByCoords(lat, lon);
+  if (locByCoord) {
+    const result: ReverseGeocodeResult = {
+      location: `${locByCoord.taluk || locByCoord.district}, ${locByCoord.state}`,
+      villageOrTown: locByCoord.taluk || undefined,
+      district: locByCoord.district,
+      state: locByCoord.state,
+      country: 'India',
+      lat,
+      lon,
+    };
+    reverseGeocodeCache.set(cacheKey, { data: result, timestamp: Date.now() });
+    return result;
+  }
+
+  // Fallback 2: "Your location (lat, lon)"
+  const fallbackResult: ReverseGeocodeResult = {
+    location: coordFallback,
+    lat,
+    lon,
+  };
+  return fallbackResult;
+}
+
 interface WeatherCacheEntry {
   data: WeatherData;
   timestamp: number;
@@ -89,47 +225,54 @@ const MAX_WEATHER_CACHE_SIZE = 100;
 const weatherMemoryCache = new Map<string, WeatherCacheEntry>();
 const inFlightWeatherRequests = new Map<string, Promise<WeatherData>>();
 
-export async function fetchWeatherData(districtName?: string, customLat?: number, customLon?: number): Promise<WeatherData> {
-  // Never silently default to Mandya! Check explicit coords or district
+export async function fetchWeatherData(
+  districtName?: string,
+  customLat?: number,
+  customLon?: number,
+  allowDemoFallback = false
+): Promise<WeatherData> {
   let lat = customLat;
   let lon = customLon;
-  let state = 'Karnataka';
+  let state = '';
   let district = districtName || '';
+  let locationLabel = '';
 
-  if (lat === undefined || lon === undefined) {
+  if (lat !== undefined && lon !== undefined) {
+    // When lat/lon are given, use them directly and never substitute Mandya or default to Karnataka!
+    const geocoded = await reverseGeocodeCoords(lat, lon);
+    locationLabel = geocoded.location;
+    district = geocoded.district || geocoded.villageOrTown || districtName || '';
+    state = geocoded.state || '';
+  } else {
+    // Fall back to district name lookup
     if (!district) {
       throw new Error('Farm location is missing. Please set your farm location (district or GPS) to load weather.');
     }
 
-    // Try finding in INDIA_LOCATIONS first
     const locByName = findLocationByName(undefined, district);
     if (locByName) {
       lat = locByName.latitude;
       lon = locByName.longitude;
       state = locByName.state;
       district = locByName.district;
+      locationLabel = `${district}, ${state}`;
     } else if (DISTRICT_COORDINATES[district]) {
       const coord = DISTRICT_COORDINATES[district];
       lat = coord.lat;
       lon = coord.lon;
       state = coord.state;
+      locationLabel = `${district}, ${state}`;
     } else {
       // Coordinate fallback for unknown district in Karnataka
       lat = 12.9716;
       lon = 77.5946;
       state = 'Karnataka';
-    }
-  } else {
-    // If coords are provided, reverse look up district/state
-    const locByCoord = findLocationByCoords(lat, lon);
-    if (locByCoord) {
-      state = locByCoord.state;
-      district = district || locByCoord.district;
+      locationLabel = `${district}, Karnataka`;
     }
   }
 
-  const finalLat = lat ?? 12.5244;
-  const finalLon = lon ?? 76.8969;
+  const finalLat = lat;
+  const finalLon = lon;
   const roundedLat = Math.round(finalLat * 100) / 100;
   const roundedLon = Math.round(finalLon * 100) / 100;
   const cacheKey = `${roundedLat.toFixed(2)},${roundedLon.toFixed(2)}`;
@@ -148,127 +291,156 @@ export async function fetchWeatherData(districtName?: string, customLat?: number
 
   const fetchPromise = (async () => {
     try {
-      const { location, season } = getLocationConditions(finalLat, finalLon, state, district);
+      const { location, season } = getLocationConditions(finalLat, finalLon, state || undefined, district || undefined);
       const url = `https://api.open-meteo.com/v1/forecast?latitude=${finalLat}&longitude=${finalLon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum&timezone=auto&forecast_days=14`;
 
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 4000); // 4 sec timeout
+      // 8s timeout with 1 retry
+      let data: any = null;
+      let lastFetchErr: any = null;
 
-      try {
-        const res = await fetch(url, { signal: controller.signal });
-        clearTimeout(timeout);
-
-        if (!res.ok) {
-          throw new Error(`Open-Meteo HTTP ${res.status}`);
+      for (let attempt = 0; attempt <= 1; attempt++) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 8000);
+        try {
+          const res = await fetch(url, { signal: controller.signal });
+          clearTimeout(timeout);
+          if (!res.ok) {
+            throw new Error(`Open-Meteo HTTP ${res.status}`);
+          }
+          data = await res.json();
+          break; // Succeeded!
+        } catch (fetchErr) {
+          clearTimeout(timeout);
+          lastFetchErr = fetchErr;
+          if (attempt === 0) {
+            await new Promise((r) => setTimeout(r, 600)); // Delay 600ms before retry
+          }
         }
-
-        const data = (await res.json()) as any;
-        const current = data.current;
-        const daily = data.daily;
-
-        const { condition, icon } = interpretWmoCode(current.weather_code);
-        const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-        const allDays: WeatherDay[] = daily.time.map((t: string, idx: number) => {
-          const d = new Date(t);
-          const code = daily.weather_code[idx] || 0;
-          const { condition: dayCond, icon: dayIcon } = interpretWmoCode(code);
-          return {
-            date: t,
-            dayName: idx === 0 ? 'Today' : dayNames[d.getDay()],
-            weatherCode: code,
-            condition: dayCond,
-            icon: dayIcon,
-            tempMax: Math.round(daily.temperature_2m_max[idx] || 30),
-            tempMin: Math.round(daily.temperature_2m_min[idx] || 22),
-            rainChance: Math.round(daily.precipitation_probability_max[idx] || 0),
-            precipitationMm: parseFloat((daily.precipitation_sum[idx] || 0).toFixed(1)),
-          };
-        });
-
-        const forecast7Days = allDays.slice(0, 7);
-        const forecast8To14Days = allDays.slice(7, 14);
-
-        const minT = Math.min(...forecast7Days.map(d => d.tempMin));
-        const maxT = Math.max(...forecast7Days.map(d => d.tempMax));
-        const nextMinT = Math.min(...forecast8To14Days.map(d => d.tempMin));
-        const nextMaxT = Math.max(...forecast8To14Days.map(d => d.tempMax));
-
-        // Determine upcoming rain advisory
-        const rainyDay = forecast7Days.find(d => d.rainChance >= 45);
-        let farmingAlert = 'Weather is favorable for standard field operations and weeding.';
-        let farmingAlertKn = 'ಸಾಮಾನ್ಯ ಕೃಷಿ ಕೆಲಸಗಳಿಗೆ ಮತ್ತು ಕಳೆ ತೆಗೆಯಲು ಹವಾಮಾನ ಅನುಕೂಲಕರವಾಗಿದೆ.';
-        let farmingAlertTa = 'நில உழவு மற்றும் களை எடுப்பதற்கு வானிலை சாதகமாக உள்ளது.';
-        let farmingAlertTe = 'పొలం పనులకు మరియు కలుపు తీతకు వాతావరణం అనుకూలంగా ఉంది.';
-
-        if (rainyDay) {
-          farmingAlert = `Rain expected on ${rainyDay.dayName} (${rainyDay.rainChance}% chance). Consider completing field spraying before rain.`;
-          farmingAlertKn = `${rainyDay.dayName} ರಂದು ಮಳೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ (${rainyDay.rainChance}% ಸಂಭವ). ಮಳೆ ಬರುವ ಮುನ್ನ ಸಿಂಪಡಣೆ ಕಾರ್ಯ ಮುಗಿಸಿ.`;
-          farmingAlertTa = `${rainyDay.dayName} அன்று மழை பெய்ய வாய்ப்புள்ளது (${rainyDay.rainChance}%). மழைக்கு முன் தெளிப்பு பணிகளை முடிக்கவும்.`;
-          farmingAlertTe = `${rainyDay.dayName} నాడు వర్షం పడే అవకాశం ఉంది (${rainyDay.rainChance}%). వర్షానికి ముందే మందుల పిచికారీ పూర్తి చేయండి.`;
-        }
-
-        const effectiveDistrict = district || 'Mandya';
-        const effectiveState = state || 'Karnataka';
-
-        const liveResult: WeatherData = {
-          location: `${effectiveDistrict}, ${effectiveState}`,
-          state: effectiveState,
-          district: effectiveDistrict,
-          latitude: finalLat,
-          longitude: finalLon,
-          temperature: Math.round(current.temperature_2m),
-          condition,
-          weatherCode: current.weather_code,
-          icon,
-          humidity: Math.round(current.relative_humidity_2m),
-          windSpeedKmH: Math.round(current.wind_speed_10m),
-          rainfallProbability: forecast7Days[0]?.rainChance || 0,
-          expectedPrecipitationMm: forecast7Days[0]?.precipitationMm || 0,
-          weekRange: `${minT}° - ${maxT}°`,
-          nextWeekRange: `${nextMinT}° - ${nextMaxT}°`,
-          nextWeekSummary: forecast8To14Days.some(d => d.rainChance > 40) ? 'Light Rain' : 'Partly Cloudy',
-          forecast7Days,
-          forecast8To14Days,
-          fiveDayRainProbability: forecast7Days.slice(0, 5).map((d) => d.rainChance),
-          farmingAlert,
-          farmingAlertKn,
-          farmingAlertTa,
-          farmingAlertTe,
-          lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          isDemoFallback: false,
-          dataSource: 'Live Open-Meteo API',
-          agroZone: location?.agroZone,
-          agroZoneCode: location?.agroZoneCode,
-          agroZoneDescription: location?.agroZoneDescription,
-          typicalSoils: location?.typicalSoils,
-          taluk: location?.taluk,
-          seasonInfo: season || undefined,
-        };
-
-        // Cache live result
-        weatherMemoryCache.set(cacheKey, { data: liveResult, timestamp: Date.now() });
-        if (weatherMemoryCache.size > MAX_WEATHER_CACHE_SIZE) {
-          const oldestKey = weatherMemoryCache.keys().next().value;
-          if (oldestKey) weatherMemoryCache.delete(oldestKey);
-        }
-
-        return liveResult;
-      } finally {
-        clearTimeout(timeout);
       }
-    } catch (err) {
-      // If live call fails or times out, return the last cached value (even if expired)
+
+      if (!data) {
+        throw lastFetchErr || new Error('Weather API request failed after retry');
+      }
+
+      const current = data.current;
+      const daily = data.daily;
+
+      const { condition, icon } = interpretWmoCode(current.weather_code);
+      const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+      const allDays: WeatherDay[] = daily.time.map((t: string, idx: number) => {
+        const d = new Date(t);
+        const code = daily.weather_code[idx] || 0;
+        const { condition: dayCond, icon: dayIcon } = interpretWmoCode(code);
+        return {
+          date: t,
+          dayName: idx === 0 ? 'Today' : dayNames[d.getDay()],
+          weatherCode: code,
+          condition: dayCond,
+          icon: dayIcon,
+          tempMax: Math.round(daily.temperature_2m_max[idx] || 30),
+          tempMin: Math.round(daily.temperature_2m_min[idx] || 22),
+          rainChance: Math.round(daily.precipitation_probability_max[idx] || 0),
+          precipitationMm: parseFloat((daily.precipitation_sum[idx] || 0).toFixed(1)),
+        };
+      });
+
+      const forecast7Days = allDays.slice(0, 7);
+      const forecast8To14Days = allDays.slice(7, 14);
+
+      const minT = Math.min(...forecast7Days.map((d) => d.tempMin));
+      const maxT = Math.max(...forecast7Days.map((d) => d.tempMax));
+      const nextMinT = Math.min(...forecast8To14Days.map((d) => d.tempMin));
+      const nextMaxT = Math.max(...forecast8To14Days.map((d) => d.tempMax));
+
+      // Determine upcoming rain advisory
+      const rainyDay = forecast7Days.find((d) => d.rainChance >= 45);
+      let farmingAlert = 'Weather is favorable for standard field operations and weeding.';
+      let farmingAlertKn = 'ಸಾಮಾನ್ಯ ಕೃಷಿ ಕೆಲಸಗಳಿಗೆ ಮತ್ತು ಕಳೆ ತೆಗೆಯಲು ಹವಾಮಾನ ಅನುಕೂಲಕರವಾಗಿದೆ.';
+      let farmingAlertTa = 'நில உழவு மற்றும் களை எடுப்பதற்கு வானிலை சாதகமாக உள்ளது.';
+      let farmingAlertTe = 'పొలం పనులకు మరియు కలుపు తీతకు వాతావరణం అనుకూలంగా ఉంది.';
+
+      if (rainyDay) {
+        farmingAlert = `Rain expected on ${rainyDay.dayName} (${rainyDay.rainChance}% chance). Consider completing field spraying before rain.`;
+        farmingAlertKn = `${rainyDay.dayName} ರಂದು ಮಳೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ (${rainyDay.rainChance}% ಸಂಭವ). ಮಳೆ ಬರುವ ಮುನ್ನ ಸಿಂಪಡಣೆ ಕಾರ್ಯ ಮುಗಿಸಿ.`;
+        farmingAlertTa = `${rainyDay.dayName} அன்று மழை பெய்ய வாய்ப்புள்ளது (${rainyDay.rainChance}%). மழைக்கு முன் தெளிப்பு பணிகளை முடிக்கவும்.`;
+        farmingAlertTe = `${rainyDay.dayName} నాడు వర్షం పడే అవకాశం ఉంది (${rainyDay.rainChance}%). వర్షానికి ముందే మందుల పిచಿಕారీ పూర్తి చేయండి.`;
+      }
+
+      const effectiveLocation =
+        locationLabel ||
+        (district ? (state ? `${district}, ${state}` : district) : `Your location (${finalLat.toFixed(2)}°, ${finalLon.toFixed(2)}°)`);
+
+      const liveResult: WeatherData = {
+        location: effectiveLocation,
+        state: state || (location?.state || ''),
+        district: district || (location?.district || ''),
+        latitude: finalLat,
+        longitude: finalLon,
+        temperature: Math.round(current.temperature_2m),
+        condition,
+        weatherCode: current.weather_code,
+        icon,
+        humidity: Math.round(current.relative_humidity_2m),
+        windSpeedKmH: Math.round(current.wind_speed_10m),
+        rainfallProbability: forecast7Days[0]?.rainChance || 0,
+        expectedPrecipitationMm: forecast7Days[0]?.precipitationMm || 0,
+        weekRange: `${minT}° - ${maxT}°`,
+        nextWeekRange: `${nextMinT}° - ${nextMaxT}°`,
+        nextWeekSummary: forecast8To14Days.some((d) => d.rainChance > 40) ? 'Light Rain' : 'Partly Cloudy',
+        forecast7Days,
+        forecast8To14Days,
+        fiveDayRainProbability: forecast7Days.slice(0, 5).map((d) => d.rainChance),
+        farmingAlert,
+        farmingAlertKn,
+        farmingAlertTa,
+        farmingAlertTe,
+        lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        isDemoFallback: false,
+        dataSource: 'Live Open-Meteo API',
+        agroZone: location?.agroZone,
+        agroZoneCode: location?.agroZoneCode,
+        agroZoneDescription: location?.agroZoneDescription,
+        typicalSoils: location?.typicalSoils,
+        taluk: location?.taluk,
+        seasonInfo: season || undefined,
+      };
+
+      // Cache live result
+      weatherMemoryCache.set(cacheKey, { data: liveResult, timestamp: Date.now() });
+      if (weatherMemoryCache.size > MAX_WEATHER_CACHE_SIZE) {
+        const oldestKey = weatherMemoryCache.keys().next().value;
+        if (oldestKey) weatherMemoryCache.delete(oldestKey);
+      }
+
+      return liveResult;
+    } catch (err: any) {
+      // If live call fails or times out:
+      // 1. Return the last cached real result (with isStale: true)
       const staleCached = weatherMemoryCache.get(cacheKey);
       if (staleCached) {
         return {
           ...staleCached.data,
           isStale: true,
-          dataSource: `${staleCached.data.dataSource} (Cached, Offline/Stale)`
+          dataSource: `${staleCached.data.dataSource} (Cached, Offline)`,
         };
       }
-      // Return high-fidelity local demo fallback clearly labeled
-      return getDemoFallbackWeather(district || 'Mandya', state || 'Karnataka', finalLat, finalLon);
+
+      // 2. If allowDemoFallback is explicitly enabled
+      if (allowDemoFallback) {
+        return getDemoFallbackWeather(
+          district || 'Your Location',
+          state || '',
+          finalLat,
+          finalLon,
+          locationLabel
+        );
+      }
+
+      // 3. Otherwise throw so client can display clear error and retry button
+      throw new Error(
+        err?.message ? `Weather unavailable: ${err.message}` : 'Weather service temporarily unavailable. Please retry.'
+      );
     } finally {
       inFlightWeatherRequests.delete(cacheKey);
     }
@@ -278,32 +450,71 @@ export async function fetchWeatherData(districtName?: string, customLat?: number
   return fetchPromise;
 }
 
-function getDemoFallbackWeather(district: string, state: string, lat: number, lon: number): WeatherData {
+export function getDemoFallbackWeather(
+  district: string,
+  state: string,
+  lat: number,
+  lon: number,
+  customLocationLabel?: string
+): WeatherData {
   const today = new Date();
   const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  const sampleDays: WeatherDay[] = [
-    { date: '2026-10-15', dayName: 'Today', weatherCode: 2, condition: 'Partly Cloudy', icon: 'cloud-sun', tempMax: 28, tempMin: 21, rainChance: 35, precipitationMm: 0.5 },
-    { date: '2026-10-16', dayName: 'Fri', weatherCode: 1, condition: 'Mainly Sunny', icon: 'sun', tempMax: 29, tempMin: 20, rainChance: 15, precipitationMm: 0.0 },
-    { date: '2026-10-17', dayName: 'Sat', weatherCode: 2, condition: 'Partly Cloudy', icon: 'cloud-sun', tempMax: 28, tempMin: 21, rainChance: 25, precipitationMm: 0.2 },
-    { date: '2026-10-18', dayName: 'Sun', weatherCode: 3, condition: 'Overcast', icon: 'cloud', tempMax: 27, tempMin: 22, rainChance: 40, precipitationMm: 1.2 },
-    { date: '2026-10-19', dayName: 'Mon', weatherCode: 61, condition: 'Light Rain', icon: 'cloud-rain', tempMax: 26, tempMin: 21, rainChance: 65, precipitationMm: 8.4 },
-    { date: '2026-10-20', dayName: 'Tue', weatherCode: 95, condition: 'Thunderstorm', icon: 'cloud-lightning', tempMax: 25, tempMin: 20, rainChance: 70, precipitationMm: 14.2 },
-    { date: '2026-10-21', dayName: 'Wed', weatherCode: 2, condition: 'Clearing Sky', icon: 'cloud-sun', tempMax: 28, tempMin: 21, rainChance: 20, precipitationMm: 0.1 },
-  ];
+  const sampleDays: WeatherDay[] = Array.from({ length: 7 }, (_, idx) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + idx);
+    const dateStr = d.toISOString().split('T')[0];
+    const isToday = idx === 0;
+    const dayName = isToday ? 'Today' : dayNames[d.getDay()];
 
-  const sampleNextWeek: WeatherDay[] = [
-    { date: '2026-10-22', dayName: 'Thu', weatherCode: 1, condition: 'Sunny', icon: 'sun', tempMax: 30, tempMin: 22, rainChance: 10, precipitationMm: 0.0 },
-    { date: '2026-10-23', dayName: 'Fri', weatherCode: 1, condition: 'Sunny', icon: 'sun', tempMax: 30, tempMin: 22, rainChance: 15, precipitationMm: 0.0 },
-    { date: '2026-10-24', dayName: 'Sat', weatherCode: 2, condition: 'Partly Cloudy', icon: 'cloud-sun', tempMax: 29, tempMin: 21, rainChance: 20, precipitationMm: 0.0 },
-    { date: '2026-10-25', dayName: 'Sun', weatherCode: 2, condition: 'Partly Cloudy', icon: 'cloud-sun', tempMax: 29, tempMin: 21, rainChance: 25, precipitationMm: 0.2 },
-    { date: '2026-10-26', dayName: 'Mon', weatherCode: 3, condition: 'Overcast', icon: 'cloud', tempMax: 28, tempMin: 21, rainChance: 35, precipitationMm: 0.8 },
-    { date: '2026-10-27', dayName: 'Tue', weatherCode: 61, condition: 'Light Shower', icon: 'cloud-drizzle', tempMax: 27, tempMin: 20, rainChance: 50, precipitationMm: 4.5 },
-    { date: '2026-10-28', dayName: 'Wed', weatherCode: 1, condition: 'Sunny', icon: 'sun', tempMax: 29, tempMin: 21, rainChance: 10, precipitationMm: 0.0 },
-  ];
+    const sampleWeather = [
+      { code: 2, condition: 'Partly Cloudy', icon: 'cloud-sun', max: 28, min: 21, rain: 35, mm: 0.5 },
+      { code: 1, condition: 'Mainly Sunny', icon: 'sun', max: 29, min: 20, rain: 15, mm: 0.0 },
+      { code: 2, condition: 'Partly Cloudy', icon: 'cloud-sun', max: 28, min: 21, rain: 25, mm: 0.2 },
+      { code: 3, condition: 'Overcast', icon: 'cloud', max: 27, min: 22, rain: 40, mm: 1.2 },
+      { code: 61, condition: 'Light Rain', icon: 'cloud-rain', max: 26, min: 21, rain: 65, mm: 8.4 },
+      { code: 95, condition: 'Thunderstorm', icon: 'cloud-lightning', max: 25, min: 20, rain: 70, mm: 14.2 },
+      { code: 2, condition: 'Clearing Sky', icon: 'cloud-sun', max: 28, min: 21, rain: 20, mm: 0.1 },
+    ][idx % 7];
+
+    return {
+      date: dateStr,
+      dayName,
+      weatherCode: sampleWeather.code,
+      condition: sampleWeather.condition,
+      icon: sampleWeather.icon,
+      tempMax: sampleWeather.max,
+      tempMin: sampleWeather.min,
+      rainChance: sampleWeather.rain,
+      precipitationMm: sampleWeather.mm,
+    };
+  });
+
+  const sampleNextWeek: WeatherDay[] = Array.from({ length: 7 }, (_, idx) => {
+    const d = new Date(today);
+    d.setDate(today.getDate() + 7 + idx);
+    const dateStr = d.toISOString().split('T')[0];
+    const dayName = dayNames[d.getDay()];
+
+    return {
+      date: dateStr,
+      dayName,
+      weatherCode: 1,
+      condition: 'Mainly Sunny',
+      icon: 'sun',
+      tempMax: 30,
+      tempMin: 22,
+      rainChance: 15,
+      precipitationMm: 0.0,
+    };
+  });
+
+  const locationTitle =
+    customLocationLabel ||
+    (district ? (state ? `${district}, ${state}` : district) : `Your location (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`);
 
   return {
-    location: `${district}, ${state}`,
+    location: locationTitle,
     state,
     district,
     latitude: lat,
@@ -326,14 +537,14 @@ function getDemoFallbackWeather(district: string, state: string, lat: number, lo
     farmingAlertKn: 'ಸೋಮವಾರ ಮತ್ತು ಮಂಗಳವಾರ ಮಳೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ (65-70% ಸಂಭವ). ಮಳೆ ಬರುವ ಮುನ್ನ ಸಿಂಪಡಣೆ ಕಾರ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ.',
     farmingAlertTa: 'திங்கள் மற்றும் செவ்வாய்க்கிழமைகளில் மழை வாய்ப்பு (65-70%). மழைக்கு முன் தெளிப்பு பணிகளை முடிக்கவும்.',
     farmingAlertTe: 'సోమవారం, మంగళవారం వర్ష సూచన (65-70%). వర్షానికి ముందే పిచికారీ పనులు పూర్తి చేయండి.',
-    lastUpdated: 'Updated 10 mins ago (Local Demo Data)',
+    lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     isDemoFallback: true,
-    dataSource: 'Local Demo Fallback Data (Offline Simulation)',
+    dataSource: 'Sample Data (Offline Simulation)',
     agroZone: 'Southern Dry Zone',
     agroZoneCode: 'ACZ-6',
     agroZoneDescription: 'Canal-irrigated Cauvery basin with high paddy and sugarcane productivity, alongside red gravelly rainfed uplands.',
     typicalSoils: ['red', 'loamy', 'alluvial'],
-    taluk: 'Mandya',
+    taluk: district || 'Mandya',
     seasonInfo: {
       season: 'Kharif',
       name: 'Kharif (Monsoon Season)',

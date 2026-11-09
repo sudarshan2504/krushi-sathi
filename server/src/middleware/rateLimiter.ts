@@ -35,7 +35,8 @@ export function authRateLimiter(
 
   const now = Date.now();
   const windowMs = 60 * 1000; // 1 minute window
-  const maxRequests = 10;
+  const isDev = process.env.NODE_ENV !== 'production';
+  const maxRequests = isDev ? 100 : 10;
 
   const current = ipRequestStore.get(ip);
 
