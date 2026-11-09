@@ -46,10 +46,10 @@ export const LeafCorners: React.FC<LeafCornersProps> = ({
         <motion.div
           animate={swayLeft}
           style={{ originX: 0, originY: 0 }}
-          className="absolute -top-3 -left-2 w-20 sm:w-24 opacity-90 select-none drop-shadow-xs"
+          className="absolute -top-1 -left-1 w-24 sm:w-28 opacity-95 select-none drop-shadow-xs"
         >
           <img
-            src="/design/leaf-branch-left.webp"
+            src="/design/leaf-branch-left.png"
             alt=""
             loading="eager"
             className="w-full h-auto object-contain"
@@ -61,10 +61,10 @@ export const LeafCorners: React.FC<LeafCornersProps> = ({
         <motion.div
           animate={swayRight}
           style={{ originX: 1, originY: 0 }}
-          className="absolute -top-3 -right-2 w-20 sm:w-24 opacity-85 select-none drop-shadow-xs"
+          className="absolute -top-1 -right-1 w-24 sm:w-28 opacity-90 select-none drop-shadow-xs"
         >
           <img
-            src="/design/leaf-branch-right.webp"
+            src="/design/leaf-branch-right.png"
             alt=""
             loading="eager"
             className="w-full h-auto object-contain"

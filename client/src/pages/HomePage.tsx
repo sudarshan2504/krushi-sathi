@@ -123,15 +123,31 @@ export const HomePage: React.FC = () => {
       }}
     >
       {/* 1. Full-Bleed Hero Background Layer (covers ~46% of viewport height at top) */}
-      <div className="absolute top-0 inset-x-0 h-[46vh] min-h-[360px] max-h-[440px] pointer-events-none overflow-hidden select-none z-0">
+      <div
+        className="absolute top-0 inset-x-0 h-[46vh] min-h-[360px] max-h-[420px] pointer-events-none overflow-hidden select-none z-0"
+        style={{
+          maskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
+        }}
+      >
         <img
-          src="/design/home-hero-bg.webp"
+          src="/design/sunrise-landscape-full.webp"
           alt=""
-          className="w-full h-full object-cover object-top"
+          className="w-full h-full object-cover object-[28%_center]"
           loading="eager"
         />
         {/* Soft top gradient scrim so header text stays crisp */}
         <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/70 via-white/20 to-transparent pointer-events-none" />
+      </div>
+
+      {/* 2. Large Farmer Cutout on Right Side (about 40% screen width, head near top-right, shoulder behind weather card) */}
+      <div className="absolute top-[70px] sm:top-[74px] right-0 sm:right-2 w-[41%] max-w-[185px] pointer-events-none select-none z-10">
+        <img
+          src="/design/farmer-cutout-flipped.png"
+          alt="Farmer gazing over field"
+          className="w-full h-auto object-contain drop-shadow-sm"
+          loading="eager"
+        />
       </div>
 
       <div className="w-full max-w-[430px] min-h-screen min-h-dvh flex flex-col px-4 pt-3 space-y-4 relative z-10">
