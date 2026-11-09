@@ -7,6 +7,7 @@ import { CropPlan, CropStageGroup } from '../types';
 import { useTranslation } from '../context/LanguageContext';
 import { useToast } from '../context/ToastContext';
 import { LoadingState } from '../components/ui/LoadingState';
+import { CropImage } from '../components/ui/CropImage';
 
 export const StageDetailPage: React.FC = () => {
   const navigate = useNavigate();
@@ -135,21 +136,13 @@ export const StageDetailPage: React.FC = () => {
       <div className="rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-card">
         {/* Stage Hero Image */}
         <div className="h-44 sm:h-52 w-full relative bg-mint/40 overflow-hidden">
-          {cropImageSrc ? (
-            <img
-              src={cropImageSrc}
-              alt={currentStage.stage}
-              className="w-full h-full object-cover"
-              onError={(e) => {
-                (e.target as HTMLElement).style.display = 'none';
-              }}
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-brand-700 to-brand-900 flex flex-col items-center justify-center text-brand-100 gap-1">
-              <Sprout className="w-8 h-8 text-brand-200" />
-              <span className="text-sm font-bold">{plan?.cropName || 'Crop'}</span>
-            </div>
-          )}
+          <CropImage
+            cropId={plan?.cropId}
+            src={cropImageSrc}
+            alt={currentStage.stage}
+            cropName={plan?.cropName}
+            className="w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-dark-text/80 via-dark-text/20 to-transparent pointer-events-none" />
           <div className="absolute bottom-3.5 left-4 right-4 text-white">
             <span className="py-0.5 px-3 rounded-full bg-forest text-white text-[10px] font-bold">

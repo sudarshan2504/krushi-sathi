@@ -127,6 +127,7 @@ export const LongTermCropsSection: React.FC<LongTermCropsSectionProps> = ({
               <div className="flex items-start justify-between gap-2.5 mb-3">
                 <div className="flex items-center gap-3 min-w-0 flex-1">
                   <CropImage
+                    cropId={crop.id}
                     src={crop.imageUrl}
                     alt={crop.name}
                     cropName={getLocalizedName(crop)}

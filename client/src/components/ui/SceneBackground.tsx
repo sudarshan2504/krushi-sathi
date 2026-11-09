@@ -32,3 +32,4 @@ export const SceneBackground: React.FC<SceneBackgroundProps> = ({
     </div>
   );
 };
+

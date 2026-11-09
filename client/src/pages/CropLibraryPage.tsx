@@ -23,6 +23,7 @@ import {
 import { useTranslation } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { CropCatalogItem, CatalogPagination } from '../types';
+import { CropImage } from '../components/ui/CropImage';
 
 const ALPHABET = [
   'All', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I',
@@ -568,15 +569,11 @@ export const CropLibraryPage: React.FC = () => {
               >
                 {/* Crop Photo Container */}
                 <div className="relative h-44 sm:h-48 w-full bg-mint/30 overflow-hidden">
-                  <img
+                  <CropImage
+                    cropId={crop.id}
                     src={primaryImage}
                     alt={crop.name}
-                    loading="lazy"
-                    decoding="async"
-                    onError={(e) => {
-                      // Graceful fallback to SVG placeholder
-                      (e.currentTarget as HTMLImageElement).src = '/crops/placeholder.svg';
-                    }}
+                    cropName={crop.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
 

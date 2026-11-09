@@ -31,3 +31,4 @@ export const WhitePill: React.FC<WhitePillProps> = ({
     </div>
   );
 };
+

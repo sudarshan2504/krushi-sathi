@@ -94,11 +94,26 @@ export const CropDetailsPage: React.FC = () => {
     };
   };
 
+  const [cropImageMeta, setCropImageMeta] = useState<any>(null);
+
   useEffect(() => {
     if (!stateCrop && cropId && cropId !== 'recommend') {
       fetchCropData();
     }
   }, [cropId]);
+
+  useEffect(() => {
+    const effectiveId = crop?.id || cropId;
+    if (effectiveId) {
+      fetch('/crops/crops-images.json')
+        .then(res => res.json())
+        .then((records: any[]) => {
+          const found = records.find(r => r.cropId === effectiveId);
+          if (found) setCropImageMeta(found);
+        })
+        .catch(() => {});
+    }
+  }, [crop?.id, cropId]);
 
   const handleStartPlan = async () => {
     if (!crop) return;
@@ -182,10 +197,11 @@ export const CropDetailsPage: React.FC = () => {
     : [
         {
           type: 'plant',
-          path: crop.imageUrl || '/crops/placeholder.svg',
-          source: 'Botanical Archive',
-          author: 'ICAR / KVK Contributor',
-          license: 'CC BY-SA 4.0',
+          path: cropImageMeta?.filePath || crop.imageUrl || (crop.id ? `/crops/${crop.id}.webp` : '/crops/placeholder.svg'),
+          source: cropImageMeta?.source || 'Botanical Species Archive',
+          author: cropImageMeta?.photographer || 'Field Contributor',
+          license: cropImageMeta?.license || 'CC BY-SA 4.0',
+          attributionUrl: cropImageMeta?.sourceUrl || undefined,
         },
       ];
 

@@ -276,6 +276,8 @@ router.get('/credits', (req: Request, res: Response) => {
   const creditsData = getCatalogCredits();
   res.json({
     success: true,
+    totalImages: creditsData.totalImages,
+    credits: creditsData.credits,
     data: creditsData,
   });
 });

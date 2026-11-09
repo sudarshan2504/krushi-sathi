@@ -1075,7 +1075,7 @@ export const EXTENDED_CROPS: CropData[] = [
   {
     id: 'crop-coffee-arabica',
     name: 'Coffee (Arabica / Robusta)',
-    scientificName: 'Coffea canephora',
+    scientificName: 'Coffea arabica',
     nameKannada: 'ಕಾಫಿ (Coffee / Arabica / Robusta)',
     nameTamil: 'காபி (Coffee)',
     nameTelugu: 'కాఫీ (Coffee)',
@@ -1519,7 +1519,7 @@ export const EXTENDED_CROPS: CropData[] = [
   {
     id: 'crop-super-napier-co5',
     name: 'Super Napier Grass (Hybrid CO-5)',
-    scientificName: 'Pennisetum purpureum x Pennisetum glaucum',
+    scientificName: 'Pennisetum purpureum',
     nameKannada: 'ಸೂಪರ್ ನೇಪಿಯರ್ ಮೇವು (Super Napier / CO-5)',
     nameTamil: 'சூப்பர் நேப்பியர் புல் (CO-5 Napier)',
     nameTelugu: 'సూపర్ నేపియర్ గడ్డి (CO-5 Fodder)',

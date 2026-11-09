@@ -58,3 +58,4 @@ export const WaveFooter: React.FC<WaveFooterProps> = ({
     </div>
   );
 };
+

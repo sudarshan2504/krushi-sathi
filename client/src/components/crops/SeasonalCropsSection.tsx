@@ -165,6 +165,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
                   <div className="flex items-center gap-2.5 min-w-0 flex-1">
                     <div className="w-12 h-12 rounded-xl overflow-hidden bg-mint shrink-0 border border-earth-100">
                       <CropImage
+                        cropId={crop.id}
                         src={crop.imageUrl}
                         alt={crop.name}
                         cropName={crop.name}

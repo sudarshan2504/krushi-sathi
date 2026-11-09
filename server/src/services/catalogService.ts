@@ -191,6 +191,30 @@ export function getCatalogCredits() {
     }
   }
 
+  // Also include verified botanical records from crops-images.json
+  const cropsImagesPath = path.resolve(__dirname, '../data/crops-images.json');
+  if (fs.existsSync(cropsImagesPath)) {
+    try {
+      const extra = JSON.parse(fs.readFileSync(cropsImagesPath, 'utf-8'));
+      for (const item of extra) {
+        if (item.status !== 'use-fallback' && !credits.some(c => c.cropId === item.cropId)) {
+          credits.push({
+            cropId: item.cropId,
+            cropName: item.name,
+            scientificName: item.scientificName,
+            category: item.category || 'general',
+            imagePath: item.filePath,
+            imageType: 'plant',
+            source: item.source,
+            author: item.photographer,
+            license: item.license,
+            attributionUrl: item.sourceUrl,
+          });
+        }
+      }
+    } catch {}
+  }
+
   return {
     totalImages: credits.length,
     credits,

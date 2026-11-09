@@ -53,6 +53,7 @@ const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage').then(m => 
 const CropLibraryPage = lazyWithRetry(() => import('./pages/CropLibraryPage').then(m => ({ default: m.CropLibraryPage })));
 const ImageCreditsPage = lazyWithRetry(() => import('./pages/ImageCreditsPage').then(m => ({ default: m.ImageCreditsPage })));
 const MarketPricesPage = lazyWithRetry(() => import('./pages/MarketPricesPage').then(m => ({ default: m.MarketPricesPage })));
+const DevCropGalleryPage = lazyWithRetry(() => import('./pages/DevCropGalleryPage').then(m => ({ default: m.DevCropGalleryPage })));
 
 // Realistic layout skeleton fallback with timeout warning and retry button
 const PageFallback: React.FC = () => {
@@ -141,6 +142,8 @@ const AppRoutes: React.FC = () => {
         <Route path="/language" element={<PageTransition><LanguageSelectPage /></PageTransition>} />
         <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
         <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
+        {/* Dev only crop review gallery */}
+        <Route path="/dev/crop-gallery" element={<PageTransition><DevCropGalleryPage /></PageTransition>} />
 
         {/* Main Application Routes inside Layout (Protected by Firebase Auth) */}
         <Route

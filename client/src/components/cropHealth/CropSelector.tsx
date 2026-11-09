@@ -110,6 +110,7 @@ export const CropSelector: React.FC<CropSelectorProps> = ({
               {/* Crop Photo / Thumbnail */}
               <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl overflow-hidden mb-2 bg-mint/30 flex items-center justify-center border border-gray-100 shadow-inner">
                 <CropImage
+                  cropId={crop.id}
                   src={crop.imageUrl}
                   alt={crop.name}
                   cropName={crop.name}

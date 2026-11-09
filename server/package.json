@@ -9,7 +9,9 @@
     "start": "node dist/index.js",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
-    "prisma:seed": "tsx prisma/seed.ts"
+    "prisma:seed": "tsx prisma/seed.ts",
+    "fetch:crop-images": "tsx scripts/fetch-crop-images.ts",
+    "check:crop-images": "tsx scripts/check-missing-crop-images.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.134.0",

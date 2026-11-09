@@ -48,3 +48,4 @@ export const OutlineButton: React.FC<OutlineButtonProps> = ({
     </motion.button>
   );
 };
+

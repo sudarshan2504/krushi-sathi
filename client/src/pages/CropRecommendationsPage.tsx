@@ -400,6 +400,7 @@ export const CropRecommendationsPage: React.FC = () => {
                         <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className="w-14 h-14 rounded-2xl overflow-hidden bg-brand-50 dark:bg-dark-elevated shrink-0 border border-gray-200 dark:border-dark-border">
                             <CropImage
+                              cropId={crop.cropId}
                               src={crop.imageUrl}
                               alt={crop.name}
                               cropName={crop.name}

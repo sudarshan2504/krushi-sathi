@@ -13,7 +13,9 @@
     "dev:server": "npm --workspace=server run dev",
     "dev:client": "npm --workspace=client run dev",
     "build": "npm --workspace=server run build && npm --workspace=client run build",
-    "prisma:seed": "npm --workspace=server run prisma:seed"
+    "prisma:seed": "npm --workspace=server run prisma:seed",
+    "fetch:crop-images": "npm --workspace=server run fetch:crop-images",
+    "check:crop-images": "npm --workspace=server run check:crop-images"
   },
   "devDependencies": {
     "concurrently": "^9.1.2",
