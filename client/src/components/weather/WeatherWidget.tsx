@@ -402,7 +402,10 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
           <div className="flex items-center justify-between pb-3 relative z-10">
             <div className="flex items-center gap-2 min-w-0 pr-2">
               <MapPin className="w-4 h-4 text-emerald-300 shrink-0" strokeWidth={2.2} />
-              <span className="font-bold text-sm tracking-tight truncate" title={weather?.location}>
+              <span
+                className="font-bold text-sm tracking-tight truncate whitespace-nowrap max-w-[190px] sm:max-w-[240px] block"
+                title={weather?.location}
+              >
                 {weather?.location || `${selectedDistrict}, Karnataka`}
               </span>
               <button

@@ -103,9 +103,77 @@ async function throttleNominatim(): Promise<void> {
   lastNominatimTimestamp = Date.now();
 }
 
+function cleanAreaName(name: string): string {
+  if (!name) return '';
+  return name
+    .replace(/\s+(District|taluk|Taluk|Urban|urban|Rural|rural)$/i, '')
+    .trim();
+}
+
+export function formatReverseGeocodeLocation(addr: any, fallback: string): {
+  location: string;
+  villageOrTown?: string;
+  district?: string;
+  state?: string;
+  country?: string;
+} {
+  const village = addr.village || addr.hamlet || '';
+  const taluk = addr.county || '';
+  const townOrCity = addr.town || addr.city || addr.municipality || addr.suburb || '';
+  const rawDistrict = addr.state_district || addr.district || '';
+  const state = addr.state || addr.region || addr.province || '';
+  const country = addr.country || '';
+
+  const cleanDistrict = cleanAreaName(rawDistrict);
+  const cleanTaluk = cleanAreaName(taluk);
+  const cleanTown = cleanAreaName(townOrCity);
+  const cleanVillage = cleanAreaName(village);
+
+  let formattedLocation = '';
+
+  // 1. If village and taluk/district are present -> "Village, District"
+  if (cleanVillage) {
+    const districtForVillage = cleanDistrict || cleanTaluk;
+    if (districtForVillage && districtForVillage.toLowerCase() !== cleanVillage.toLowerCase()) {
+      formattedLocation = `${cleanVillage}, ${districtForVillage}`;
+    } else if (state) {
+      formattedLocation = `${cleanVillage}, ${state}`;
+    } else {
+      formattedLocation = cleanVillage;
+    }
+  } else {
+    // 2. Otherwise -> "<place>, <state>" (e.g. "Mysuru, Karnataka", "Bengaluru, Karnataka")
+    // Never repeat the same name twice (if place and district are the same, show it once)
+    const place = cleanTown || cleanDistrict || cleanTaluk;
+    if (place) {
+      if (state) {
+        formattedLocation = `${place}, ${state}`;
+      } else if (country) {
+        formattedLocation = `${place}, ${country}`;
+      } else {
+        formattedLocation = place;
+      }
+    } else if (state) {
+      formattedLocation = `${state}${country ? `, ${country}` : ''}`;
+    } else if (addr.name) {
+      formattedLocation = `${addr.name}${state ? `, ${state}` : country ? `, ${country}` : ''}`;
+    } else {
+      formattedLocation = fallback;
+    }
+  }
+
+  return {
+    location: formattedLocation,
+    villageOrTown: village || townOrCity || undefined,
+    district: cleanDistrict || cleanTaluk || undefined,
+    state: state || undefined,
+    country: country || undefined,
+  };
+}
+
 /**
  * Reverse geocodes coordinates to a human-readable location label
- * format: village/town, district, state.
+ * format: "<place>, <state>" (e.g. "Mysuru, Karnataka") or "Village, District"
  * If reverse geocode fails, returns "Your location (lat, lon)" instead of a wrong district name.
  */
 export async function reverseGeocodeCoords(lat: number, lon: number): Promise<ReverseGeocodeResult> {
@@ -139,46 +207,14 @@ export async function reverseGeocodeCoords(lat: number, lon: number): Promise<Re
     if (res.ok) {
       const data = (await res.json()) as any;
       const addr = data.address || {};
-
-      const villageOrTown =
-        addr.village ||
-        addr.town ||
-        addr.city ||
-        addr.suburb ||
-        addr.hamlet ||
-        addr.municipality ||
-        addr.county ||
-        '';
-
-      const district = addr.state_district || addr.district || addr.county || '';
-      const state = addr.state || addr.region || addr.province || '';
-      const country = addr.country || '';
-
-      let formattedLocation = '';
-      if (villageOrTown && district && villageOrTown.toLowerCase() !== district.toLowerCase()) {
-        formattedLocation = `${villageOrTown}, ${district}`;
-      } else if (villageOrTown && state) {
-        formattedLocation = `${villageOrTown}, ${state}`;
-      } else if (district && state) {
-        formattedLocation = `${district}, ${state}`;
-      } else if (villageOrTown) {
-        formattedLocation = `${villageOrTown}${country ? `, ${country}` : ''}`;
-      } else if (district) {
-        formattedLocation = `${district}${country ? `, ${country}` : ''}`;
-      } else if (state) {
-        formattedLocation = `${state}${country ? `, ${country}` : ''}`;
-      } else if (data.name) {
-        formattedLocation = `${data.name}${country ? `, ${country}` : ''}`;
-      } else {
-        formattedLocation = coordFallback;
-      }
+      const formatted = formatReverseGeocodeLocation(addr, coordFallback);
 
       const result: ReverseGeocodeResult = {
-        location: formattedLocation,
-        villageOrTown: villageOrTown || undefined,
-        district: district || undefined,
-        state: state || undefined,
-        country: country || undefined,
+        location: formatted.location,
+        villageOrTown: formatted.villageOrTown,
+        district: formatted.district,
+        state: formatted.state,
+        country: formatted.country,
         lat,
         lon,
       };
@@ -193,8 +229,13 @@ export async function reverseGeocodeCoords(lat: number, lon: number): Promise<Re
   // Fallback 1: match known India locations database
   const locByCoord = findLocationByCoords(lat, lon);
   if (locByCoord) {
+    const place =
+      locByCoord.taluk && locByCoord.taluk.toLowerCase() !== locByCoord.district.toLowerCase()
+        ? `${locByCoord.taluk}, ${locByCoord.district}`
+        : `${locByCoord.district}, ${locByCoord.state}`;
+
     const result: ReverseGeocodeResult = {
-      location: `${locByCoord.taluk || locByCoord.district}, ${locByCoord.state}`,
+      location: place,
       villageOrTown: locByCoord.taluk || undefined,
       district: locByCoord.district,
       state: locByCoord.state,
