@@ -16,6 +16,8 @@ async function startServer() {
       console.log(`🌾 Demo OTP mode: Active (Use OTP: ${config.demoOtp})`);
       if (config.geminiApiKey) {
         console.log('🌾 AI Mode: Real Gemini AI (Configured)');
+      } else if (config.openRouterApiKey) {
+        console.log(`🌾 AI Mode: OpenRouter LLM (${config.openRouterModel})`);
       } else {
         console.log('🌾 AI Mode: Local Rule-Based Agricultural Assistant (Mode B fallback)');
       }

@@ -86,6 +86,7 @@ class SpeechService {
   private voicesLoaded = false;
   private playbackToken = 0;
   private isCancelled = false;
+  private audioBufferCache = new Map<string, { audio: string; mimeType: string; provider: ActiveTtsProvider; voice?: string }>();
 
   constructor() {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -583,6 +584,36 @@ class SpeechService {
     const shouldTryBackend = options?.preferCloud !== false && this.preferCloud;
 
     if (shouldTryBackend) {
+      const cacheKey = `${langCode}_${gender}_${providerChoice}_${cleanText}`;
+      const cachedItem = this.audioBufferCache.get(cacheKey);
+
+      if (cachedItem && (cachedItem.provider === 'gemini-tts' || cachedItem.provider === 'edge-neural')) {
+        console.log(`[Voice Perf] Instant client audio cache hit (0ms)`);
+        return this.playAudioBase64(cachedItem.audio, cachedItem.mimeType, cachedItem.provider, token, {
+          onStart: () => {
+            if (this.playbackToken !== token || this.isCancelled) return;
+            this.currentProvider = cachedItem.provider;
+            options?.onProviderSelected?.(cachedItem.provider, cachedItem.voice);
+            options?.onStart?.();
+          },
+          onEnd: () => {
+            if (this.playbackToken !== token || this.isCancelled) return;
+            this.currentProvider = null;
+            this.activeAudio = null;
+            options?.onEnd?.();
+          },
+          onInterrupted: () => {
+            this.currentProvider = null;
+            this.activeAudio = null;
+            options?.onInterrupted?.();
+          },
+          onError: (err) => {
+            if (this.playbackToken !== token || this.isCancelled) return;
+            this.speakBrowser(cleanText, langCode, options, token);
+          },
+        });
+      }
+
       try {
         const t0 = performance.now();
         const res = await api.chat.synthesizeSpeech(cleanText, langCode, gender, providerChoice, speed);
@@ -597,6 +628,19 @@ class SpeechService {
         if (res && res.audio && (res.provider === 'gemini-tts' || res.provider === 'edge-neural')) {
           console.log(`[Voice Perf] TTS synthesized via ${res.provider} in ${Math.round(t1 - t0)}ms`);
           const activeProvider: ActiveTtsProvider = res.provider;
+
+          // Store in client LRU audio cache for instant replay
+          if (this.audioBufferCache.size >= 50) {
+            const firstKey = this.audioBufferCache.keys().next().value;
+            if (firstKey) this.audioBufferCache.delete(firstKey);
+          }
+          this.audioBufferCache.set(cacheKey, {
+            audio: res.audio,
+            mimeType: res.mimeType || 'audio/mp3',
+            provider: activeProvider,
+            voice: res.voice,
+          });
+
           return this.playAudioBase64(res.audio, res.mimeType || 'audio/mp3', activeProvider, token, {
             onStart: () => {
               if (this.playbackToken !== token || this.isCancelled) return;

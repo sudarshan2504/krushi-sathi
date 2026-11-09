@@ -10,7 +10,7 @@ import { detectSeasonFromLocation } from './seasonService';
 export interface ChatResponse {
   answer: string;
   speechContent?: string;
-  language: string;
+  language?: string;
   mode: 'gemini' | 'openrouter' | 'local_demo';
   modelUsed?: string;
   sources?: string[];
@@ -152,18 +152,19 @@ export function cleanSpeechFormatting(text: string): string {
 }
 
 /**
- * Creates a clean, 2-3 sentence speakable summary from raw agricultural text
- * if no explicit speech_summary tag is found.
+ * Creates a clean, 1-2 sentence speakable summary from raw agricultural text
+ * for ultra-fast, natural speech synthesis (< 1s turnaround).
  */
 export function cleanForSpeakableSummary(rawText: string, language: string): string {
   const cleaned = cleanSpeechFormatting(rawText);
   if (!cleaned) return '';
 
   const sentences = cleaned.split(/(?<=[.!?।])\s+/).filter((s) => s.trim().length > 3);
-  if (sentences.length === 0) return cleaned;
+  if (sentences.length === 0) return cleaned.slice(0, 180);
 
-  const summary = sentences.slice(0, 3).join(' ');
-  return summary.length > 250 ? summary.slice(0, 250) + '...' : summary;
+  // Take the first 1-2 most informative sentences (max ~180 chars)
+  const summary = sentences.slice(0, 2).join(' ');
+  return summary.length > 180 ? summary.slice(0, 180).trim() + '.' : summary;
 }
 
 /**
@@ -227,12 +228,52 @@ export const REGIONAL_NEURAL_VOICES: Record<string, { female: string; male: stri
   },
 };
 
-// Circuit breaker for Cloud TTS engines (5 minute lockout on failure/timeout)
-const TTS_CIRCUIT_BREAKER_LOCKOUT_MS = 5 * 60 * 1000;
+// Circuit breaker for Cloud TTS engines (30-second lockout on failure/timeout for fast self-healing)
+const TTS_CIRCUIT_BREAKER_LOCKOUT_MS = 30 * 1000;
 const ttsCircuitBreakers: Record<'gemini-tts' | 'edge-neural', { failUntil: number }> = {
   'gemini-tts': { failUntil: 0 },
   'edge-neural': { failUntil: 0 },
 };
+
+// In-memory audio cache for synthesized speech: avoids regenerating identical greetings/answers
+interface CachedAudioEntry {
+  audio: string;
+  mimeType: string;
+  voiceUsed: string;
+  provider: 'gemini-tts' | 'edge-neural' | 'browser';
+  language?: string;
+  createdAt: number;
+}
+const ttsAudioCache = new Map<string, CachedAudioEntry>();
+const MAX_TTS_CACHE_ENTRIES = 200;
+
+function getCachedTtsAudio(key: string): SpeechGenerationResult | null {
+  const cached = ttsAudioCache.get(key);
+  if (!cached) return null;
+  // Expire after 24 hours
+  if (Date.now() - cached.createdAt > 24 * 60 * 60 * 1000) {
+    ttsAudioCache.delete(key);
+    return null;
+  }
+  return {
+    audio: cached.audio,
+    mimeType: cached.mimeType,
+    voiceUsed: cached.voiceUsed,
+    provider: cached.provider,
+    language: cached.language,
+  };
+}
+
+function setCachedTtsAudio(key: string, result: SpeechGenerationResult) {
+  if (ttsAudioCache.size >= MAX_TTS_CACHE_ENTRIES) {
+    const oldestKey = ttsAudioCache.keys().next().value;
+    if (oldestKey) ttsAudioCache.delete(oldestKey);
+  }
+  ttsAudioCache.set(key, {
+    ...result,
+    createdAt: Date.now(),
+  });
+}
 
 export function isTtsCircuitBroken(provider: 'gemini-tts' | 'edge-neural'): boolean {
   return Date.now() < ttsCircuitBreakers[provider].failUntil;
@@ -240,7 +281,7 @@ export function isTtsCircuitBroken(provider: 'gemini-tts' | 'edge-neural'): bool
 
 export function tripTtsCircuitBreaker(provider: 'gemini-tts' | 'edge-neural', reason: string) {
   ttsCircuitBreakers[provider].failUntil = Date.now() + TTS_CIRCUIT_BREAKER_LOCKOUT_MS;
-  console.warn(`[aiService] ${provider} tripped circuit breaker: ${reason}. Bypassing for 5 minutes.`);
+  console.warn(`[aiService] ${provider} tripped circuit breaker: ${reason}. Bypassing for 30s.`);
 }
 
 export function resetTtsCircuitBreaker(provider: 'gemini-tts' | 'edge-neural') {
@@ -251,7 +292,7 @@ export function resetTtsCircuitBreaker(provider: 'gemini-tts' | 'edge-neural') {
  * Synthesizes audio using Microsoft Edge Regional Neural voices.
  * Provides completely natural South Indian conversational voices for
  * Kannada, Tamil, Telugu, and Indian English with zero rate limit restrictions.
- * Fast 4s timeout + 5-minute circuit breaker.
+ * Generous 7s timeout + 30s self-healing circuit breaker.
  */
 async function synthesizeWithEdgeNeural(
   text: string,
@@ -274,8 +315,8 @@ async function synthesizeWithEdgeNeural(
     const buffer = await new Promise<Buffer>((resolve, reject) => {
       const chunks: Buffer[] = [];
       const timeout = setTimeout(() => {
-        reject(new Error(`Edge Neural TTS timed out after 4s for voice ${voiceName}`));
-      }, 4000);
+        reject(new Error(`Edge Neural TTS timed out after 7s for voice ${voiceName}`));
+      }, 7000);
 
       audioStream.on('data', (chunk: Buffer) => chunks.push(chunk));
       audioStream.on('end', () => {
@@ -412,36 +453,44 @@ export async function generateSpeechAudio({
 
   const safeLang = ['en', 'kn', 'ta', 'te'].includes(language) ? language : 'en';
   const safeGender = gender === 'male' ? 'male' : 'female';
-  const textToSynthesize = cleanText.length > 500 ? cleanText.slice(0, 500) + '...' : cleanText;
+  // Limit to concise 1-2 sentence speech summary (< 200 chars) for sub-second synthesis
+  const textToSynthesize = cleanForSpeakableSummary(cleanText, safeLang);
 
   if (provider === 'browser') {
     return null;
   }
 
+  // Check TTS Audio Cache first (< 1ms instant response!)
+  const cacheKey = `${safeLang}_${safeGender}_${provider}_${textToSynthesize}`;
+  const cachedAudio = getCachedTtsAudio(cacheKey);
+  if (cachedAudio) {
+    return cachedAudio;
+  }
+
+  let result: SpeechGenerationResult | null = null;
+
   if (provider === 'gemini-tts') {
-    return synthesizeWithGeminiTts(textToSynthesize, safeLang, safeGender);
+    result = await synthesizeWithGeminiTts(textToSynthesize, safeLang, safeGender);
+  } else if (provider === 'edge-neural') {
+    result = await synthesizeWithEdgeNeural(textToSynthesize, safeLang, safeGender);
+  } else {
+    // provider === 'auto':
+    // 1. Try Gemini TTS if key configured and circuit not broken
+    if (config.geminiApiKey && !isTtsCircuitBroken('gemini-tts')) {
+      result = await synthesizeWithGeminiTts(textToSynthesize, safeLang, safeGender);
+    }
+
+    // 2. Try Edge Neural if circuit not broken
+    if (!result && !isTtsCircuitBroken('edge-neural')) {
+      result = await synthesizeWithEdgeNeural(textToSynthesize, safeLang, safeGender);
+    }
   }
 
-  if (provider === 'edge-neural') {
-    return synthesizeWithEdgeNeural(textToSynthesize, safeLang, safeGender);
+  if (result) {
+    setCachedTtsAudio(cacheKey, result);
   }
 
-  // provider === 'auto':
-  // 1. Try Gemini TTS if key configured and circuit not broken
-  if (config.geminiApiKey && !isTtsCircuitBroken('gemini-tts')) {
-    const geminiRes = await synthesizeWithGeminiTts(textToSynthesize, safeLang, safeGender);
-    if (geminiRes) return geminiRes;
-  }
-
-  // 2. Try Edge Neural if circuit not broken
-  if (!isTtsCircuitBroken('edge-neural')) {
-    const edgeRes = await synthesizeWithEdgeNeural(textToSynthesize, safeLang, safeGender);
-    if (edgeRes) return edgeRes;
-  }
-
-  // 3. Both cloud services down / circuit broken: return null immediately
-  // Client is instructed to use browser voice without waiting!
-  return null;
+  return result;
 }
 
 /**
@@ -688,8 +737,10 @@ export async function callOpenRouter(
   const apiKey = (config.openRouterApiKey || '').trim();
   if (!apiKey) return null;
 
-  const preferredModel = (config.openRouterModel || 'openrouter/free').trim();
-  const modelsToTry = [preferredModel, 'nvidia/nemotron-3.5-lightning:free'];
+  const preferredModel = (config.openRouterModel || 'nvidia/nemotron-3.5-lightning:free').trim();
+  const modelsToTry = preferredModel === 'nvidia/nemotron-3.5-lightning:free'
+    ? ['nvidia/nemotron-3.5-lightning:free', 'openrouter/free', 'google/gemma-4-26b-a4b-it:free']
+    : [preferredModel, 'nvidia/nemotron-3.5-lightning:free', 'openrouter/free'];
 
   const messages: { role: string; content: string }[] = [
     { role: 'system', content: systemPrompt },
@@ -717,7 +768,7 @@ export async function callOpenRouter(
   for (const model of modelsToTry) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000);
+      const timeoutId = setTimeout(() => controller.abort(), 7000);
 
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -731,7 +782,8 @@ export async function callOpenRouter(
           model,
           messages,
           temperature: 0.25,
-          max_tokens: 600,
+          max_tokens: 350,
+          reasoning: { max_tokens: 0 },
         }),
         signal: controller.signal,
       });
@@ -771,8 +823,10 @@ export async function* callOpenRouterStream(
   const apiKey = (config.openRouterApiKey || '').trim();
   if (!apiKey) return;
 
-  const preferredModel = (config.openRouterModel || 'openrouter/free').trim();
-  const modelsToTry = [preferredModel, 'nvidia/nemotron-3.5-lightning:free'];
+  const preferredModel = (config.openRouterModel || 'nvidia/nemotron-3.5-lightning:free').trim();
+  const modelsToTry = preferredModel === 'nvidia/nemotron-3.5-lightning:free'
+    ? ['nvidia/nemotron-3.5-lightning:free', 'openrouter/free', 'google/gemma-4-26b-a4b-it:free']
+    : [preferredModel, 'nvidia/nemotron-3.5-lightning:free', 'openrouter/free'];
 
   const messages: { role: string; content: string }[] = [
     { role: 'system', content: systemPrompt },
@@ -799,7 +853,16 @@ export async function* callOpenRouterStream(
   for (const model of modelsToTry) {
     try {
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 18000);
+      let hasEmittedFirstChunk = false;
+
+      // Overall stream timeout
+      const overallTimeout = setTimeout(() => controller.abort(), 12000);
+      // TTFT (first token) timeout: abort if model stalls or generates invisible reasoning
+      const firstChunkTimeout = setTimeout(() => {
+        if (!hasEmittedFirstChunk) {
+          controller.abort();
+        }
+      }, 6500);
 
       const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
@@ -813,50 +876,66 @@ export async function* callOpenRouterStream(
           model,
           messages,
           temperature: 0.25,
-          max_tokens: 600,
+          max_tokens: 350,
           stream: true,
+          reasoning: { max_tokens: 0 },
         }),
         signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
       if (!res.ok) {
+        clearTimeout(overallTimeout);
+        clearTimeout(firstChunkTimeout);
         const errorBody = await res.text();
         console.warn(`[aiService] OpenRouter stream ${model} error (${res.status}): ${errorBody}`);
         continue;
       }
 
-      if (!res.body) continue;
+      if (!res.body) {
+        clearTimeout(overallTimeout);
+        clearTimeout(firstChunkTimeout);
+        continue;
+      }
 
       const reader = (res.body as any).getReader();
       const decoder = new TextDecoder('utf-8');
       let buffer = '';
 
-      while (true) {
-        const { value, done } = await reader.read();
-        if (done) break;
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split('\n');
-        buffer = lines.pop() || '';
+      try {
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split('\n');
+          buffer = lines.pop() || '';
 
-        for (const line of lines) {
-          const trimmed = line.trim();
-          if (trimmed.startsWith('data: ')) {
-            const dataStr = trimmed.slice(6);
-            if (dataStr === '[DONE]') {
-              yield { done: true, modelUsed: model };
-              return;
-            }
-            try {
-              const parsed = JSON.parse(dataStr);
-              const content = parsed.choices?.[0]?.delta?.content;
-              if (content) {
-                yield { chunk: content };
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (trimmed.startsWith('data: ')) {
+              const dataStr = trimmed.slice(6);
+              if (dataStr === '[DONE]') {
+                clearTimeout(overallTimeout);
+                clearTimeout(firstChunkTimeout);
+                yield { done: true, modelUsed: model };
+                return;
               }
-            } catch {}
+              try {
+                const parsed = JSON.parse(dataStr);
+                const content = parsed.choices?.[0]?.delta?.content;
+                if (content) {
+                  if (!hasEmittedFirstChunk) {
+                    hasEmittedFirstChunk = true;
+                    clearTimeout(firstChunkTimeout);
+                  }
+                  yield { chunk: content };
+                }
+              } catch {}
+            }
           }
         }
+      } finally {
+        clearTimeout(overallTimeout);
+        clearTimeout(firstChunkTimeout);
       }
 
       yield { done: true, modelUsed: model };

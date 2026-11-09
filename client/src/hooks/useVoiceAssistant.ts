@@ -169,7 +169,14 @@ export function useVoiceAssistant({
       onNewMessage?.(userMsg);
 
       try {
-        const res = await api.chat.sendMessage(trimmed, languageRef.current, convIdRef.current);
+        let streamAssistantWords = '';
+        const res = await api.chat.sendMessage(trimmed, languageRef.current, convIdRef.current, {
+          onChunk: (chunk: string) => {
+            streamAssistantWords += chunk;
+            setLastAssistantWords(streamAssistantWords);
+            lastAssistantWordsRef.current = streamAssistantWords;
+          },
+        });
         const tChat = performance.now();
         console.log(`[Voice Perf] Chat API responded in ${Math.round(tChat - tSubmit)}ms`);
 

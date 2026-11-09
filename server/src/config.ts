@@ -19,7 +19,7 @@ export const config = {
   geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
   groqApiKey: process.env.GROQ_API_KEY || '',
   openRouterApiKey: process.env.OPENROUTER_API_KEY || '',
-  openRouterModel: process.env.OPENROUTER_MODEL || 'openrouter/free',
+  openRouterModel: process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3.5-lightning:free',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   allowedOrigins: process.env.ALLOWED_ORIGINS || '',
 };

@@ -232,17 +232,51 @@ export const ChatPage: React.FC = () => {
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
 
+    const streamingTempId = `stream-assistant-${Date.now()}`;
+    let streamText = '';
+
     try {
-      const res = await api.chat.sendMessage(text, language, conversationId);
+      const res = await api.chat.sendMessage(text, language, conversationId, {
+        onChunk: (chunk: string) => {
+          streamText += chunk;
+          setIsLoading(false);
+          setMessages((prev) => {
+            const index = prev.findIndex((m) => m.id === streamingTempId);
+            if (index >= 0) {
+              const updated = [...prev];
+              updated[index] = { ...updated[index], content: streamText };
+              return updated;
+            } else {
+              return [
+                ...prev,
+                {
+                  id: streamingTempId,
+                  role: 'assistant',
+                  content: streamText,
+                  language,
+                  createdAt: new Date().toISOString(),
+                },
+              ];
+            }
+          });
+        },
+      });
+
       if (res.conversationId && !conversationId) {
         setConversationId(res.conversationId);
       }
-      setMessages((prev) => [...prev, res.message]);
+
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => m.id !== streamingTempId);
+        return [...filtered, res.message];
+      });
+
       if (res.message?.language && res.message.language !== language) {
         setLanguage(res.message.language as any);
       }
     } catch (err: any) {
       console.error('[chat error]', err);
+      setMessages((prev) => prev.filter((m) => m.id !== streamingTempId || m.content.trim().length > 0));
       setError(err.message || 'Could not send message. Please try again.');
       setFailedMessage(text);
     } finally {

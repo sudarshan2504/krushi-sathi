@@ -160,7 +160,11 @@ router.post('/messages', optionalAuthMiddleware, async (req: AuthRequest, res: R
             tasks: { where: { isCompleted: false }, orderBy: { stageOrder: 'asc' }, take: 1, select: { stage: true } },
           },
         }),
-        fetchWeatherData(user.district || 'Mandya', user.latitude || undefined, user.longitude || undefined).catch(() => null),
+        // Fast 1.2s timeout so weather preflight never blocks chat response start
+        Promise.race([
+          fetchWeatherData(user.district || 'Mandya', user.latitude || undefined, user.longitude || undefined).catch(() => null),
+          new Promise<null>((resolve) => setTimeout(() => resolve(null), 1200)),
+        ]),
       ]);
 
       let soilInfo: string | undefined;
