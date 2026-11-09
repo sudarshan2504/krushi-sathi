@@ -51,7 +51,7 @@ export const ta = {
   cropLibrarySubtitle:'தென்னிந்திய முதன்மை பயிர் பட்டியல்',
   imageCredits:'பட வரவுகள் & உரிமங்கள்',
   recommendedForLocation:'உங்கள் இடத்திற்கு பரிந்துரைக்கப்படுகிறது',
-  navAiChat:'விவசாய AI',
+  navAiChat:'AI சாட்',
   navProfile:'சுயவிவரம்',
   navBack:'பின்செல்',
   navNext:'அடுத்து',

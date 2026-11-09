@@ -18,6 +18,7 @@
     "check:crop-images": "npm --workspace=server run check:crop-images"
   },
   "devDependencies": {
+    "@playwright/test": "^1.65.0",
     "concurrently": "^9.1.2",
     "puppeteer-core": "^25.16.0"
   }

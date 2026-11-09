@@ -51,7 +51,7 @@ export const kn = {
   cropLibrarySubtitle:'ದಕ್ಷಿಣ ಭಾರತ ಮಾಸ್ಟರ್ ಬೆಳೆ ಕ್ಯಾಟಲಾಗ್',
   imageCredits:'ಚಿತ್ರ ಕೃಪೆ ಮತ್ತು ಪರವಾನಗಿ',
   recommendedForLocation:'ನಿಮ್ಮ ಮಣ್ಣಿಗೆ ಸೂಕ್ತವಾಗಿದೆ',
-  navAiChat:'ಕೃಷಿ AI',
+  navAiChat:'AI ಚಾಟ್',
   navProfile:'ಪ್ರೊಫೈಲ್',
   navBack:'ಹಿಂದಕ್ಕೆ',
   navNext:'ಮುಂದೆ',

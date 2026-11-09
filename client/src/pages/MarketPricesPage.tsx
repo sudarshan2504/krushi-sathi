@@ -139,7 +139,7 @@ export const MarketPricesPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen min-h-dvh w-full bg-[#FAF8F2] dark:bg-[#1E2320] flex justify-center pb-28 selection:bg-emerald-100 selection:text-forest-dark overflow-x-hidden">
+    <div className="min-h-screen min-h-dvh w-full bg-[#FAF8F2] dark:bg-[#1E2320] flex justify-center pb-32 safe-bottom selection:bg-emerald-100 selection:text-forest-dark overflow-x-hidden">
       <div className="w-full max-w-[430px] min-h-screen min-h-dvh flex flex-col px-4 pt-3 space-y-4">
         {/* Top Header */}
         <header className="flex items-center justify-between py-1.5 z-20">

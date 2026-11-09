@@ -50,8 +50,8 @@ export const Layout: React.FC = () => {
           className={[
             'flex-1 w-full',
             isFullWidth
-              ? 'p-0 pb-[calc(5rem+env(safe-area-inset-bottom,16px))]'
-              : 'px-4 sm:px-5 py-4 pb-[calc(6rem+env(safe-area-inset-bottom,16px))] space-y-0',
+              ? 'p-0 pb-32'
+              : 'px-4 sm:px-5 py-4 pb-32 space-y-0',
             'safe-bottom',
           ].join(' ')}
         >

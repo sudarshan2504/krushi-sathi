@@ -51,7 +51,7 @@ export const te = {
   cropLibrarySubtitle:'దక్షిణ భారత మాస్టర్ పంటల కేటలాగ్',
   imageCredits:'చిత్ర క్రెడిట్స్ & లైసెన్సులు',
   recommendedForLocation:'మీ నేలకు సిఫార్సు చేయబడింది',
-  navAiChat:'వ్యవసాయ AI',
+  navAiChat:'AI చాట్',
   navProfile:'ప్రొఫైల్',
   navBack:'వెనుకకు',
   navNext:'తరువాత',
