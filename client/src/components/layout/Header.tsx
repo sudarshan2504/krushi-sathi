@@ -9,14 +9,12 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { Globe, Bell, Check, LogOut, ChevronLeft } from 'lucide-react';
-import { useAuth } from '../../context/AuthContext';
+import { Bell, ChevronLeft } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
-import { api } from '../../services/api';
 import { Modal } from '../ui/Modal';
-import { LanguageCode } from '../../i18n';
 import { IconButton } from '../ui/IconButton';
 import { BrandLogo } from '../ui/BrandLogo';
+import { LanguagePill } from '../ui/LanguagePill';
 
 const PAGE_TITLES: Record<string, string> = {
   '/home':      '',          // Home shows brand logo
@@ -26,13 +24,6 @@ const PAGE_TITLES: Record<string, string> = {
   '/diseases':  'Disease Guide',
   '/chat':      'AI Assistant',
   '/profile':   'Profile',
-};
-
-const LANG_SHORT_CODES: Record<LanguageCode, string> = {
-  en: 'EN',
-  kn: 'ಕನ್ನಡ',
-  ta: 'தமிழ்',
-  te: 'తెలుగు',
 };
 
 function useScrolled(threshold = 4) {
@@ -52,27 +43,18 @@ function useScrolled(threshold = 4) {
 export const Header: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
-  const { language, setLanguage, languages, t } = useTranslation();
-  const [isLangOpen, setIsLangOpen] = useState(false);
+  const { t } = useTranslation();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
   const scrolled = useScrolled();
 
   const isHome = location.pathname === '/home';
   const pageTitle = PAGE_TITLES[location.pathname] ?? '';
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/login');
-  };
-
-  const currentLang = languages.find((l) => l.code === language);
-
   return (
     <>
       <header
         className={[
-          'sticky top-0 z-30 w-full',
+          'sticky top-0 z-40 w-full',
           'pt-[max(0.75rem,env(safe-area-inset-top,0px))]',
           'pb-2.5',
           'px-4 sm:px-5',
@@ -99,7 +81,7 @@ export const Header: React.FC = () => {
         ) : (
           <button
             onClick={() => navigate(-1)}
-            className="flex items-center justify-center w-10 h-10 rounded-2xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-brand"
+            className="flex items-center justify-center w-11 h-11 rounded-2xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-dark-elevated transition-colors shrink-0 focus-visible:ring-2 focus-visible:ring-brand cursor-pointer"
             aria-label={t('navBack')}
           >
             <ChevronLeft className="w-5 h-5" strokeWidth={2.5} />
@@ -118,15 +100,8 @@ export const Header: React.FC = () => {
 
         {/* Right controls */}
         <div className="flex items-center gap-2 shrink-0">
-          {/* Language selector */}
-          <button
-            onClick={() => setIsLangOpen(true)}
-            className="flex items-center gap-1.5 h-9 px-2.5 rounded-full border border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface text-[13px] font-semibold text-gray-800 dark:text-gray-200 hover:border-brand-400 dark:hover:border-brand-600 transition-colors shadow-xs focus-visible:ring-2 focus-visible:ring-brand shrink-0 whitespace-nowrap"
-            aria-label={t('chooseLanguage')}
-          >
-            <Globe className="w-3.5 h-3.5 text-brand-700 dark:text-brand-400 shrink-0" aria-hidden="true" />
-            <span className="leading-none">{LANG_SHORT_CODES[language] || 'EN'}</span>
-          </button>
+          {/* Language portal dropdown */}
+          <LanguagePill variant="compact" />
 
           {/* Notification bell */}
           {isHome && (
@@ -148,47 +123,6 @@ export const Header: React.FC = () => {
           )}
         </div>
       </header>
-
-      {/* Language Modal */}
-      <Modal isOpen={isLangOpen} onClose={() => setIsLangOpen(false)} title={t('chooseLanguage')}>
-        <p className="text-[14px] text-gray-500 dark:text-gray-400 mb-4">
-          {t('selectLanguageComfortable')}
-        </p>
-        <div className="grid grid-cols-2 gap-2.5">
-          {languages.map((lang) => {
-            const isSelected = language === lang.code;
-            return (
-              <button
-                key={lang.code}
-                onClick={() => {
-                  setLanguage(lang.code as LanguageCode);
-                  if (user) {
-                    api.auth.updateProfile({ language: lang.code }).catch(() => {});
-                  }
-                  setIsLangOpen(false);
-                }}
-                className={[
-                  'relative p-4 rounded-3xl border-2 text-left flex flex-col gap-1 transition-all',
-                  'focus-visible:ring-2 focus-visible:ring-brand focus-visible:ring-offset-2',
-                  isSelected
-                    ? 'border-brand-700 bg-brand-50 dark:bg-brand-900/20 dark:border-brand-600'
-                    : 'border-gray-200 dark:border-dark-border bg-white dark:bg-dark-surface hover:border-brand-300 dark:hover:border-brand-700',
-                ].join(' ')}
-              >
-                <span className={['text-lg font-bold', isSelected ? 'text-brand-700 dark:text-brand-400' : 'text-gray-900 dark:text-gray-100'].join(' ')}>
-                  {lang.nativeLabel}
-                </span>
-                <span className="text-[12px] text-gray-500 dark:text-gray-400">{lang.label}</span>
-                {isSelected && (
-                  <span className="absolute top-3 right-3 w-5 h-5 rounded-full bg-brand-700 dark:bg-brand-600 flex items-center justify-center">
-                    <Check className="w-3 h-3 text-white" strokeWidth={3} aria-hidden="true" />
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-      </Modal>
 
       {/* Notification Modal */}
       <Modal isOpen={isNotifOpen} onClose={() => setIsNotifOpen(false)} title={t('notifications')}>

@@ -140,14 +140,19 @@ export const HomePage: React.FC = () => {
               type="button"
               onClick={() => {
                 setHasUnreadNotifications(false);
-                showToast('You have 2 weather & crop advisories for Mandya', 'info');
+                showToast(
+                  user?.district
+                    ? `You have 2 weather & crop advisories for ${user.district}`
+                    : 'You have 2 weather & crop advisories for your farm',
+                  'info'
+                );
               }}
               aria-label="View notifications"
-              className="relative w-9 h-9 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200/70 dark:border-zinc-700 flex items-center justify-center shadow-xs hover:bg-zinc-50 active:scale-95 transition cursor-pointer"
+              className="relative w-11 h-11 rounded-full bg-white dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 border border-zinc-200/70 dark:border-zinc-700 flex items-center justify-center shadow-xs hover:bg-zinc-50 active:scale-95 transition cursor-pointer"
             >
               <Bell className="w-4 h-4 text-zinc-700 dark:text-zinc-200" />
               {hasUnreadNotifications && (
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 animate-pulse" />
+                <span className="absolute top-2.5 right-2.5 w-2 h-2 rounded-full bg-red-500 ring-2 ring-white dark:ring-zinc-800 animate-pulse" />
               )}
             </button>
           </div>

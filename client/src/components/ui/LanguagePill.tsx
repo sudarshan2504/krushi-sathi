@@ -20,14 +20,21 @@ export const LanguagePill: React.FC<LanguagePillProps> = ({
   const [isOpen, setIsOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const backdropRef = useRef<HTMLDivElement>(null);
   const [dropdownCoords, setDropdownCoords] = useState<{ top: number; right: number }>({ top: 0, right: 0 });
 
   const updatePosition = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      // Align dropdown's right edge with button's right edge, clamped with padding
-      const right = Math.max(12, window.innerWidth - rect.right);
-      const top = rect.bottom + 8;
+      const menuWidth = 208; // w-52
+      const estimatedMenuHeight = 276;
+      // Align dropdown's right edge with button's right edge, clamped within viewport
+      const maxRight = Math.max(12, window.innerWidth - menuWidth - 12);
+      const right = Math.min(Math.max(12, window.innerWidth - rect.right), maxRight);
+      const fitsBelow = rect.bottom + 8 + estimatedMenuHeight <= window.innerHeight - 12;
+      const top = fitsBelow
+        ? rect.bottom + 8
+        : Math.max(12, rect.top - estimatedMenuHeight - 8);
       setDropdownCoords({ top, right });
     }
   }, []);
@@ -37,6 +44,10 @@ export const LanguagePill: React.FC<LanguagePillProps> = ({
       updatePosition();
       const handleClickOutside = (e: MouseEvent | TouchEvent) => {
         const target = e.target as Node;
+        if (backdropRef.current && backdropRef.current.contains(target)) {
+          // Let the backdrop swallow the click/tap completely before closing
+          return;
+        }
         if (
           buttonRef.current &&
           !buttonRef.current.contains(target) &&
@@ -94,10 +105,10 @@ export const LanguagePill: React.FC<LanguagePillProps> = ({
         aria-haspopup="listbox"
         aria-expanded={isOpen}
         aria-label={`Change language, currently ${currentLanguageOption.label}`}
-        className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-700/80 shadow-xs hover:bg-zinc-50 dark:hover:bg-zinc-750 active:scale-95 transition cursor-pointer select-none"
+        className="flex items-center justify-center gap-1.5 min-h-[44px] min-w-[44px] px-3.5 py-2 rounded-full bg-white dark:bg-zinc-800 text-zinc-800 dark:text-zinc-100 border border-zinc-200/80 dark:border-zinc-700/80 shadow-xs hover:bg-zinc-50 dark:hover:bg-zinc-750 active:scale-95 transition cursor-pointer select-none"
       >
         <Globe className="w-4 h-4 text-forest dark:text-emerald-400 shrink-0" />
-        <span className="text-xs font-bold tracking-wide">{displayText}</span>
+        <span className="text-xs font-bold tracking-wide leading-[1.4]">{displayText}</span>
         <ChevronDown
           className={`w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400 transition-transform duration-200 ${
             isOpen ? 'rotate-180' : ''
@@ -107,47 +118,58 @@ export const LanguagePill: React.FC<LanguagePillProps> = ({
 
       {isOpen &&
         createPortal(
-          <div
-            ref={dropdownRef}
-            role="listbox"
-            aria-label="Select language"
-            style={{
-              top: `${dropdownCoords.top}px`,
-              right: `${dropdownCoords.right}px`,
-            }}
-            className="fixed z-[9999] w-52 py-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200/90 dark:border-zinc-700 max-h-[calc(100vh-100px)] overflow-y-auto animate-in fade-in zoom-in-95 duration-150 select-none opacity-100"
-          >
-            <div className="px-3.5 py-1 text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
-              Select Language
+          <>
+            <div
+              ref={backdropRef}
+              className="fixed inset-0 z-[9998] bg-transparent"
+              aria-hidden="true"
+              onClick={(e) => {
+                e.stopPropagation();
+                setIsOpen(false);
+              }}
+            />
+            <div
+              ref={dropdownRef}
+              role="listbox"
+              aria-label="Select language"
+              style={{
+                top: `${dropdownCoords.top}px`,
+                right: `${dropdownCoords.right}px`,
+              }}
+              className="fixed z-[9999] w-52 py-2 bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl border border-zinc-200/90 dark:border-zinc-700 max-h-[calc(100vh-24px)] overflow-y-auto select-none opacity-100"
+            >
+              <div className="px-3.5 py-1 text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+                Select Language
+              </div>
+              <div className="mt-1 space-y-0.5 px-1.5">
+                {languages.map((opt) => {
+                  const isSelected = opt.code === language;
+                  return (
+                    <button
+                      key={opt.code}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      onClick={() => handleSelect(opt.code as LanguageCode)}
+                      className={`w-full min-h-[48px] flex items-center justify-between px-3 py-2 rounded-xl text-left text-xs transition cursor-pointer select-none ${
+                        isSelected
+                          ? 'bg-emerald-50 dark:bg-emerald-950/60 text-[#144D29] dark:text-emerald-300 font-bold'
+                          : 'text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                      }`}
+                    >
+                      <div className="flex flex-col">
+                        <span className="font-bold text-[13px] leading-[1.4]">{opt.nativeLabel}</span>
+                        <span className="text-[11px] text-zinc-500 dark:text-zinc-400 leading-[1.3]">{opt.label}</span>
+                      </div>
+                      {isSelected && (
+                        <Check className="w-4 h-4 text-forest dark:text-emerald-400 shrink-0 stroke-[2.5]" />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
-            <div className="mt-1 space-y-0.5 px-1.5">
-              {languages.map((opt) => {
-                const isSelected = opt.code === language;
-                return (
-                  <button
-                    key={opt.code}
-                    type="button"
-                    role="option"
-                    aria-selected={isSelected}
-                    onClick={() => handleSelect(opt.code as LanguageCode)}
-                    className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-left text-xs transition cursor-pointer select-none ${
-                      isSelected
-                        ? 'bg-emerald-50 dark:bg-emerald-950/60 text-[#144D29] dark:text-emerald-300 font-bold'
-                        : 'text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800'
-                    }`}
-                  >
-                    <div className="flex flex-col">
-                      <span className="font-bold text-[13px] leading-tight">{opt.nativeLabel}</span>
-                      <span className="text-[11px] text-zinc-400 dark:text-zinc-500 mt-0.5">{opt.label}</span>
-                    </div>
-                    {isSelected && (
-                      <Check className="w-4 h-4 text-forest dark:text-emerald-400 shrink-0 stroke-[2.5]" />
-                    )}
-                  </button>
-                );
-              })}
-            </div>
-          </div>,
+          </>,
           document.body
         )}
     </div>
