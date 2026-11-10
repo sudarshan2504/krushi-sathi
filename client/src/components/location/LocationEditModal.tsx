@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Navigation, Loader2, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -37,6 +37,18 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
   const [isDetecting, setIsDetecting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setState(user?.state || 'Karnataka');
+      setDistrict(user?.district || '');
+      setVillage(user?.village || '');
+      setLatitude(user?.latitude || null);
+      setLongitude(user?.longitude || null);
+      setLocationSource(user?.locationSource || 'manual');
+      setError(null);
+    }
+  }, [isOpen, user]);
 
   const selectedStateObj: IndianState =
     INDIAN_STATES.find((s) => s.name === state) || INDIAN_STATES[0];
@@ -96,7 +108,7 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
           setError('Location request timed out. Please try again or select manually.');
         }
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 }
+      { enableHighAccuracy: false, timeout: 8000, maximumAge: 60000 }
     );
   };
 
@@ -121,8 +133,11 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
       });
 
       updateUser(updated);
-      showToast(t('toastSaved'), 'success');
-      onLocationUpdated?.(state, district, latitude || undefined, longitude || undefined);
+      if (onLocationUpdated) {
+        onLocationUpdated(state, district, latitude || undefined, longitude || undefined);
+      } else {
+        showToast(t('toastSaved'), 'success');
+      }
       onClose();
     } catch (err: any) {
       setError(err?.message || 'Failed to update location');
@@ -135,7 +150,7 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-dark-text/40 backdrop-blur-xs">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-xs">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -149,10 +164,10 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
                 <MapPin className="w-5 h-5" />
               </div>
               <div>
-                <h3 className="font-extrabold text-base text-dark-text">
+                <h3 className="font-extrabold text-base text-gray-900">
                   {t('editLocationTitle') || 'Change Farm Location'}
                 </h3>
-                <p className="text-xs text-dark-muted font-medium">
+                <p className="text-xs text-gray-500 font-medium">
                   {t('locationWhyNeeded')}
                 </p>
               </div>
@@ -160,7 +175,7 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="p-2 rounded-full hover:bg-gray-100 text-dark-muted transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+              className="p-2 rounded-full hover:bg-gray-100 text-gray-600 transition cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
               aria-label="Close"
             >
               <X className="w-5 h-5" />
@@ -199,7 +214,7 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
           <form onSubmit={handleSave} className="space-y-3 pt-1">
             {/* State Select */}
             <div>
-              <label className="block text-xs font-bold text-dark-text mb-1">
+              <label className="block text-xs font-bold text-gray-800 mb-1">
                 {t('state')} *
               </label>
               <select
@@ -211,9 +226,11 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
                   if (stObj && !stObj.districts.includes(district)) {
                     setDistrict(stObj.districts[0] || '');
                   }
+                  setLatitude(null);
+                  setLongitude(null);
                   setLocationSource('manual');
                 }}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold focus:border-forest outline-none bg-white min-h-[46px]"
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-900 focus:border-forest outline-none bg-white min-h-[46px]"
               >
                 {INDIAN_STATES.map((s) => (
                   <option key={s.name} value={s.name}>
@@ -225,7 +242,7 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
             {/* District Select */}
             <div>
-              <label className="block text-xs font-bold text-dark-text mb-1">
+              <label className="block text-xs font-bold text-gray-800 mb-1">
                 {t('district')} *
               </label>
               <select
@@ -233,9 +250,11 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
                 value={district}
                 onChange={(e) => {
                   setDistrict(e.target.value);
+                  setLatitude(null);
+                  setLongitude(null);
                   setLocationSource('manual');
                 }}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold focus:border-forest outline-none bg-white min-h-[46px]"
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-900 focus:border-forest outline-none bg-white min-h-[46px]"
               >
                 <option value="">{t('selectDistrictPlaceholder')}</option>
                 {selectedStateObj.districts.map((d) => (
@@ -248,15 +267,15 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
             {/* Village (Optional) */}
             <div>
-              <label className="block text-xs font-bold text-dark-text mb-1">
-                {t('village')} ({t('farmSize') ? 'Optional' : 'Optional'})
+              <label className="block text-xs font-bold text-gray-800 mb-1">
+                {t('village')} (Optional)
               </label>
               <input
                 type="text"
                 value={village}
                 onChange={(e) => setVillage(e.target.value)}
                 placeholder="e.g. Koppa"
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold focus:border-forest outline-none bg-white min-h-[46px]"
+                className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-900 focus:border-forest outline-none bg-white min-h-[46px]"
               />
             </div>
 
@@ -265,7 +284,7 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 py-3 px-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-dark-text font-bold text-xs transition min-h-[48px] cursor-pointer"
+                className="flex-1 py-3 px-4 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-xs transition min-h-[48px] cursor-pointer"
               >
                 {t('navCancel')}
               </button>

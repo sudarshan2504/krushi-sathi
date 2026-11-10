@@ -310,28 +310,32 @@ export function getLocationConditions(
 
   let locationData;
 
-  if (state && district) {
+  if (state || district) {
     locationData = findLocationByName(state, district, taluk);
   }
 
-  if (!locationData && lat !== undefined && lon !== undefined) {
-    locationData = findLocationByCoords(lat, lon);
+  if (!locationData && !state && !district && lat !== undefined && lon !== undefined) {
+    const candidate = findLocationByCoords(lat, lon);
+    const approxDeg = Math.hypot(candidate.latitude - lat, candidate.longitude - lon);
+    if (approxDeg <= 1.0) {
+      locationData = candidate;
+    }
   }
 
-  // If still not matched, construct minimal location from passed query
+  // If still not matched, construct minimal location from passed query without fabricating Mandya/Karnataka
   if (!locationData) {
     locationData = {
-      state: state || 'Karnataka',
-      district: district || 'Unknown District',
+      state: state || '',
+      district: district || '',
       taluk: taluk || district || '',
-      latitude: lat || 12.9716,
-      longitude: lon || 77.5946,
-      agroZone: 'Southern Plateau and Hills Zone',
-      agroZoneCode: 'ACZ-10',
-      agroZoneDescription: 'Semi-arid peninsular plateau with diversified crop systems.',
+      latitude: lat ?? 0,
+      longitude: lon ?? 0,
+      agroZone: 'Local Agricultural Zone',
+      agroZoneCode: 'LOCAL',
+      agroZoneDescription: 'Regional agro-climatic growing conditions tailored to your local coordinates.',
       typicalSoils: ['red', 'loamy', 'black'],
       rainfallMm: '650 - 850 mm',
-      primaryCrops: ['Ragi', 'Paddy', 'Pulses'],
+      primaryCrops: ['Paddy', 'Ragi', 'Pulses'],
     };
   }
 

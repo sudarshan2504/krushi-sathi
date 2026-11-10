@@ -99,7 +99,10 @@ export async function fetchWithRetry<T>(
         lastError = new Error(`Network timeout: request exceeded ${timeoutMs / 1000}s.`);
       }
       // If server returned a 4xx or business error, do not retry
-      if (err.message && (err.message.includes('status 4') || err.message.includes('Invalid') || err.message.includes('not found'))) {
+      if (
+        (err.status && err.status >= 400 && err.status < 500) ||
+        (err.message && (err.message.includes('status 4') || err.message.includes('Invalid') || err.message.includes('not found')))
+      ) {
         throw err;
       }
       if (attempt < attempts - 1) {
@@ -307,14 +310,17 @@ export const api = {
 
       try {
         const data = await fetchWithRetry<WeatherData>(`${API_BASE}/weather?${params.toString()}`, {}, 1, 8000);
-        setCachedData(cacheKey, data);
+        if (!data.isDemoFallback) {
+          setCachedData(cacheKey, data);
+        }
         return data;
       } catch (err) {
-        if (cached) {
+        const staleCached = cached || getCachedData<WeatherData>(cacheKey, Number.MAX_SAFE_INTEGER);
+        if (staleCached) {
           return {
-            ...cached,
+            ...staleCached,
             isStale: true,
-            dataSource: `${cached.dataSource} (Offline Client Cache)`
+            dataSource: `${staleCached.dataSource} (Cached)`,
           };
         }
         throw err;

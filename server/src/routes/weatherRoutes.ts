@@ -6,8 +6,20 @@ import {
 } from '../services/weatherService';
 import { INDIA_LOCATIONS } from '../data/indiaLocations';
 import { getLocationConditions } from '../services/seasonService';
+import { createRateLimiter } from '../middleware/rateLimiter';
 
 const router = Router();
+
+const reverseGeocodeRateLimiter = createRateLimiter({
+  keyPrefix: 'weather-reverse',
+  windowMs: 60 * 1000,
+  maxRequests: () => {
+    const envMax = parseInt(process.env.REVERSE_GEOCODE_RATE_LIMIT_MAX || '', 10);
+    if (!isNaN(envMax) && envMax > 0) return envMax;
+    return process.env.NODE_ENV === 'production' ? 30 : 120;
+  },
+  message: 'Too many reverse-geocoding requests. Please wait a moment before trying again.',
+});
 
 // 1. Get structured India locations (States -> Districts -> Taluks) for dropdown selection
 router.get('/locations', (_req: Request, res: Response) => {
@@ -18,7 +30,7 @@ router.get('/locations', (_req: Request, res: Response) => {
 });
 
 // 2. Reverse-geocode coordinates to a readable place (village/town, district, state)
-router.get('/reverse', async (req: Request, res: Response) => {
+router.get('/reverse', reverseGeocodeRateLimiter, async (req: Request, res: Response) => {
   try {
     const latStr = req.query.lat as string | undefined;
     const lonStr = req.query.lon as string | undefined;
@@ -40,13 +52,20 @@ router.get('/reverse', async (req: Request, res: Response) => {
       });
     }
 
+    if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+      return res.status(400).json({
+        success: false,
+        message: 'Coordinates out of geographical bounds.',
+      });
+    }
+
     const result = await reverseGeocodeCoords(lat, lon);
     res.json({
       success: true,
       data: result,
     });
   } catch (err: any) {
-    res.status(500).json({
+    res.status(err.status || 500).json({
       success: false,
       message: err.message || 'Failed to reverse geocode coordinates',
     });
@@ -56,15 +75,34 @@ router.get('/reverse', async (req: Request, res: Response) => {
 // 3. Get location-based conditions (Agro-climatic zone, season, live weather, typical soils)
 router.get('/location-conditions', async (req: Request, res: Response) => {
   try {
-    const lat = req.query.lat ? parseFloat(req.query.lat as string) : 12.5244;
-    const lon = req.query.lon ? parseFloat(req.query.lon as string) : 76.8969;
-    const state = req.query.state as string;
-    const district = req.query.district as string;
-    const taluk = req.query.taluk as string;
+    const lat = req.query.lat !== undefined ? parseFloat(req.query.lat as string) : undefined;
+    const lon = req.query.lon !== undefined ? parseFloat(req.query.lon as string) : undefined;
+    const state = req.query.state as string | undefined;
+    const district = req.query.district as string | undefined;
+    const taluk = req.query.taluk as string | undefined;
 
-    const conditions = getLocationConditions(lat, lon, state, district, taluk);
-    const targetDistrict = conditions.location?.district || district || 'Mandya';
-    const weather = await fetchWeatherData(targetDistrict, lat, lon);
+    const hasValidCoords = lat !== undefined && !isNaN(lat) && lon !== undefined && !isNaN(lon);
+    if (!district && !state && !hasValidCoords) {
+      return res.status(400).json({
+        success: false,
+        needsLocation: true,
+        message: 'Farm location is missing. Please provide your district or GPS coordinates.',
+      });
+    }
+
+    const conditions = getLocationConditions(
+      hasValidCoords ? lat : undefined,
+      hasValidCoords ? lon : undefined,
+      state,
+      district,
+      taluk
+    );
+    const targetDistrict = district || conditions.location?.district;
+    const weather = await fetchWeatherData(
+      targetDistrict,
+      hasValidCoords ? lat : undefined,
+      hasValidCoords ? lon : undefined
+    );
 
     res.json({
       success: true,
@@ -74,7 +112,10 @@ router.get('/location-conditions', async (req: Request, res: Response) => {
       },
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: 'Failed to retrieve location conditions' });
+    res.status(err.status || 500).json({
+      success: false,
+      message: err.message || 'Failed to retrieve location conditions',
+    });
   }
 });
 
@@ -82,8 +123,8 @@ router.get('/location-conditions', async (req: Request, res: Response) => {
 router.get('/', async (req: Request, res: Response) => {
   try {
     const district = req.query.district as string | undefined;
-    const lat = req.query.lat ? parseFloat(req.query.lat as string) : undefined;
-    const lon = req.query.lon ? parseFloat(req.query.lon as string) : undefined;
+    const lat = req.query.lat !== undefined ? parseFloat(req.query.lat as string) : undefined;
+    const lon = req.query.lon !== undefined ? parseFloat(req.query.lon as string) : undefined;
     const allowDemo = req.query.demo === 'true';
 
     if (!district && (lat === undefined || isNaN(lat) || lon === undefined || isNaN(lon))) {
@@ -100,7 +141,7 @@ router.get('/', async (req: Request, res: Response) => {
       data: weather,
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message || 'Failed to retrieve weather data' });
+    res.status(err.status || 500).json({ success: false, message: err.message || 'Failed to retrieve weather data' });
   }
 });
 

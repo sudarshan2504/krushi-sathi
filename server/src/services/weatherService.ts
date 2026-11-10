@@ -77,7 +77,7 @@ export const DISTRICT_COORDINATES: Record<string, { lat: number; lon: number; st
 };
 
 import { getLocationConditions } from './seasonService';
-import { findLocationByName, findLocationByCoords } from '../data/indiaLocations';
+import { findLocationByName } from '../data/indiaLocations';
 
 export interface ReverseGeocodeResult {
   location: string;
@@ -91,6 +91,7 @@ export interface ReverseGeocodeResult {
 
 const REVERSE_GEOCODE_CACHE_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 const reverseGeocodeCache = new Map<string, { data: ReverseGeocodeResult; timestamp: number }>();
+const forwardGeocodeCache = new Map<string, { data: ReverseGeocodeResult; timestamp: number }>();
 
 let lastNominatimTimestamp = 0;
 const NOMINATIM_MIN_INTERVAL_MS = 1100; // 1.1s spacing to respect Nominatim 1 req/sec policy
@@ -110,6 +111,16 @@ function cleanAreaName(name: string): string {
     .trim();
 }
 
+function dedupJoin(primary?: string, secondary?: string): string {
+  const p = (primary || '').trim();
+  const s = (secondary || '').trim();
+  if (p && s) {
+    if (p.toLowerCase() === s.toLowerCase()) return p;
+    return `${p}, ${s}`;
+  }
+  return p || s || '';
+}
+
 export function formatReverseGeocodeLocation(addr: any, fallback: string): {
   location: string;
   villageOrTown?: string;
@@ -118,11 +129,11 @@ export function formatReverseGeocodeLocation(addr: any, fallback: string): {
   country?: string;
 } {
   const village = addr.village || addr.hamlet || '';
-  const taluk = addr.county || '';
+  const taluk = addr.county || addr.subdistrict || '';
   const townOrCity = addr.town || addr.city || addr.municipality || addr.suburb || '';
   const rawDistrict = addr.state_district || addr.district || '';
-  const state = addr.state || addr.region || addr.province || '';
-  const country = addr.country || '';
+  const state = (addr.state || addr.region || addr.province || '').trim();
+  const country = (addr.country || '').trim();
 
   const cleanDistrict = cleanAreaName(rawDistrict);
   const cleanTaluk = cleanAreaName(taluk);
@@ -131,41 +142,35 @@ export function formatReverseGeocodeLocation(addr: any, fallback: string): {
 
   let formattedLocation = '';
 
-  // 1. If village and taluk/district are present -> "Village, District"
+  // 1. If village is present -> "Village, District" (or "Village, State" if same/absent)
   if (cleanVillage) {
-    const districtForVillage = cleanDistrict || cleanTaluk;
-    if (districtForVillage && districtForVillage.toLowerCase() !== cleanVillage.toLowerCase()) {
-      formattedLocation = `${cleanVillage}, ${districtForVillage}`;
+    const districtOrTaluk = cleanDistrict || cleanTaluk;
+    if (districtOrTaluk && districtOrTaluk.toLowerCase() !== cleanVillage.toLowerCase()) {
+      formattedLocation = `${cleanVillage}, ${districtOrTaluk}`;
     } else if (state) {
-      formattedLocation = `${cleanVillage}, ${state}`;
+      formattedLocation = dedupJoin(cleanVillage, state);
     } else {
       formattedLocation = cleanVillage;
     }
   } else {
-    // 2. Otherwise -> "<place>, <state>" (e.g. "Mysuru, Karnataka", "Bengaluru, Karnataka")
-    // Never repeat the same name twice (if place and district are the same, show it once)
+    // 2. Otherwise -> "<place>, <state>" (e.g. "Mysuru, Karnataka"), never repeating identical names
     const place = cleanTown || cleanDistrict || cleanTaluk;
     if (place) {
-      if (state) {
-        formattedLocation = `${place}, ${state}`;
-      } else if (country) {
-        formattedLocation = `${place}, ${country}`;
-      } else {
-        formattedLocation = place;
-      }
+      formattedLocation = state ? dedupJoin(place, state) : country ? dedupJoin(place, country) : place;
     } else if (state) {
-      formattedLocation = `${state}${country ? `, ${country}` : ''}`;
+      formattedLocation = country ? dedupJoin(state, country) : state;
     } else if (addr.name) {
-      formattedLocation = `${addr.name}${state ? `, ${state}` : country ? `, ${country}` : ''}`;
+      const cleanAddrName = cleanAreaName(addr.name);
+      formattedLocation = dedupJoin(cleanAddrName, state || country);
     } else {
       formattedLocation = fallback;
     }
   }
 
   return {
-    location: formattedLocation,
+    location: formattedLocation || fallback,
     villageOrTown: village || townOrCity || undefined,
-    district: cleanDistrict || cleanTaluk || undefined,
+    district: cleanDistrict || cleanTaluk || cleanTown || undefined,
     state: state || undefined,
     country: country || undefined,
   };
@@ -177,6 +182,12 @@ export function formatReverseGeocodeLocation(addr: any, fallback: string): {
  * If reverse geocode fails, returns "Your location (lat, lon)" instead of a wrong district name.
  */
 export async function reverseGeocodeCoords(lat: number, lon: number): Promise<ReverseGeocodeResult> {
+  if (lat < -90 || lat > 90 || lon < -180 || lon > 180) {
+    const err: any = new Error('Coordinates out of geographical bounds');
+    err.status = 400;
+    throw err;
+  }
+
   const roundedLat = Math.round(lat * 1000) / 1000;
   const roundedLon = Math.round(lon * 1000) / 1000;
   const cacheKey = `${roundedLat.toFixed(3)},${roundedLon.toFixed(3)}`;
@@ -200,60 +211,106 @@ export async function reverseGeocodeCoords(lat: number, lon: number): Promise<Re
       headers: {
         'User-Agent': 'KrushiSathiApp/2.0 (contact: support@krushisathi.in; agricultural advisory)',
         'Accept': 'application/json',
+        'Accept-Language': 'en',
       },
     });
     clearTimeout(timeout);
 
     if (res.ok) {
       const data = (await res.json()) as any;
-      const addr = data.address || {};
-      const formatted = formatReverseGeocodeLocation(addr, coordFallback);
+      const addr = data?.address || {};
+      const hasAddressFields = Object.keys(addr).length > 0;
+      if (hasAddressFields) {
+        const formatted = formatReverseGeocodeLocation(addr, coordFallback);
 
-      const result: ReverseGeocodeResult = {
-        location: formatted.location,
-        villageOrTown: formatted.villageOrTown,
-        district: formatted.district,
-        state: formatted.state,
-        country: formatted.country,
-        lat,
-        lon,
-      };
+        const result: ReverseGeocodeResult = {
+          location: formatted.location,
+          villageOrTown: formatted.villageOrTown,
+          district: formatted.district,
+          state: formatted.state,
+          country: formatted.country,
+          lat,
+          lon,
+        };
 
-      reverseGeocodeCache.set(cacheKey, { data: result, timestamp: Date.now() });
-      return result;
+        if (formatted.location !== coordFallback) {
+          reverseGeocodeCache.set(cacheKey, { data: result, timestamp: Date.now() });
+        }
+        return result;
+      }
     }
   } catch (err) {
     console.warn(`[WeatherService] Reverse geocode lookup failed for (${lat}, ${lon}):`, (err as any)?.message || err);
   }
 
-  // Fallback 1: match known India locations database
-  const locByCoord = findLocationByCoords(lat, lon);
-  if (locByCoord) {
-    const place =
-      locByCoord.taluk && locByCoord.taluk.toLowerCase() !== locByCoord.district.toLowerCase()
-        ? `${locByCoord.taluk}, ${locByCoord.district}`
-        : `${locByCoord.district}, ${locByCoord.state}`;
-
-    const result: ReverseGeocodeResult = {
-      location: place,
-      villageOrTown: locByCoord.taluk || undefined,
-      district: locByCoord.district,
-      state: locByCoord.state,
-      country: 'India',
-      lat,
-      lon,
-    };
-    reverseGeocodeCache.set(cacheKey, { data: result, timestamp: Date.now() });
-    return result;
-  }
-
-  // Fallback 2: "Your location (lat, lon)"
-  const fallbackResult: ReverseGeocodeResult = {
+  // Never substitute Mandya or another city if reverse-geocoding fails
+  return {
     location: coordFallback,
     lat,
     lon,
   };
-  return fallbackResult;
+}
+
+/**
+ * Forward geocodes an arbitrary Indian place/district via Nominatim with 24h cache.
+ * Returns null if unreachable or unknown (never substitutes Mandya/Karnataka).
+ */
+async function forwardGeocodePlace(queryName: string): Promise<ReverseGeocodeResult | null> {
+  const key = queryName.trim().toLowerCase();
+  if (!key) return null;
+
+  const cached = forwardGeocodeCache.get(key);
+  if (cached && Date.now() - cached.timestamp < REVERSE_GEOCODE_CACHE_TTL_MS) {
+    return cached.data;
+  }
+
+  try {
+    await throttleNominatim();
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 6000);
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(queryName)}&countrycodes=in&format=jsonv2&limit=1&addressdetails=1`;
+
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'KrushiSathiApp/2.0 (contact: support@krushisathi.in; agricultural advisory)',
+        'Accept': 'application/json',
+        'Accept-Language': 'en',
+      },
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return null;
+    const items = (await res.json()) as any[];
+    if (!Array.isArray(items) || items.length === 0) return null;
+
+    const best = items[0];
+    const lat = parseFloat(best.lat);
+    const lon = parseFloat(best.lon);
+    if (isNaN(lat) || isNaN(lon)) return null;
+
+    const addr = best.address || {};
+    const formatted = formatReverseGeocodeLocation(
+      { ...addr, name: addr.name || best.name || queryName },
+      queryName.trim()
+    );
+
+    const result: ReverseGeocodeResult = {
+      location: formatted.location,
+      villageOrTown: formatted.villageOrTown,
+      district: formatted.district || queryName.trim(),
+      state: formatted.state || '',
+      country: formatted.country || 'India',
+      lat,
+      lon,
+    };
+    forwardGeocodeCache.set(key, { data: result, timestamp: Date.now() });
+    return result;
+  } catch (err) {
+    console.warn(`[WeatherService] Forward geocode lookup failed for "${queryName}":`, (err as any)?.message || err);
+    return null;
+  }
 }
 
 interface WeatherCacheEntry {
@@ -275,45 +332,66 @@ export async function fetchWeatherData(
   let lat = customLat;
   let lon = customLon;
   let state = '';
-  let district = districtName || '';
+  let district = (districtName || '').trim();
   let locationLabel = '';
 
   if (lat !== undefined && lon !== undefined) {
     // When lat/lon are given, use them directly and never substitute Mandya or default to Karnataka!
     const geocoded = await reverseGeocodeCoords(lat, lon);
     locationLabel = geocoded.location;
-    district = geocoded.district || geocoded.villageOrTown || districtName || '';
+    district = geocoded.district || geocoded.villageOrTown || '';
     state = geocoded.state || '';
   } else {
     // Fall back to district name lookup
     if (!district) {
-      throw new Error('Farm location is missing. Please set your farm location (district or GPS) to load weather.');
+      const err: any = new Error('Farm location is missing. Please set your farm location (district or GPS) to load weather.');
+      err.status = 400;
+      throw err;
     }
 
     const locByName = findLocationByName(undefined, district);
+    const matchedCoordKey = Object.keys(DISTRICT_COORDINATES).find(
+      (k) => k.toLowerCase() === district.toLowerCase()
+    );
+
     if (locByName) {
       lat = locByName.latitude;
       lon = locByName.longitude;
       state = locByName.state;
       district = locByName.district;
-      locationLabel = `${district}, ${state}`;
-    } else if (DISTRICT_COORDINATES[district]) {
-      const coord = DISTRICT_COORDINATES[district];
+      locationLabel = dedupJoin(district, state);
+    } else if (matchedCoordKey) {
+      const coord = DISTRICT_COORDINATES[matchedCoordKey];
       lat = coord.lat;
       lon = coord.lon;
       state = coord.state;
-      locationLabel = `${district}, ${state}`;
+      district = matchedCoordKey;
+      locationLabel = dedupJoin(district, state);
     } else {
-      // Coordinate fallback for unknown district in Karnataka
-      lat = 12.9716;
-      lon = 77.5946;
-      state = 'Karnataka';
-      locationLabel = `${district}, Karnataka`;
+      // Unknown district not in built-in table -> try forward geocoding without Karnataka/Mandya substitution
+      const geocodedPlace = await forwardGeocodePlace(district);
+      if (geocodedPlace) {
+        lat = geocodedPlace.lat;
+        lon = geocodedPlace.lon;
+        state = geocodedPlace.state || '';
+        district = geocodedPlace.district || district;
+        locationLabel = geocodedPlace.location;
+      } else {
+        const err: any = new Error(
+          `Unable to resolve location "${district}". Please select a district from the list or use device location.`
+        );
+        err.status = 404;
+        throw err;
+      }
     }
   }
 
   const finalLat = lat;
   const finalLon = lon;
+  const effectiveLocation =
+    locationLabel ||
+    (district ? dedupJoin(district, state) : `Your location (${finalLat.toFixed(2)}°, ${finalLon.toFixed(2)}°)`);
+
   const roundedLat = Math.round(finalLat * 100) / 100;
   const roundedLon = Math.round(finalLon * 100) / 100;
   const cacheKey = `${roundedLat.toFixed(2)},${roundedLon.toFixed(2)}`;
@@ -321,7 +399,14 @@ export async function fetchWeatherData(
   const cached = weatherMemoryCache.get(cacheKey);
   const now = Date.now();
   if (cached && now - cached.timestamp < WEATHER_CACHE_TTL_MS) {
-    return cached.data;
+    return {
+      ...cached.data,
+      location: effectiveLocation,
+      state: state || cached.data.state,
+      district: district || cached.data.district,
+      latitude: finalLat,
+      longitude: finalLon,
+    };
   }
 
   // Deduplicate in-flight requests
@@ -407,10 +492,6 @@ export async function fetchWeatherData(
         farmingAlertTa = `${rainyDay.dayName} அன்று மழை பெய்ய வாய்ப்புள்ளது (${rainyDay.rainChance}%). மழைக்கு முன் தெளிப்பு பணிகளை முடிக்கவும்.`;
         farmingAlertTe = `${rainyDay.dayName} నాడు వర్షం పడే అవకాశం ఉంది (${rainyDay.rainChance}%). వర్షానికి ముందే మందుల పిచಿಕారీ పూర్తి చేయండి.`;
       }
-
-      const effectiveLocation =
-        locationLabel ||
-        (district ? (state ? `${district}, ${state}` : district) : `Your location (${finalLat.toFixed(2)}°, ${finalLon.toFixed(2)}°)`);
 
       const liveResult: WeatherData = {
         location: effectiveLocation,
@@ -552,7 +633,10 @@ export function getDemoFallbackWeather(
 
   const locationTitle =
     customLocationLabel ||
-    (district ? (state ? `${district}, ${state}` : district) : `Your location (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`);
+    (district ? dedupJoin(district, state) : `Your location (${lat.toFixed(2)}°, ${lon.toFixed(2)}°)`);
+
+  const rainySampleDay = sampleDays.find((d) => d.rainChance >= 45) || sampleDays[4];
+  const rainyLabel = rainySampleDay?.dayName || 'this week';
 
   return {
     location: locationTitle,
@@ -574,34 +658,17 @@ export function getDemoFallbackWeather(
     forecast7Days: sampleDays,
     forecast8To14Days: sampleNextWeek,
     fiveDayRainProbability: sampleDays.slice(0, 5).map((d) => d.rainChance),
-    farmingAlert: 'Rain expected on Monday & Tuesday (65-70% chance). Consider completing field spraying and harvesting before rain.',
-    farmingAlertKn: 'ಸೋಮವಾರ ಮತ್ತು ಮಂಗಳವಾರ ಮಳೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ (65-70% ಸಂಭವ). ಮಳೆ ಬರುವ ಮುನ್ನ ಸಿಂಪಡಣೆ ಕಾರ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ.',
-    farmingAlertTa: 'திங்கள் மற்றும் செவ்வாய்க்கிழமைகளில் மழை வாய்ப்பு (65-70%). மழைக்கு முன் தெளிப்பு பணிகளை முடிக்கவும்.',
-    farmingAlertTe: 'సోమవారం, మంగళవారం వర్ష సూచన (65-70%). వర్షానికి ముందే పిచికారీ పనులు పూర్తి చేయండి.',
+    farmingAlert: `Rain expected on ${rainyLabel} (${rainySampleDay?.rainChance ?? 65}% chance). Consider completing field spraying and harvesting before rain.`,
+    farmingAlertKn: `${rainyLabel} ರಂದು ಮಳೆ ನಿರೀಕ್ಷಿಸಲಾಗಿದೆ (${rainySampleDay?.rainChance ?? 65}% ಸಂಭವ). ಮಳೆ ಬರುವ ಮುನ್ನ ಸಿಂಪಡಣೆ ಕಾರ್ಯ ಪೂರ್ಣಗೊಳಿಸಿ.`,
+    farmingAlertTa: `${rainyLabel} அன்று மழை வாய்ப்பு (${rainySampleDay?.rainChance ?? 65}%). மழைக்கு முன் தெளிப்பு பணிகளை முடிக்கவும்.`,
+    farmingAlertTe: `${rainyLabel} నాడు వర్ష సూచన (${rainySampleDay?.rainChance ?? 65}%). వర్షానికి ముందే పిచికారీ పనులు పూర్తి చేయండి.`,
     lastUpdated: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     isDemoFallback: true,
     dataSource: 'Sample Data (Offline Simulation)',
-    agroZone: 'Southern Dry Zone',
-    agroZoneCode: 'ACZ-6',
-    agroZoneDescription: 'Canal-irrigated Cauvery basin with high paddy and sugarcane productivity, alongside red gravelly rainfed uplands.',
-    typicalSoils: ['red', 'loamy', 'alluvial'],
-    taluk: district || 'Mandya',
-    seasonInfo: {
-      season: 'Kharif',
-      name: 'Kharif (Monsoon Season)',
-      nameKannada: 'ಮುಂಗಾರು ಹಂಗಾಮು (ಖಾರೀಫ್)',
-      nameTamil: 'காரிப் பருவம் (தென்மேற்கு பருவமழை)',
-      nameTelugu: 'ఖరీఫ్ కాలం (వర్షాకాలం)',
-      monthsRange: 'June - October',
-      currentPhase: 'Vegetative Growth',
-      currentPhaseKn: 'ಸಸ್ಯ ಬೆಳವಣಿಗೆ ಹಂತ',
-      currentPhaseTa: 'தாவர வளர்ச்சி பருவம்',
-      currentPhaseTe: 'మొక్కల ఏపుగా పెరిగే దశ',
-      advice: 'Ensure adequate field drainage and apply top-dressing fertilizers.',
-      adviceKn: 'ಹೆಚ್ಚುವರಿ ನೀರು ಬಸಿದು ಹೋಗಲು ಕಾಲುವೆ ನಿರ್ಮಿಸಿ. ಯೂರಿಯಾ ಗೊಬ್ಬರ ನೀಡಿ.',
-      adviceTa: 'வயலில் தேங்கும் உபரி நீரை வடிக்கவும். உரம் இடவும்.',
-      adviceTe: 'మురుగునీరు నిలవకుండా కాలువలు తీయండి. ఎరువులు వేయండి.',
-      primarySeasonalCrops: ['Paddy', 'Ragi', 'Maize', 'Cotton', 'Red Gram']
-    }
+    agroZone: 'Local Agricultural Zone',
+    agroZoneCode: 'LOCAL',
+    agroZoneDescription: 'Offline weather sample simulation matching your selected coordinates.',
+    typicalSoils: ['red', 'loamy', 'black'],
+    taluk: '',
   };
 }

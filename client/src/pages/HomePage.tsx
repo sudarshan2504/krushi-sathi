@@ -40,6 +40,13 @@ export const HomePage: React.FC = () => {
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [hasUnreadNotifications, setHasUnreadNotifications] = useState(true);
+  const [manualWeatherLocation, setManualWeatherLocation] = useState<{
+    state?: string;
+    district?: string;
+    lat?: number;
+    lon?: number;
+    updatedAt: number;
+  } | null>(null);
 
   // Load dashboard data
   const loadDashboardData = useCallback(async () => {
@@ -171,7 +178,8 @@ export const HomePage: React.FC = () => {
 
         {/* 3. WEATHER CARD (Curved Forest Green Header + 5-Day Strip + Peach Alert) */}
         <WeatherWidget
-          initialDistrict={user?.district || 'Mandya'}
+          initialDistrict={user?.district || undefined}
+          manualLocation={manualWeatherLocation}
           onWeatherDataLoaded={setWeatherData}
           onChangeLocationClick={() => setIsLocationModalOpen(true)}
         />
@@ -253,7 +261,14 @@ export const HomePage: React.FC = () => {
         <LocationEditModal
           isOpen={isLocationModalOpen}
           onClose={() => setIsLocationModalOpen(false)}
-          onLocationUpdated={(newState, newDistrict) => {
+          onLocationUpdated={(newState, newDistrict, newLat, newLon) => {
+            setManualWeatherLocation({
+              state: newState,
+              district: newDistrict,
+              lat: newLat,
+              lon: newLon,
+              updatedAt: Date.now(),
+            });
             showToast(`Location updated to ${newDistrict}, ${newState}`, 'success');
           }}
         />
