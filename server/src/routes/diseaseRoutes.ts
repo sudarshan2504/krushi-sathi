@@ -5,6 +5,7 @@ import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { createRateLimiter } from '../middleware/rateLimiter';
 import { diagnoseCropProblem } from '../services/diagnosisService';
 import { analyzeCropPhotos } from '../services/photoAnalysisService';
+import { getCropImageMetadataMap } from '../services/cropImageService';
 
 const router = Router();
 
@@ -139,18 +140,24 @@ router.get('/crops/catalog', async (_req: Request, res: Response) => {
       orderBy: { name: 'asc' },
     });
 
-    const formatted = crops.map(c => ({
-      id: c.id,
-      name: c.name,
-      scientificName: c.scientificName,
-      nameKannada: c.nameKannada,
-      nameTamil: c.nameTamil,
-      nameTelugu: c.nameTelugu,
-      category: c.category,
-      imageUrl: c.imageUrl,
-      problemCount: c.problemCrops.length,
-      primaryProblemCount: c.problemCrops.filter(pc => pc.importance === 'primary').length,
-    }));
+    const metaMap = getCropImageMetadataMap();
+    const formatted = crops.map(c => {
+      const meta = metaMap.get(c.id);
+      const imageStatus = meta?.status || 'approved';
+      return {
+        id: c.id,
+        name: c.name,
+        scientificName: c.scientificName,
+        nameKannada: c.nameKannada,
+        nameTamil: c.nameTamil,
+        nameTelugu: c.nameTelugu,
+        category: c.category,
+        imageStatus,
+        imageUrl: imageStatus === 'use-fallback' ? '' : `/crops/${c.id}.webp`,
+        problemCount: c.problemCrops.length,
+        primaryProblemCount: c.problemCrops.filter(pc => pc.importance === 'primary').length,
+      };
+    });
 
     res.json({
       success: true,

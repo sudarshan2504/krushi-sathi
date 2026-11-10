@@ -53,7 +53,9 @@ const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage').then(m => 
 const CropLibraryPage = lazyWithRetry(() => import('./pages/CropLibraryPage').then(m => ({ default: m.CropLibraryPage })));
 const ImageCreditsPage = lazyWithRetry(() => import('./pages/ImageCreditsPage').then(m => ({ default: m.ImageCreditsPage })));
 const MarketPricesPage = lazyWithRetry(() => import('./pages/MarketPricesPage').then(m => ({ default: m.MarketPricesPage })));
-const DevCropGalleryPage = lazyWithRetry(() => import('./pages/DevCropGalleryPage').then(m => ({ default: m.DevCropGalleryPage })));
+const DevCropGalleryPage = import.meta.env.DEV
+  ? lazyWithRetry(() => import('./pages/DevCropGalleryPage').then(m => ({ default: m.DevCropGalleryPage })))
+  : null;
 
 // Realistic layout skeleton fallback with timeout warning and retry button
 const PageFallback: React.FC = () => {
@@ -143,7 +145,24 @@ const AppRoutes: React.FC = () => {
         <Route path="/login" element={<PageTransition><LoginPage /></PageTransition>} />
         <Route path="/register" element={<PageTransition><RegisterPage /></PageTransition>} />
         {/* Dev only crop review gallery */}
-        <Route path="/dev/crop-gallery" element={<PageTransition><DevCropGalleryPage /></PageTransition>} />
+        {import.meta.env.DEV && DevCropGalleryPage ? (
+          <>
+            <Route path="/dev/crop-gallery" element={<PageTransition><DevCropGalleryPage /></PageTransition>} />
+            <Route path="/dev/crop-images" element={<Navigate to="/dev/crop-gallery" replace />} />
+          </>
+        ) : (
+          <Route
+            path="/dev/*"
+            element={
+              <div className="min-h-screen flex items-center justify-center p-6 text-center bg-bg">
+                <div className="space-y-2">
+                  <h1 className="text-2xl font-bold text-text">404 — Not Found</h1>
+                  <p className="text-sm text-text-muted">Developer review routes are disabled in production.</p>
+                </div>
+              </div>
+            }
+          />
+        )}
 
         {/* Main Application Routes inside Layout (Protected by Firebase Auth) */}
         <Route

@@ -6,6 +6,7 @@ export interface CropImageProps {
   src?: string | null;
   alt?: string;
   cropName?: string;
+  useFallback?: boolean;
   className?: string;
   containerClassName?: string;
   showFallbackLabel?: boolean;
@@ -25,12 +26,20 @@ export const CropImage: React.FC<CropImageProps> = ({
   src,
   alt,
   cropName,
+  useFallback = false,
   className = 'w-full h-full object-cover',
   containerClassName = 'w-full h-full relative overflow-hidden',
   showFallbackLabel = true,
 }) => {
-  // Resolve source priority: explicit src > /crops/<cropId>.webp > null
-  const resolvedSrc = src || (cropId ? `/crops/${cropId}.webp` : null);
+  const isInvalidSrc =
+    useFallback ||
+    src === 'use-fallback' ||
+    (typeof src === 'string' && src.includes('placeholder.svg'));
+
+  // Resolve source priority: explicit local src (unless invalid/fallback) > /crops/<cropId>.webp > null
+  const resolvedSrc = isInvalidSrc
+    ? null
+    : src || (cropId ? `/crops/${cropId}.webp` : null);
 
   const [isLoading, setIsLoading] = useState<boolean>(Boolean(resolvedSrc));
   const [hasError, setHasError] = useState<boolean>(false);

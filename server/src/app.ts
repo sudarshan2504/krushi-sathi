@@ -13,7 +13,7 @@ import profileRoutes from './routes/profileRoutes';
 import locationRoutes from './routes/locationRoutes';
 import seasonRoutes from './routes/seasonRoutes';
 import marketRoutes from './routes/marketRoutes';
-import { devCropRouter, cropCreditsRouter } from './routes/devCropRoutes';
+import { devCropRouter } from './routes/devCropRoutes';
 
 import path from 'path';
 import { config } from './config';
@@ -136,7 +136,12 @@ app.use('/api/profile', profileRoutes);
 app.use('/api/location', locationRoutes);
 app.use('/api/season', seasonRoutes);
 app.use('/api/dev/crops', devCropRouter);
-app.use('/api/crops/credits', cropCreditsRouter);
+app.use('/dev', (_req: Request, res: Response, next: NextFunction) => {
+  if (process.env.NODE_ENV === 'production') {
+    return res.status(403).json({ success: false, message: 'Dev review routes are disabled in production' });
+  }
+  next();
+});
 
 // 404 Route Handler
 app.use((_req: Request, res: Response) => {

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import crypto from 'crypto';
 import sharp from 'sharp';
 import dotenv from 'dotenv';
 import { CROPS_DATA } from '../data/cropKnowledge';
@@ -12,6 +13,43 @@ export const SERVER_DATA_DIR = path.resolve(__dirname, '../data');
 export const CROPS_IMAGES_JSON_SERVER = path.join(SERVER_DATA_DIR, 'crops-images.json');
 export const CROPS_IMAGES_JSON_CLIENT = path.join(CLIENT_PUBLIC_CROPS_DIR, 'crops-images.json');
 export const CROPS_CATALOG_JSON_PATH = path.join(SERVER_DATA_DIR, 'cropsCatalog.json');
+
+let cachedImageMetaMap: Map<string, CropImageMetadata> | null = null;
+let cachedImageMetaMtime = 0;
+
+export function clearCropImageMetadataCache() {
+  cachedImageMetaMap = null;
+  cachedImageMetaMtime = 0;
+}
+
+export function getCropImageMetadataMap(): Map<string, CropImageMetadata> {
+  try {
+    if (fs.existsSync(CROPS_IMAGES_JSON_SERVER)) {
+      const stats = fs.statSync(CROPS_IMAGES_JSON_SERVER);
+      if (!cachedImageMetaMap || stats.mtimeMs > cachedImageMetaMtime) {
+        const list: CropImageMetadata[] = JSON.parse(fs.readFileSync(CROPS_IMAGES_JSON_SERVER, 'utf-8'));
+        const map = new Map<string, CropImageMetadata>();
+        for (const item of list) {
+          map.set(item.cropId, item);
+        }
+        // Map known aliases so DB / slug lookups resolve to their canonical crop metadata
+        for (const item of list) {
+          for (const alias of getCropAliases(item.cropId)) {
+            if (!map.has(alias)) {
+              map.set(alias, item);
+            }
+          }
+        }
+        cachedImageMetaMap = map;
+        cachedImageMetaMtime = stats.mtimeMs;
+      }
+      return cachedImageMetaMap;
+    }
+  } catch (err: any) {
+    console.warn('Could not read crops-images.json metadata cache:', err.message);
+  }
+  return new Map();
+}
 
 // Ensure destination directories exist
 if (!fs.existsSync(CLIENT_PUBLIC_CROPS_DIR)) {
@@ -44,79 +82,138 @@ export function sleep(ms: number) {
 // Clean HTML strings from Wikimedia metadata
 export function cleanHtml(text?: string): string {
   if (!text) return 'Unknown Contributor';
-  return text.replace(/<[^>]*>?/gm, '').replace(/\s+/g, ' ').trim() || 'Unknown Contributor';
+  const stripped = text
+    .replace(/<[^>]*>?/gm, '')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/\s+/g, ' ')
+    .trim();
+  return stripped || 'Unknown Contributor';
 }
 
-// -------------------------------------------------------------
-// 1. iNaturalist Taxa API Search
-// -------------------------------------------------------------
-export async function searchINaturalist(scientificName: string): Promise<{
+const SCIENTIFIC_NAME_ALIASES: Record<string, string[]> = {
+  'sorghum bicolor var. sudanense': ['Sorghum × drummondii', 'Sorghum drummondii', 'Sudangrass'],
+  'pennisetum purpureum x p. glaucum': ['Cenchrus purpureus', 'Pennisetum purpureum'],
+  'sorghum bicolor var. saccharatum': ['Sorghum bicolor bicolor', 'Sorghum bicolor'],
+};
+
+export function getScientificNameCandidates(scientificName: string): string[] {
+  const candidates: string[] = [];
+  const raw = (scientificName || '').trim();
+  if (!raw) return candidates;
+  candidates.push(raw);
+
+  const lower = raw.toLowerCase();
+  if (SCIENTIFIC_NAME_ALIASES[lower]) {
+    candidates.push(...SCIENTIFIC_NAME_ALIASES[lower]);
+  }
+
+  // Strip "var. ..." or "subsp. ..." if present
+  const noVar = raw.replace(/\s+(var\.|subsp\.|ssp\.|f\.)\s+.*$/i, '').trim();
+  if (noVar && noVar !== raw) {
+    candidates.push(noVar);
+  }
+
+  // If hybrid notation "A x B", also try primary parent binomial "A"
+  if (/\s+[x×]\s+/i.test(raw)) {
+    const primary = raw.split(/\s+[x×]\s+/i)[0]?.trim();
+    if (primary) candidates.push(primary);
+  }
+
+  return Array.from(new Set(candidates));
+}
+
+export interface SearchImageCandidate {
   url: string;
   sourceUrl: string;
   photographer: string;
   license: string;
-} | null> {
+}
+
+const TIER1_LICENSES = new Set(['cc0', 'cc-by', 'cc-by-sa']);
+const OPEN_LICENSES = new Set(['cc0', 'cc-by', 'cc-by-sa', 'cc-by-nc', 'cc-by-nc-sa']);
+
+// -------------------------------------------------------------
+// 1. iNaturalist Taxa API Search
+// -------------------------------------------------------------
+export async function searchINaturalistCandidates(scientificName: string): Promise<SearchImageCandidate[]> {
   try {
     const endpoint = `https://api.inaturalist.org/v1/taxa?q=${encodeURIComponent(scientificName)}&is_active=true`;
     const res = await fetch(endpoint, {
       headers: { 'User-Agent': USER_AGENT, 'Accept': 'application/json' },
     });
 
-    if (!res.ok) return null;
+    if (!res.ok) return [];
     const data = (await res.json()) as any;
-    if (!data.results || data.results.length === 0) return null;
+    if (!data.results || data.results.length === 0) return [];
 
-    // Find the closest taxon (species/genus/variety)
-    const taxon =
-      data.results.find((t: any) => ['species', 'genus', 'variety', 'subspecies'].includes(t.rank)) ||
-      data.results[0];
+    const queryLower = scientificName.toLowerCase().trim();
+    const rankedTaxa = [...data.results].sort((a: any, b: any) => {
+      const aExact = (a.name || '').toLowerCase().trim() === queryLower ? 0 : 1;
+      const bExact = (b.name || '').toLowerCase().trim() === queryLower ? 0 : 1;
+      if (aExact !== bExact) return aExact - bExact;
+      const validRanks = new Set(['species', 'subspecies', 'variety', 'infrahybrid', 'genus']);
+      const aRank = validRanks.has(a.rank) ? 0 : 1;
+      const bRank = validRanks.has(b.rank) ? 0 : 1;
+      return aRank - bRank;
+    });
 
-    // Priority 1: Check default_photo
-    const photo = taxon.default_photo;
-    if (photo && photo.url) {
+    const candidates: SearchImageCandidate[] = [];
+    const seenPhotoUrls = new Set<string>();
+
+    const collectPhoto = (taxonId: number | string, photo: any, preferTier1Only: boolean) => {
+      if (!photo || !photo.url) return;
       const licenseCode = (photo.license_code || '').toLowerCase();
-      // Accept CC0, CC-BY, CC-BY-SA, or educational open licenses
-      const isOpenLicense = ['cc0', 'cc-by', 'cc-by-sa', 'cc-by-nc', 'cc-by-nc-sa'].includes(licenseCode);
-      if (isOpenLicense) {
-        // Upgrade square/medium thumbnail to large/original
-        let highResUrl = photo.medium_url || photo.url;
-        highResUrl = highResUrl.replace('/square.', '/large.').replace('/small.', '/large.');
+      if (!OPEN_LICENSES.has(licenseCode)) return;
+      if (preferTier1Only && !TIER1_LICENSES.has(licenseCode)) return;
+      if (!preferTier1Only && TIER1_LICENSES.has(licenseCode)) return;
 
-        const photographer = cleanHtml(photo.attribution || 'iNaturalist Contributor');
-        return {
-          url: highResUrl,
-          sourceUrl: `https://www.inaturalist.org/taxa/${taxon.id}`,
-          photographer,
-          license: licenseCode ? licenseCode.toUpperCase() : 'CC-BY-SA',
-        };
-      }
-    }
+      let highResUrl = photo.medium_url || photo.url;
+      highResUrl = highResUrl.replace('/square.', '/large.').replace('/small.', '/large.');
+      if (seenPhotoUrls.has(highResUrl)) return;
+      seenPhotoUrls.add(highResUrl);
 
-    // Priority 2: Check taxon_photos array for an open license
-    if (taxon.taxon_photos && Array.isArray(taxon.taxon_photos)) {
-      for (const tp of taxon.taxon_photos) {
-        const p = tp.photo;
-        if (p && p.url) {
-          const lCode = (p.license_code || '').toLowerCase();
-          if (['cc0', 'cc-by', 'cc-by-sa'].includes(lCode)) {
-            let highResUrl = p.medium_url || p.url;
-            highResUrl = highResUrl.replace('/square.', '/large.').replace('/small.', '/large.');
-            return {
-              url: highResUrl,
-              sourceUrl: `https://www.inaturalist.org/taxa/${taxon.id}`,
-              photographer: cleanHtml(p.attribution || 'iNaturalist Contributor'),
-              license: lCode.toUpperCase(),
-            };
-          }
+      candidates.push({
+        url: highResUrl,
+        sourceUrl: `https://www.inaturalist.org/taxa/${taxonId}`,
+        photographer: cleanHtml(photo.attribution || 'iNaturalist Contributor'),
+        license: licenseCode ? licenseCode.toUpperCase() : 'CC-BY-SA',
+      });
+    };
+
+    // Pass 1: Tier-1 open commercial-friendly licenses (CC0, CC-BY, CC-BY-SA) across matching taxa
+    for (const taxon of rankedTaxa.slice(0, 3)) {
+      collectPhoto(taxon.id, taxon.default_photo, true);
+      if (Array.isArray(taxon.taxon_photos)) {
+        for (const tp of taxon.taxon_photos) {
+          collectPhoto(taxon.id, tp?.photo, true);
         }
       }
     }
 
-    return null;
+    // Pass 2: Tier-2 educational CC-BY-NC / CC-BY-NC-SA fallback
+    for (const taxon of rankedTaxa.slice(0, 2)) {
+      collectPhoto(taxon.id, taxon.default_photo, false);
+      if (Array.isArray(taxon.taxon_photos)) {
+        for (const tp of taxon.taxon_photos) {
+          collectPhoto(taxon.id, tp?.photo, false);
+        }
+      }
+    }
+
+    return candidates;
   } catch (err: any) {
     console.warn(`    [iNaturalist API Warning] ${scientificName}:`, err.message);
-    return null;
+    return [];
   }
+}
+
+export async function searchINaturalist(scientificName: string): Promise<SearchImageCandidate | null> {
+  const candidates = await searchINaturalistCandidates(scientificName);
+  return candidates[0] || null;
 }
 
 // -------------------------------------------------------------
@@ -265,7 +362,7 @@ export async function downloadImageBuffer(url: string, retries = 3): Promise<Buf
 }
 
 // -------------------------------------------------------------
-// Compress and save to WebP (~800px wide)
+// Compress and save to WebP (~800px wide, < 300KB)
 // -------------------------------------------------------------
 export async function saveCompressedWebp(buffer: Buffer, destPath: string): Promise<boolean> {
   try {
@@ -277,6 +374,23 @@ export async function saveCompressedWebp(buffer: Buffer, destPath: string): Prom
       })
       .webp({ quality: 82, effort: 4 })
       .toFile(destPath);
+
+    // Ensure WebP size stays comfortably under 300 KB
+    let stat = fs.statSync(destPath);
+    if (stat.size > 280 * 1024) {
+      await sharp(buffer)
+        .resize({ width: 760, withoutEnlargement: true, fit: 'inside' })
+        .webp({ quality: 72, effort: 5 })
+        .toFile(destPath);
+      stat = fs.statSync(destPath);
+    }
+    if (stat.size > 295 * 1024) {
+      await sharp(buffer)
+        .resize({ width: 680, withoutEnlargement: true, fit: 'inside' })
+        .webp({ quality: 65, effort: 5 })
+        .toFile(destPath);
+    }
+
     return true;
   } catch (err: any) {
     console.error(`    [Sharp Compression Error] ${destPath}:`, err.message);
@@ -293,18 +407,21 @@ export function getCropAliases(cropId: string): string[] {
     aliases.push(`crop-${cropId}`);
   }
 
-  // Common crop ID mappings between CROPS_DATA and catalog
+  // Common crop ID mappings between CROPS_DATA, catalog, and DB seedCropHealth IDs
   const idMap: Record<string, string[]> = {
     'crop-ragi-finger-millet': ['finger-millet-ragi', 'crop-finger-millet-ragi'],
     'crop-chickpea-gram': ['chickpea-bengal-gram', 'crop-chickpea-bengal-gram'],
     'crop-jowar-sorghum': ['sorghum-jowar', 'crop-sorghum-jowar'],
     'crop-bajra-pearl-millet': ['pearl-millet-bajra', 'crop-pearl-millet-bajra'],
     'crop-wheat-rabi': ['wheat-south-india', 'crop-wheat-south-india', 'wheat'],
-    'crop-redgram-pigeonpea': ['red-gram-pigeonpea', 'crop-red-gram-pigeonpea'],
+    'crop-redgram-pigeonpea': ['red-gram-pigeonpea', 'crop-red-gram-pigeonpea', 'crop-pigeonpea'],
+    'red-gram-pigeonpea': ['crop-redgram-pigeonpea', 'crop-pigeonpea'],
     'crop-greengram-moong': ['green-gram-moong', 'crop-green-gram-moong'],
-    'crop-chilli-pepper': ['chilli-green-dry', 'crop-chilli-green-dry', 'chilli'],
+    'crop-chilli-pepper': ['chilli-green-dry', 'crop-chilli-green-dry', 'crop-chilli', 'chilli'],
+    'chilli-green-dry': ['crop-chilli-pepper', 'crop-chilli'],
     'crop-onion-bulb': ['onion', 'crop-onion'],
-    'crop-bhendi-okra': ['bhendi-okra', 'crop-bhendi-okra', 'okra'],
+    'crop-bhendi-okra': ['bhendi-okra', 'crop-bhendi-okra', 'crop-okra', 'okra'],
+    'bhendi-okra': ['crop-bhendi-okra', 'crop-okra'],
     'crop-tomato-vegetable': ['tomato', 'crop-tomato'],
     'crop-cotton-cash': ['cotton', 'crop-cotton'],
     'crop-mango-alphonso': ['mango', 'crop-mango'],
@@ -312,6 +429,9 @@ export function getCropAliases(cropId: string): string[] {
     'crop-banana-grandnaine': ['banana', 'crop-banana'],
     'crop-papaya-redlady': ['papaya', 'crop-papaya'],
     'crop-marigold-african': ['marigold', 'crop-marigold'],
+    'crop-jasmine-mysore-mallige': ['jasmine-mysore-mallige'],
+    'crop-arecanut-betelnut': ['arecanut-betelnut', 'crop-arecanut-betelnut', 'crop-arecanut'],
+    'arecanut-betelnut': ['crop-arecanut-betelnut', 'crop-arecanut'],
     'crop-coconut-tall': ['coconut', 'crop-coconut'],
     'crop-coffee-arabica': ['coffee', 'crop-coffee'],
     'crop-sandalwood-agroforestry': ['sandalwood-srigandha', 'crop-sandalwood-srigandha'],
@@ -320,7 +440,7 @@ export function getCropAliases(cropId: string): string[] {
     'crop-black-pepper-panniyur': ['black-pepper', 'crop-black-pepper'],
     'crop-sunflower-hybrid': ['sunflower', 'crop-sunflower'],
     'crop-soybean-js335': ['soybean', 'crop-soybean'],
-    'crop-super-napier-co5': ['super-napier-co5', 'fodder-sorghum-multicut'],
+    'crop-super-napier-co5': ['super-napier-co5'],
     'crop-fodder-cowpea': ['cowpea-alasande', 'crop-cowpea-alasande'],
   };
 
@@ -329,6 +449,62 @@ export function getCropAliases(cropId: string): string[] {
   }
 
   return Array.from(new Set(aliases));
+}
+
+export function syncCatalogJsonWithMetadata(records?: CropImageMetadata[]) {
+  try {
+    const metadataList: CropImageMetadata[] =
+      records ||
+      (fs.existsSync(CROPS_IMAGES_JSON_SERVER)
+        ? JSON.parse(fs.readFileSync(CROPS_IMAGES_JSON_SERVER, 'utf-8'))
+        : []);
+
+    const byId = new Map<string, CropImageMetadata>(metadataList.map(r => [r.cropId, r]));
+
+    if (fs.existsSync(CROPS_CATALOG_JSON_PATH)) {
+      const catalog = JSON.parse(fs.readFileSync(CROPS_CATALOG_JSON_PATH, 'utf-8'));
+      const updated = catalog.map((crop: any) => {
+        const meta = byId.get(crop.id);
+        if (!meta) return crop;
+
+        if (meta.status === 'use-fallback') {
+          return {
+            ...crop,
+            imageStatus: meta.status,
+            imageUrl: '',
+            images: [],
+          };
+        }
+
+        const localPath = `/crops/${crop.id}.webp`;
+        return {
+          ...crop,
+          imageStatus: meta.status,
+          imageUrl: localPath,
+          images: [
+            {
+              type: 'plant',
+              path: localPath,
+              source: meta.source || 'Botanical Archive',
+              author: meta.photographer || 'Contributor',
+              license: meta.license || 'CC-BY-SA',
+              attributionUrl: meta.sourceUrl || '',
+            },
+          ],
+        };
+      });
+
+      const serialized = JSON.stringify(updated, null, 2);
+      fs.writeFileSync(CROPS_CATALOG_JSON_PATH, serialized, 'utf-8');
+      const clientCatalogPath = path.join(CLIENT_PUBLIC_CROPS_DIR, 'cropsCatalog.json');
+      if (fs.existsSync(path.dirname(clientCatalogPath))) {
+        fs.writeFileSync(clientCatalogPath, serialized, 'utf-8');
+      }
+    }
+    clearCropImageMetadataCache();
+  } catch (err: any) {
+    console.warn('Could not sync cropsCatalog.json with image metadata:', err.message);
+  }
 }
 
 // -------------------------------------------------------------
@@ -412,6 +588,28 @@ export async function fetchAllCropImages(options: { force?: boolean; singleCropI
 
   console.log(`Ready to verify/fetch images for ${queue.length} crops...\n`);
 
+  // Track SHA-256 hashes of existing crop files to prevent non-alias crops from reusing the same photo
+  const usedHashToCrops = new Map<string, Set<string>>();
+  for (const meta of Object.values(existingMetadata)) {
+    const p = path.join(CLIENT_PUBLIC_CROPS_DIR, `${meta.cropId}.webp`);
+    if (meta.status !== 'use-fallback' && fs.existsSync(p)) {
+      const h = crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
+      if (!usedHashToCrops.has(h)) usedHashToCrops.set(h, new Set());
+      usedHashToCrops.get(h)!.add(meta.cropId);
+    }
+  }
+
+  const isHashUsedByOtherCrop = (candidateBuffer: Buffer, cropId: string): boolean => {
+    const allowedSet = new Set([cropId, ...getCropAliases(cropId)]);
+    const hash = crypto.createHash('sha256').update(candidateBuffer).digest('hex');
+    const owners = usedHashToCrops.get(hash);
+    if (!owners) return false;
+    for (const owner of owners) {
+      if (!allowedSet.has(owner)) return true;
+    }
+    return false;
+  };
+
   let fetchedCount = 0;
   let skippedApproved = 0;
   let fallbackCount = 0;
@@ -420,6 +618,7 @@ export async function fetchAllCropImages(options: { force?: boolean; singleCropI
     const crop = queue[i];
     const cropFile = `${crop.cropId}.webp`;
     const destPath = path.join(CLIENT_PUBLIC_CROPS_DIR, cropFile);
+    const tempPath = path.join(CLIENT_PUBLIC_CROPS_DIR, `.tmp-${crop.cropId}.webp`);
     const existing = existingMetadata[crop.cropId];
 
     console.log(`[${i + 1}/${queue.length}] 🌿 ${crop.name} (${crop.scientificName || 'Botanical name'}) [${crop.cropId}]`);
@@ -430,115 +629,108 @@ export async function fetchAllCropImages(options: { force?: boolean; singleCropI
       continue;
     }
 
-    let chosenResult: {
-      url: string;
-      sourceUrl: string;
-      photographer: string;
-      license: string;
+    type CandidateWithSource = SearchImageCandidate & {
       source: 'iNaturalist' | 'Wikipedia' | 'Wikimedia Commons' | 'Pexels';
-    } | null = null;
+    };
+    const candidates: CandidateWithSource[] = [];
+    const sciCandidates = getScientificNameCandidates(crop.scientificName);
 
-    if (crop.scientificName) {
-      const inat = await searchINaturalist(crop.scientificName);
-      if (inat) {
-        chosenResult = { ...inat, source: 'iNaturalist' };
-        console.log(`  📍 Found on iNaturalist: ${inat.license} by ${inat.photographer}`);
+    for (const sciQuery of sciCandidates) {
+      const inatList = await searchINaturalistCandidates(sciQuery);
+      for (const item of inatList) {
+        candidates.push({ ...item, source: 'iNaturalist' });
       }
+      await sleep(200);
     }
 
-    await sleep(300);
+    await sleep(250);
 
-    if (!chosenResult && crop.scientificName) {
-      const wikiSci = await searchWikipediaSummary(crop.scientificName);
-      if (wikiSci) {
-        chosenResult = { ...wikiSci, source: 'Wikipedia' };
-        console.log(`  📍 Found on Wikipedia (Scientific): ${wikiSci.license} by ${wikiSci.photographer}`);
-      }
-    }
-
-    if (!chosenResult) {
-      const cleanCommon = crop.name.split('(')[0].trim();
-      const wikiCommon = await searchWikipediaSummary(cleanCommon);
-      if (wikiCommon) {
-        chosenResult = { ...wikiCommon, source: 'Wikipedia' };
-        console.log(`  📍 Found on Wikipedia (Common): ${wikiCommon.license} by ${wikiCommon.photographer}`);
-      }
-    }
-
-    await sleep(300);
-
-    if (!chosenResult) {
-      const pexels = await searchPexels(crop.name, crop.scientificName);
-      if (pexels) {
-        chosenResult = { ...pexels, source: 'Pexels' };
-        console.log(`  📍 Found on Pexels: Free license by ${pexels.photographer}`);
-      }
-    }
-
-    if (chosenResult) {
-      console.log(`  ⬇️ Downloading image from ${chosenResult.url.substring(0, 70)}...`);
-      const buffer = await downloadImageBuffer(chosenResult.url);
-
-      if (buffer) {
-        const saved = await saveCompressedWebp(buffer, destPath);
-        if (saved) {
-          const aliases = getCropAliases(crop.cropId);
-          for (const alias of aliases) {
-            const aliasPath = path.join(CLIENT_PUBLIC_CROPS_DIR, `${alias}.webp`);
-            try {
-              fs.copyFileSync(destPath, aliasPath);
-            } catch {}
-          }
-
-          const record: CropImageMetadata = {
-            cropId: crop.cropId,
-            name: crop.name,
-            scientificName: crop.scientificName,
-            nameKannada: crop.nameKannada,
-            nameTamil: crop.nameTamil,
-            nameTelugu: crop.nameTelugu,
-            category: crop.category,
-            filePath: `/crops/${crop.cropId}.webp`,
-            source: chosenResult.source,
-            sourceUrl: chosenResult.sourceUrl,
-            photographer: chosenResult.photographer,
-            license: chosenResult.license,
-            status: existing?.status === 'approved' ? 'approved' : 'pending-review',
-            updatedAt: new Date().toISOString(),
-          };
-
-          existingMetadata[crop.cropId] = record;
-          fetchedCount++;
-          console.log(`  ✨ Saved 800px WebP -> ${cropFile}`);
-        } else {
-          console.error(`  ❌ Failed to compress image with Sharp.`);
+    if (sciCandidates.length > 0) {
+      for (const sciQuery of sciCandidates) {
+        const wikiSci = await searchWikipediaSummary(sciQuery);
+        if (wikiSci) {
+          candidates.push({ ...wikiSci, source: 'Wikipedia' });
         }
-      } else {
-        console.error(`  ❌ Failed to download image buffer.`);
+        await sleep(200);
       }
+    }
+
+    const cleanCommon = crop.name.split('(')[0].trim();
+    const wikiCommon = await searchWikipediaSummary(cleanCommon);
+    if (wikiCommon) {
+      candidates.push({ ...wikiCommon, source: 'Wikipedia' });
+    }
+
+    await sleep(250);
+
+    const pexels = await searchPexels(crop.name, crop.scientificName);
+    if (pexels) {
+      candidates.push({ ...pexels, source: 'Pexels' });
+    }
+
+    let chosenResult: CandidateWithSource | null = null;
+    let savedNewFile = false;
+
+    for (const cand of candidates) {
+      console.log(`  ⬇️ Trying ${cand.source} (${cand.license}) -> ${cand.url.substring(0, 68)}...`);
+      const buffer = await downloadImageBuffer(cand.url);
+      if (!buffer) continue;
+
+      const saved = await saveCompressedWebp(buffer, tempPath);
+      if (!saved || !fs.existsSync(tempPath)) continue;
+
+      const compressedBuf = fs.readFileSync(tempPath);
+      if (isHashUsedByOtherCrop(compressedBuf, crop.cropId)) {
+        console.log(`  ⚠️ Candidate photo collides with another non-alias crop. Trying next candidate...`);
+        try { fs.unlinkSync(tempPath); } catch {}
+        continue;
+      }
+
+      fs.renameSync(tempPath, destPath);
+      const newHash = crypto.createHash('sha256').update(compressedBuf).digest('hex');
+      if (!usedHashToCrops.has(newHash)) usedHashToCrops.set(newHash, new Set());
+      usedHashToCrops.get(newHash)!.add(crop.cropId);
+
+      chosenResult = cand;
+      savedNewFile = true;
+      break;
+    }
+
+    if (chosenResult && savedNewFile) {
+      const aliases = getCropAliases(crop.cropId);
+      for (const alias of aliases) {
+        const aliasPath = path.join(CLIENT_PUBLIC_CROPS_DIR, `${alias}.webp`);
+        try {
+          fs.copyFileSync(destPath, aliasPath);
+        } catch {}
+      }
+
+      const record: CropImageMetadata = {
+        cropId: crop.cropId,
+        name: crop.name,
+        scientificName: crop.scientificName,
+        nameKannada: crop.nameKannada,
+        nameTamil: crop.nameTamil,
+        nameTelugu: crop.nameTelugu,
+        category: crop.category,
+        filePath: `/crops/${crop.cropId}.webp`,
+        source: chosenResult.source,
+        sourceUrl: chosenResult.sourceUrl,
+        photographer: chosenResult.photographer,
+        license: chosenResult.license,
+        status: options.force ? 'pending-review' : (existing?.status === 'approved' ? 'approved' : 'pending-review'),
+        updatedAt: new Date().toISOString(),
+      };
+
+      existingMetadata[crop.cropId] = record;
+      fetchedCount++;
+      console.log(`  📍 Selected ${chosenResult.source} (${chosenResult.license}) by ${chosenResult.photographer}`);
+      console.log(`  ✨ Saved 800px WebP -> ${cropFile}`);
     } else {
-      if (fs.existsSync(destPath)) {
-        console.log(`  ℹ️ No API image found, but local WebP already present. Retaining local file.`);
-        if (!existingMetadata[crop.cropId]) {
-          existingMetadata[crop.cropId] = {
-            cropId: crop.cropId,
-            name: crop.name,
-            scientificName: crop.scientificName,
-            nameKannada: crop.nameKannada,
-            nameTamil: crop.nameTamil,
-            nameTelugu: crop.nameTelugu,
-            category: crop.category,
-            filePath: `/crops/${crop.cropId}.webp`,
-            source: 'Wikimedia Commons',
-            sourceUrl: 'https://commons.wikimedia.org',
-            photographer: 'Botanical Archive',
-            license: 'CC BY-SA',
-            status: 'pending-review',
-            updatedAt: new Date().toISOString(),
-          };
-        }
+      if (fs.existsSync(destPath) && existing && existing.sourceUrl && existing.photographer !== 'Botanical Archive') {
+        console.log(`  ℹ️ No new API image found; retaining verified local WebP (${existing.source}).`);
       } else {
-        console.warn(`  ⚠️ No image found. Designating fallback illustration.`);
+        console.warn(`  ⚠️ No verified image found. Designating fallback illustration.`);
         existingMetadata[crop.cropId] = {
           cropId: crop.cropId,
           name: crop.name,
@@ -565,13 +757,14 @@ export async function fetchAllCropImages(options: { force?: boolean; singleCropI
   }
 
   const finalList = Object.values(existingMetadata);
+  syncCatalogJsonWithMetadata(finalList);
   const approvedTotal = finalList.filter(c => c.status === 'approved').length;
   const pendingTotal = finalList.filter(c => c.status === 'pending-review').length;
   const fallbackTotal = finalList.filter(c => c.status === 'use-fallback').length;
 
   console.log('\n=============================================================');
   console.log('✅ CROP IMAGES RUN COMPLETE!');
-  console.log(`📦 Total Crops in Index: ${finalList.length}`);
+  console.log(`📦 Total Crops in Index: ${finalList.length} (fetched: ${fetchedCount}, skipped approved: ${skippedApproved})`);
   console.log(`🌟 Approved: ${approvedTotal}`);
   console.log(`⏳ Pending Review: ${pendingTotal}`);
   console.log(`🎨 Use Fallback: ${fallbackTotal}`);

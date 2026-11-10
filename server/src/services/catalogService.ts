@@ -2,11 +2,47 @@ import fs from 'fs';
 import path from 'path';
 import { MASTER_CROPS_CATALOG, isCropRecommendedForFarmer } from '../data/masterCrops/index';
 import { CropMasterRecord } from '../types/cropMasterSchema';
+import { getCropImageMetadataMap } from './cropImageService';
 
 const CROPS_CATALOG_JSON_PATH = path.resolve(__dirname, '../data/cropsCatalog.json');
 
 let cachedCatalog: CropMasterRecord[] | null = null;
 let lastMtime: number = 0;
+
+function enrichCatalogCrop(crop: CropMasterRecord): CropMasterRecord {
+  const metaMap = getCropImageMetadataMap();
+  const meta = metaMap.get(crop.id);
+
+  if (meta) {
+    if (meta.status === 'use-fallback') {
+      return {
+        ...crop,
+        imageStatus: meta.status,
+        imageUrl: '',
+        images: [],
+      };
+    }
+
+    const localPath = `/crops/${crop.id}.webp`;
+    return {
+      ...crop,
+      imageStatus: meta.status,
+      imageUrl: localPath,
+      images: [
+        {
+          type: 'plant',
+          path: localPath,
+          source: meta.source,
+          author: meta.photographer,
+          license: meta.license,
+          attributionUrl: meta.sourceUrl || '',
+        },
+      ],
+    };
+  }
+
+  return crop;
+}
 
 export function getActiveCatalog(): CropMasterRecord[] {
   try {
@@ -129,7 +165,7 @@ export function queryCatalog(options: CatalogFilterOptions) {
   const paginatedCrops = filtered.slice(startIndex, startIndex + limit);
 
   const annotatedCrops = paginatedCrops.map(c => ({
-    ...c,
+    ...enrichCatalogCrop(c),
     isRecommendedForFarmer: isCropRecommendedForFarmer(c, farmerSoilType, farmerSeason, farmerTaluk),
   }));
 
@@ -149,31 +185,35 @@ export function queryCatalog(options: CatalogFilterOptions) {
 export function getCatalogCropById(id: string): (CropMasterRecord & { isRecommendedForFarmer?: boolean }) | undefined {
   const catalog = getActiveCatalog();
   const q = id.toLowerCase().trim();
-  return catalog.find(
+  const found = catalog.find(
     c =>
       c.id.toLowerCase() === q ||
       c.id.replace('crop-', '').toLowerCase() === q ||
       c.name.toLowerCase().replace(/[^a-z0-9]/g, '') === q.replace(/[^a-z0-9]/g, '')
   );
+  return found ? enrichCatalogCrop(found) : undefined;
 }
 
 export function getCatalogCredits() {
-  const catalog = getActiveCatalog();
+  const catalog = getActiveCatalog().map(enrichCatalogCrop);
   const credits: Array<{
     cropId: string;
     cropName: string;
     scientificName: string;
     category: string;
     imagePath: string;
+    path: string;
     imageType: string;
     source: string;
     author: string;
+    photographer: string;
     license: string;
     attributionUrl?: string;
+    sourceUrl?: string;
   }> = [];
 
   for (const crop of catalog) {
-    if (crop.images && crop.images.length > 0) {
+    if (crop.imageStatus !== 'use-fallback' && crop.images && crop.images.length > 0) {
       for (const img of crop.images) {
         credits.push({
           cropId: crop.id,
@@ -181,38 +221,40 @@ export function getCatalogCredits() {
           scientificName: crop.scientificName,
           category: crop.category,
           imagePath: img.path,
+          path: img.path,
           imageType: img.type,
           source: img.source,
           author: img.author,
+          photographer: img.author,
           license: img.license,
           attributionUrl: img.attributionUrl,
+          sourceUrl: img.attributionUrl,
         });
       }
     }
   }
 
-  // Also include verified botanical records from crops-images.json
-  const cropsImagesPath = path.resolve(__dirname, '../data/crops-images.json');
-  if (fs.existsSync(cropsImagesPath)) {
-    try {
-      const extra = JSON.parse(fs.readFileSync(cropsImagesPath, 'utf-8'));
-      for (const item of extra) {
-        if (item.status !== 'use-fallback' && !credits.some(c => c.cropId === item.cropId)) {
-          credits.push({
-            cropId: item.cropId,
-            cropName: item.name,
-            scientificName: item.scientificName,
-            category: item.category || 'general',
-            imagePath: item.filePath,
-            imageType: 'plant',
-            source: item.source,
-            author: item.photographer,
-            license: item.license,
-            attributionUrl: item.sourceUrl,
-          });
-        }
-      }
-    } catch {}
+  // Also include records from crops-images.json not already in catalog credits
+  const metaMap = getCropImageMetadataMap();
+  for (const [key, item] of metaMap.entries()) {
+    if (key !== item.cropId) continue;
+    if (item.status !== 'use-fallback' && !credits.some(c => c.cropId === item.cropId)) {
+      credits.push({
+        cropId: item.cropId,
+        cropName: item.name,
+        scientificName: item.scientificName,
+        category: item.category || 'general',
+        imagePath: `/crops/${item.cropId}.webp`,
+        path: `/crops/${item.cropId}.webp`,
+        imageType: 'plant',
+        source: item.source,
+        author: item.photographer,
+        photographer: item.photographer,
+        license: item.license,
+        attributionUrl: item.sourceUrl,
+        sourceUrl: item.sourceUrl,
+      });
+    }
   }
 
   return {

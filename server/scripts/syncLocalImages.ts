@@ -101,14 +101,14 @@ async function main() {
     } else if (fs.existsSync(slugFile)) {
       fs.copyFileSync(slugFile, singleFile);
       localPath = `/crops/${crop.id}.webp`;
-    } else if (matched && matched.images && matched.images.length > 0) {
+    } else if (matched && matched.images && matched.images.length > 0 && !matched.images[0].path.includes('/image-')) {
       localPath = matched.images[0].path;
     } else {
-      localPath = '/crops/placeholder.svg';
-      source = 'Krushi Sathi Neutral Botanical Leaf';
+      localPath = '';
+      source = 'Fallback Illustration';
       author = 'Krushi Sathi';
-      licence = 'Public Domain';
-      attribution = 'Photo not available';
+      licence = 'CC0';
+      attribution = 'Botanical leaf fallback';
     }
 
     if (matched && matched.images && matched.images.length > 0) {

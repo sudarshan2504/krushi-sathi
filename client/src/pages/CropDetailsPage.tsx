@@ -29,9 +29,10 @@ import {
 import { Button } from '../components/ui/Button';
 import { StickyBottomBar } from '../components/ui/StickyBottomBar';
 import { StatTile } from '../components/ui/StatTile';
+import { CropImage as CropImageTile } from '../components/ui/CropImage';
 import { useTranslation } from '../context/LanguageContext';
 import { api } from '../services/api';
-import { CropImage } from '../types';
+import { CropImage as CropImageMeta } from '../types';
 
 export const CropDetailsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -46,7 +47,6 @@ export const CropDetailsPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(!stateCrop);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [isCreatingPlan, setIsCreatingPlan] = useState(false);
-  const [imageFailed, setImageFailed] = useState(false);
 
   // If URL was accidentally /crops/recommend, redirect gracefully to /crops
   useEffect(() => {
@@ -191,13 +191,16 @@ export const CropDetailsPage: React.FC = () => {
       ? crop.nameTelugu
       : crop.name;
 
+  const isFallbackImage =
+    crop?.imageStatus === 'use-fallback' || cropImageMeta?.status === 'use-fallback';
+
   // Local gallery images if present
-  const imagesList: CropImage[] = crop.images && crop.images.length > 0
+  const imagesList: CropImageMeta[] = crop.images && crop.images.length > 0
     ? crop.images
     : [
         {
           type: 'plant',
-          path: cropImageMeta?.filePath || crop.imageUrl || (crop.id ? `/crops/${crop.id}.webp` : '/crops/placeholder.svg'),
+          path: isFallbackImage ? '' : (cropImageMeta?.filePath || crop.imageUrl || (crop.id ? `/crops/${crop.id}.webp` : '')),
           source: cropImageMeta?.source || 'Botanical Species Archive',
           author: cropImageMeta?.photographer || 'Field Contributor',
           license: cropImageMeta?.license || 'CC BY-SA 4.0',
@@ -245,7 +248,7 @@ export const CropDetailsPage: React.FC = () => {
 
         <button
           onClick={() => navigate('/credits')}
-          className="text-xs font-bold text-dark-muted hover:text-forest transition"
+          className="text-xs font-bold text-gray-600 hover:text-forest transition"
         >
           Image Credits
         </button>
@@ -255,27 +258,20 @@ export const CropDetailsPage: React.FC = () => {
       <div className="rounded-3xl overflow-hidden bg-white border border-gray-100 shadow-card">
         {/* Main Image Stage */}
         <div className="relative h-64 sm:h-80 w-full bg-mint/30 overflow-hidden">
-          {!imageFailed ? (
-            <img
-              key={currentImage.path}
-              src={currentImage.path}
-              alt={`${cropName} - ${currentImage.type}`}
-              loading="lazy"
-              onError={() => setImageFailed(true)}
-              className="w-full h-full object-cover transition-opacity duration-300"
-            />
-          ) : (
-            <div className="w-full h-full bg-gradient-to-br from-forest to-emerald-900 flex flex-col items-center justify-center text-white p-4">
-              <Sprout className="w-16 h-16 text-mint mb-2" />
-              <span className="font-extrabold text-lg">{cropName}</span>
-              <span className="text-xs text-mint/80">Botanical photo pending field verification</span>
-            </div>
-          )}
+          <CropImageTile
+            cropId={crop.id || cropId}
+            src={isFallbackImage ? null : currentImage.path}
+            useFallback={isFallbackImage}
+            alt={`${cropName} - ${currentImage.type}`}
+            cropName={cropName}
+            containerClassName="w-full h-full relative overflow-hidden"
+            className="w-full h-full object-cover"
+          />
 
-          <div className="absolute inset-0 bg-gradient-to-t from-dark-text/90 via-dark-text/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent pointer-events-none z-10" />
 
           {/* Top Badges */}
-          <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-auto">
+          <div className="absolute top-4 left-4 right-4 flex items-center justify-between pointer-events-auto z-20">
             <div className="flex items-center gap-2">
               <span className="bg-forest-dark/85 backdrop-blur-md text-white text-xs font-extrabold px-3 py-1 rounded-full border border-forest/30 shadow-sm">
                 {crop.category?.toUpperCase() || 'AGRICULTURE'}
@@ -302,11 +298,11 @@ export const CropDetailsPage: React.FC = () => {
           </div>
 
           {/* Crop Title on Hero Image */}
-          <div className="absolute bottom-4 left-4 right-4 text-white pointer-events-auto space-y-1">
+          <div className="absolute bottom-4 left-4 right-4 text-white pointer-events-auto space-y-1 z-20">
             <span className="text-xs font-semibold text-mint italic block">
               {crop.scientificName}
             </span>
-            <h1 className="text-2xl sm:text-3xl font-black drop-shadow-sm">
+            <h1 className="text-2xl sm:text-3xl font-black drop-shadow-sm text-white">
               {cropName}
             </h1>
             {localName !== cropName && (
@@ -330,7 +326,6 @@ export const CropDetailsPage: React.FC = () => {
                   key={`${img.path}-${idx}`}
                   onClick={() => {
                     setSelectedImageIndex(idx);
-                    setImageFailed(false);
                   }}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shrink-0 ${
                     isSelected
@@ -347,11 +342,11 @@ export const CropDetailsPage: React.FC = () => {
 
         {/* Image Attribution Line (Academic & Open License Transparency) */}
         {currentImage.author && (
-          <div className="px-4 py-2 bg-cream-light/60 border-b border-gray-100 flex flex-wrap items-center justify-between text-[11px] text-dark-muted gap-2">
+          <div className="px-4 py-2 bg-cream-light/60 border-b border-gray-100 flex flex-wrap items-center justify-between text-[11px] text-gray-600 gap-2">
             <div className="flex items-center gap-1.5">
               <Camera className="w-3.5 h-3.5 text-gray-400" />
               <span>
-                Photo: <strong className="text-dark-text">{currentImage.author}</strong> ({currentImage.license})
+                Photo: <strong className="text-gray-900">{currentImage.author}</strong> ({currentImage.license})
               </span>
             </div>
 
@@ -415,19 +410,19 @@ export const CropDetailsPage: React.FC = () => {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="p-2 rounded-xl bg-white border border-gray-200">
               <span className="text-[10px] text-gray-400 block">English</span>
-              <span className="font-extrabold text-dark-text truncate block">{crop.name}</span>
+              <span className="font-extrabold text-gray-900 truncate block">{crop.name}</span>
             </div>
             <div className="p-2 rounded-xl bg-white border border-gray-200">
               <span className="text-[10px] text-gray-400 block">ಕನ್ನಡ (Kannada)</span>
-              <span className="font-extrabold text-dark-text truncate block">{crop.nameKannada || '-'}</span>
+              <span className="font-extrabold text-gray-900 truncate block">{crop.nameKannada || '-'}</span>
             </div>
             <div className="p-2 rounded-xl bg-white border border-gray-200">
               <span className="text-[10px] text-gray-400 block">தமிழ் (Tamil)</span>
-              <span className="font-extrabold text-dark-text truncate block">{crop.nameTamil || '-'}</span>
+              <span className="font-extrabold text-gray-900 truncate block">{crop.nameTamil || '-'}</span>
             </div>
             <div className="p-2 rounded-xl bg-white border border-gray-200">
               <span className="text-[10px] text-gray-400 block">తెలుగు (Telugu)</span>
-              <span className="font-extrabold text-dark-text truncate block">{crop.nameTelugu || '-'}</span>
+              <span className="font-extrabold text-gray-900 truncate block">{crop.nameTelugu || '-'}</span>
             </div>
           </div>
         </div>
@@ -445,7 +440,7 @@ export const CropDetailsPage: React.FC = () => {
               key={tab.id}
               onClick={() => setActiveTab(tab.id as any)}
               className={`flex-1 min-h-[46px] py-2.5 px-3 text-xs font-bold transition-all relative flex items-center justify-center shrink-0 ${
-                activeTab === tab.id ? 'text-forest' : 'text-dark-muted hover:text-dark-text'
+                activeTab === tab.id ? 'text-forest' : 'text-gray-600 hover:text-gray-900'
               }`}
             >
               <span>{tab.label}</span>
@@ -464,7 +459,7 @@ export const CropDetailsPage: React.FC = () => {
           {/* TAB 1: OVERVIEW */}
           {activeTab === 'overview' && (
             <div className="space-y-4 text-xs leading-relaxed">
-              <p className="text-dark-text font-medium text-sm">
+              <p className="text-gray-900 font-medium text-sm">
                 {language === 'kn' && crop.descriptionKn
                   ? crop.descriptionKn
                   : language === 'ta' && crop.descriptionTa
@@ -492,7 +487,7 @@ export const CropDetailsPage: React.FC = () => {
               {/* Climate & Soil Requirements */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-bold text-dark-text">
+                  <div className="flex items-center gap-1.5 font-bold text-gray-900">
                     <Thermometer className="w-4 h-4 text-red-500" />
                     <span>Climate & Temperature</span>
                   </div>
@@ -507,7 +502,7 @@ export const CropDetailsPage: React.FC = () => {
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1.5">
-                  <div className="flex items-center gap-1.5 font-bold text-dark-text">
+                  <div className="flex items-center gap-1.5 font-bold text-gray-900">
                     <CloudRain className="w-4 h-4 text-blue-500" />
                     <span>Water & Irrigation</span>
                   </div>
@@ -523,7 +518,7 @@ export const CropDetailsPage: React.FC = () => {
               {/* Suitable Soil Types */}
               {crop.idealSoilTypes && (
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100">
-                  <span className="font-bold text-dark-text block mb-1.5">Suitable Soil Types:</span>
+                  <span className="font-bold text-gray-900 block mb-1.5">Suitable Soil Types:</span>
                   <div className="flex flex-wrap gap-1.5">
                     {crop.idealSoilTypes.map((st: string, idx: number) => (
                       <span
@@ -590,12 +585,12 @@ export const CropDetailsPage: React.FC = () => {
           {/* TAB 2: SOWING & NUTRIENTS */}
           {activeTab === 'sowing' && (
             <div className="space-y-4 text-xs leading-relaxed">
-              <h3 className="text-sm font-bold text-dark-text">Agronomic Sowing & Spacing Specifications</h3>
+              <h3 className="text-sm font-bold text-gray-900">Agronomic Sowing & Spacing Specifications</h3>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
                   <span className="text-gray-500 font-semibold block text-[10px] uppercase">Sowing Time & Months</span>
-                  <span className="font-bold text-dark-text text-sm">
+                  <span className="font-bold text-gray-900 text-sm">
                     {Array.isArray(crop.sowingMonths) ? crop.sowingMonths.join(', ') : crop.sowingMonths || 'June - July'}
                   </span>
                   <p className="text-[11px] text-gray-500">
@@ -605,7 +600,7 @@ export const CropDetailsPage: React.FC = () => {
 
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
                   <span className="text-gray-500 font-semibold block text-[10px] uppercase">Recommended Spacing</span>
-                  <span className="font-bold text-dark-text text-sm">
+                  <span className="font-bold text-gray-900 text-sm">
                     {crop.spacing || '45 cm × 15 cm'}
                   </span>
                   <p className="text-[11px] text-gray-500">
@@ -620,7 +615,7 @@ export const CropDetailsPage: React.FC = () => {
                   <FlaskConical className="w-4 h-4 text-brand-600 dark:text-brand-400" />
                   <span>ICAR Standard Fertilizer & Nutrient Schedule (Per Acre)</span>
                 </span>
-                <div className="space-y-2 text-dark-text">
+                <div className="space-y-2 text-gray-900">
                   <div className="p-2.5 rounded-xl bg-white border border-forest/10">
                     <strong className="text-forest font-extrabold block">1. Basal Application (At Sowing/Planting):</strong>
                     <span className="text-[11px] text-gray-600 block mt-0.5">
@@ -647,7 +642,7 @@ export const CropDetailsPage: React.FC = () => {
           {/* TAB 3: STAGES & LIFECYCLE */}
           {activeTab === 'timeline' && (
             <div className="space-y-3 text-xs">
-              <h3 className="text-sm font-bold text-dark-text mb-1">
+              <h3 className="text-sm font-bold text-gray-900 mb-1">
                 Day 1 to Harvest Stage Roadmap
               </h3>
               {crop.stages && crop.stages.length > 0 ? (
@@ -662,12 +657,12 @@ export const CropDetailsPage: React.FC = () => {
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-center">
-                          <span className="font-extrabold text-dark-text">{st.stage}</span>
+                          <span className="font-extrabold text-gray-900">{st.stage}</span>
                           <span className="text-[10px] text-forest font-bold">
                             Days {st.dayRange || st.duration}
                           </span>
                         </div>
-                        <p className="text-[11px] text-dark-muted mt-0.5">
+                        <p className="text-[11px] text-gray-600 mt-0.5">
                           {st.description || (st.tasks && st.tasks.map((t: any) => t.taskName || t).join(' • '))}
                         </p>
                       </div>
@@ -675,7 +670,7 @@ export const CropDetailsPage: React.FC = () => {
                   ))}
                 </div>
               ) : (
-                <div className="p-4 text-center text-dark-muted bg-gray-50 rounded-2xl">
+                <div className="p-4 text-center text-gray-600 bg-gray-50 rounded-2xl">
                   Full day-by-day task checklist generated upon adding crop to your field tracking plan.
                 </div>
               )}
@@ -685,7 +680,7 @@ export const CropDetailsPage: React.FC = () => {
           {/* TAB 4: PESTS & DISEASES */}
           {activeTab === 'pests' && (
             <div className="space-y-3 text-xs">
-              <h3 className="text-sm font-bold text-dark-text mb-1">
+              <h3 className="text-sm font-bold text-gray-900 mb-1">
                 Common Pests & Integrated Pest Management (IPM)
               </h3>
               {crop.diseases && crop.diseases.length > 0 ? (
@@ -731,13 +726,13 @@ export const CropDetailsPage: React.FC = () => {
           {/* TAB 5: ECONOMICS & YIELD */}
           {activeTab === 'economics' && (
             <div className="space-y-3.5 text-xs">
-              <h3 className="text-sm font-bold text-dark-text mb-1">
+              <h3 className="text-sm font-bold text-gray-900 mb-1">
                 Estimated Farm Economics & Market Viability (Per Acre)
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                  <span className="text-dark-muted block text-[10px] uppercase font-bold">Approx. Cultivation Cost</span>
-                  <span className="text-lg font-extrabold text-dark-text">
+                  <span className="text-gray-500 block text-[10px] uppercase font-bold">Approx. Cultivation Cost</span>
+                  <span className="text-lg font-extrabold text-gray-900">
                     {crop.estimatedCost || crop.estimatedCostPerAcre || '₹18,000 - ₹24,000'}
                   </span>
                   <p className="text-[10px] text-gray-500">Includes land prep, seed, fertilizer & labor</p>
@@ -757,7 +752,7 @@ export const CropDetailsPage: React.FC = () => {
                   <TrendingUp className="w-5 h-5 text-forest shrink-0" />
                   <div>
                     <span className="font-extrabold text-forest text-xs block">Expected Economic Returns</span>
-                    <span className="text-[11px] text-dark-text">{crop.roiEstimate}</span>
+                    <span className="text-[11px] text-gray-900">{crop.roiEstimate}</span>
                   </div>
                 </div>
               )}

@@ -35,6 +35,7 @@ export const CropMasterRecordSchema = z.object({
   alphabeticalKey: z.string().length(1), // 'A' - 'Z'
   confidence: z.enum(['high', 'medium', 'low']),
   confidenceNote: z.string().default('Package of practices aligned with UASB/TNAU agronomic guides. Verify regional variety adaptations with your local Agriculture Department / KVK.'),
+  imageStatus: z.enum(['pending-review', 'approved', 'use-fallback']).optional(),
   images: z.array(CropImageSchema).default([]),
   idealSoilTypes: z.array(z.string()),
   minPh: z.number(),
@@ -67,7 +68,7 @@ export const CropMasterRecordSchema = z.object({
   descriptionKn: z.string(),
   descriptionTa: z.string(),
   descriptionTe: z.string(),
-  imageUrl: z.string().default('/crops/placeholder.svg'),
+  imageUrl: z.string().default(''),
   risks: z.array(z.string()).default([]),
   benefits: z.array(z.string()).default([]),
   suitableAgroZones: z.array(z.string()).default([]),

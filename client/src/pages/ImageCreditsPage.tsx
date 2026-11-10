@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { api } from '../services/api';
 import { ImageCreditItem } from '../types';
+import { CropImage } from '../components/ui/CropImage';
 
 export const ImageCreditsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -53,12 +54,12 @@ export const ImageCreditsPage: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-earth-light/40 py-6 px-3 sm:px-6 max-w-6xl mx-auto space-y-6">
+    <div className="min-h-screen py-4 px-2 sm:px-4 max-w-6xl mx-auto space-y-6">
       {/* Top Bar */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 transition"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-gray-900 hover:bg-gray-50 transition"
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -68,15 +69,18 @@ export const ImageCreditsPage: React.FC = () => {
           Compliance & Attribution
         </span>
 
-        <a
-          href="/crop-images-review.html"
-          target="_blank"
-          rel="noreferrer"
-          className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
-        >
-          <span>Visual Review Dashboard</span>
-          <ExternalLink className="w-3.5 h-3.5" />
-        </a>
+        {import.meta.env.DEV ? (
+          <button
+            type="button"
+            onClick={() => navigate('/dev/crop-gallery')}
+            className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
+          >
+            <span>Visual Review Dashboard</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </button>
+        ) : (
+          <div className="w-11" />
+        )}
       </div>
 
       {/* Header Banner */}
@@ -86,11 +90,11 @@ export const ImageCreditsPage: React.FC = () => {
           <span>Open Knowledge & Creative Commons Attribution</span>
         </div>
 
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-dark-text">
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-gray-900">
           Image Credits & Copyright Licensing
         </h1>
 
-        <p className="text-xs sm:text-sm text-dark-muted leading-relaxed max-w-3xl">
+        <p className="text-xs sm:text-sm text-gray-600 leading-relaxed max-w-3xl">
           In strict compliance with academic and open licensing standards, all botanical photographs in Krushi Sathi
           are retrieved from Wikimedia Commons and open botanical repositories under valid Creative Commons licenses
           (CC BY-SA 4.0, CC BY 3.0, CC0 Public Domain). All crop disease imagery is strictly sourced from verified
@@ -101,15 +105,15 @@ export const ImageCreditsPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
           <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100">
             <span className="text-gray-500 block">Total Cataloged Photos</span>
-            <span className="text-lg font-extrabold text-dark-text">{credits.length} Verified Photos</span>
+            <span className="text-lg font-extrabold text-gray-900">{credits.length} Verified Photos</span>
           </div>
           <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100">
             <span className="text-gray-500 block">Primary Image Source</span>
-            <span className="text-lg font-extrabold text-dark-text">Wikimedia Commons</span>
+            <span className="text-lg font-extrabold text-gray-900">Wikimedia Commons</span>
           </div>
           <div className="p-3 bg-gray-50 rounded-2xl border border-gray-100">
             <span className="text-gray-500 block">Storage Architecture</span>
-            <span className="text-lg font-extrabold text-dark-text">Local WebP (No Live Query)</span>
+            <span className="text-lg font-extrabold text-gray-900">Local WebP (No Live Query)</span>
           </div>
         </div>
       </div>
@@ -152,7 +156,7 @@ export const ImageCreditsPage: React.FC = () => {
           </div>
         ) : filteredCredits.length === 0 ? (
           <div className="p-12 text-center space-y-2">
-            <p className="text-sm font-bold text-dark-text">No image records found matching your search</p>
+            <p className="text-sm font-bold text-gray-900">No image records found matching your search</p>
             <button
               onClick={() => {
                 setSearchQuery('');
@@ -172,14 +176,14 @@ export const ImageCreditsPage: React.FC = () => {
               >
                 <div className="flex items-start gap-4">
                   {/* Thumbnail */}
-                  <img
+                  <CropImage
+                    cropId={item.cropId}
                     src={item.imagePath}
                     alt={item.cropName}
-                    loading="lazy"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = '/crops/placeholder.svg';
-                    }}
-                    className="w-16 h-16 rounded-2xl object-cover border border-gray-200 bg-gray-100 shrink-0 shadow-xs"
+                    cropName={item.cropName}
+                    showFallbackLabel={false}
+                    containerClassName="w-16 h-16 rounded-2xl overflow-hidden border border-gray-200 bg-gray-100 shrink-0 shadow-xs relative"
+                    className="w-full h-full object-cover"
                   />
 
                   <div className="space-y-1">
@@ -187,10 +191,10 @@ export const ImageCreditsPage: React.FC = () => {
                       <span className="text-xs font-bold uppercase tracking-wider text-forest px-2 py-0.5 rounded-md bg-forest/10">
                         {item.imageType}
                       </span>
-                      <span className="text-xs text-dark-muted font-mono">{item.imagePath}</span>
+                      <span className="text-xs text-gray-500 font-mono">{item.imagePath}</span>
                     </div>
 
-                    <h4 className="text-sm font-extrabold text-dark-text">{item.cropName}</h4>
+                    <h4 className="text-sm font-extrabold text-gray-900">{item.cropName}</h4>
                     <p className="text-xs font-medium text-forest italic">{item.scientificName}</p>
 
                     <p className="text-xs text-gray-600">

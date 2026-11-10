@@ -402,8 +402,10 @@ export const CropRecommendationsPage: React.FC = () => {
                             <CropImage
                               cropId={crop.cropId}
                               src={crop.imageUrl}
+                              useFallback={crop.imageStatus === 'use-fallback'}
                               alt={crop.name}
                               cropName={crop.name}
+                              showFallbackLabel={false}
                               className="w-full h-full object-cover"
                             />
                           </div>

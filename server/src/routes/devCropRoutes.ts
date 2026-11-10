@@ -2,7 +2,13 @@ import express, { Request, Response } from 'express';
 import fs from 'fs';
 import path from 'path';
 import sharp from 'sharp';
-import { CropImageMetadata, fetchAllCropImages } from '../services/cropImageService';
+import {
+  CropImageMetadata,
+  fetchAllCropImages,
+  syncCatalogJsonWithMetadata,
+  clearCropImageMetadataCache,
+  getCropAliases,
+} from '../services/cropImageService';
 
 export const devCropRouter = express.Router();
 
@@ -29,6 +35,8 @@ function saveRecords(records: CropImageMetadata[]) {
   if (fs.existsSync(CLIENT_PUBLIC_CROPS_DIR)) {
     fs.writeFileSync(CROPS_IMAGES_JSON_CLIENT, jsonStr, 'utf-8');
   }
+  syncCatalogJsonWithMetadata(records);
+  clearCropImageMetadataCache();
 }
 
 // Dev guard middleware
@@ -111,8 +119,16 @@ devCropRouter.post('/:cropId/upload', devOnlyMiddleware, async (req: Request, re
 
     await sharp(buffer)
       .resize({ width: 800, withoutEnlargement: true, fit: 'inside' })
-      .webp({ quality: 84 })
+      .webp({ quality: 82 })
       .toFile(destPath);
+
+    // Sync alias files (e.g. crop-chilli, okra aliases)
+    for (const alias of getCropAliases(cropId)) {
+      const aliasPath = path.join(CLIENT_PUBLIC_CROPS_DIR, `${alias}.webp`);
+      try {
+        fs.copyFileSync(destPath, aliasPath);
+      } catch {}
+    }
 
     const records = getRecords();
     const index = records.findIndex(r => r.cropId === cropId);

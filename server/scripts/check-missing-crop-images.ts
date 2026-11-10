@@ -25,6 +25,7 @@ export function checkCropImages() {
 
   const missingFiles: CropImageMetadata[] = [];
   records.forEach(r => {
+    if (r.status === 'use-fallback') return;
     const filename = `${r.cropId}.webp`;
     const fullPath = path.join(CLIENT_PUBLIC_CROPS_DIR, filename);
     if (!fs.existsSync(fullPath)) {

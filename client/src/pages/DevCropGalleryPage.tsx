@@ -61,9 +61,17 @@ export const DevCropGalleryPage: React.FC = () => {
   };
 
   const loadCrops = async () => {
+    if (!import.meta.env.DEV) {
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       const res = await fetch('/api/dev/crops');
+      if (res.status === 403) {
+        navigate('/home');
+        return;
+      }
       if (res.ok) {
         const json = await res.json();
         setCrops(json.data || []);
@@ -445,6 +453,8 @@ export const DevCropGalleryPage: React.FC = () => {
                       ) : (
                         <CropImage
                           cropId={crop.cropId}
+                          src={`/crops/${crop.cropId}.webp${crop.updatedAt ? `?t=${encodeURIComponent(crop.updatedAt)}` : ''}`}
+                          useFallback={isFallback}
                           alt={crop.name}
                           cropName={crop.name}
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"

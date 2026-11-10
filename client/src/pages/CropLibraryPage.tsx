@@ -246,18 +246,18 @@ export const CropLibraryPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-dvh bg-earth-light/40 py-4 sm:py-6 px-2.5 sm:px-6 max-w-7xl mx-auto space-y-5 sm:space-y-6">
+    <div className="min-h-dvh py-2 sm:py-4 px-1 sm:px-2 max-w-7xl mx-auto space-y-5 sm:space-y-6">
       {/* Hero Header */}
-      <div className="bg-gradient-to-r from-forest via-forest-dark to-forest-DEFAULT text-white rounded-3xl p-6 sm:p-8 shadow-card relative overflow-hidden">
+      <div className="bg-gradient-to-r from-forest via-forest-dark to-forest-light text-white rounded-3xl p-6 sm:p-8 shadow-card relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none" />
         
         <div className="relative z-10 max-w-3xl space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/15 backdrop-blur-md text-xs font-bold text-mint-light">
-            <BookOpen className="w-4 h-4 text-goldenrod" />
+            <BookOpen className="w-4 h-4 text-amber-300" />
             <span>South India Master Crop Catalog (112 Crops)</span>
           </div>
           
-          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight">
+          <h1 className="text-2xl sm:text-4xl font-extrabold tracking-tight text-white">
             {language === 'kn'
               ? 'ದಕ್ಷಿಣ ಭಾರತ ಬೆಳೆ ಗ್ರಂಥಾಲಯ (A-Z)'
               : language === 'ta'
@@ -277,15 +277,16 @@ export const CropLibraryPage: React.FC = () => {
               <ShieldCheck className="w-4 h-4 text-emerald-300" />
               <span>100% Offline Local Images</span>
             </div>
-            <a
-              href="/crop-images-review.html"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-1.5 bg-goldenrod text-forest-dark px-3 py-1.5 rounded-xl hover:bg-yellow-400 font-bold transition shadow-sm"
-            >
-              <span>Image Review Dashboard</span>
-              <ExternalLink className="w-3.5 h-3.5" />
-            </a>
+            {import.meta.env.DEV && (
+              <button
+                type="button"
+                onClick={() => navigate('/dev/crop-gallery')}
+                className="flex items-center gap-1.5 bg-amber-300 text-forest-900 px-3 py-1.5 rounded-xl hover:bg-amber-200 font-bold transition shadow-sm"
+              >
+                <span>Image Review Dashboard</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </button>
+            )}
             <button
               onClick={() => navigate('/credits')}
               className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-xl hover:bg-white/20 transition text-white"
@@ -312,7 +313,7 @@ export const CropLibraryPage: React.FC = () => {
                 className={`min-w-[44px] min-h-[44px] px-2.5 rounded-xl text-xs font-extrabold transition shrink-0 flex items-center justify-center touch-target active:scale-95 ${
                   isActive
                     ? 'bg-forest text-white shadow-sm ring-2 ring-forest/30 scale-105'
-                    : 'text-gray-600 hover:bg-gray-100 hover:text-dark-text'
+                    : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
                 }`}
               >
                 {letter}
@@ -464,8 +465,8 @@ export const CropLibraryPage: React.FC = () => {
 
         {/* Active Filters Pills & Summary */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-1">
-          <div className="flex flex-wrap items-center gap-1.5 text-xs text-dark-muted">
-            <span className="font-extrabold text-dark-text">
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-gray-600">
+            <span className="font-extrabold text-gray-900">
               Showing {crops.length} of {pagination.total} crops
             </span>
             {selectedLetter !== 'All' && (
@@ -523,8 +524,8 @@ export const CropLibraryPage: React.FC = () => {
       ) : error ? (
         <div className="bg-white rounded-3xl p-8 border border-red-200 text-center max-w-md mx-auto space-y-3">
           <Info className="w-8 h-8 text-red-500 mx-auto" />
-          <h3 className="text-base font-extrabold text-dark-text">Failed to load crops</h3>
-          <p className="text-xs text-dark-muted">{error}</p>
+          <h3 className="text-base font-extrabold text-gray-900">Failed to load crops</h3>
+          <p className="text-xs text-gray-600">{error}</p>
           <button
             onClick={() => handleFilterChange(setPage, 1)}
             className="px-4 py-2 bg-forest text-white rounded-xl text-xs font-bold hover:bg-forest-dark"
@@ -538,8 +539,8 @@ export const CropLibraryPage: React.FC = () => {
             <Sprout className="w-8 h-8" />
           </div>
           <div>
-            <h3 className="text-lg font-extrabold text-dark-text">No Crops Match Your Filters</h3>
-            <p className="text-xs text-dark-muted mt-1 leading-relaxed">
+            <h3 className="text-lg font-extrabold text-gray-900">No Crops Match Your Filters</h3>
+            <p className="text-xs text-gray-600 mt-1 leading-relaxed">
               Try adjusting the alphabet letter, clearing search keywords, or selecting "All Categories" to view the full 112 South Indian crop catalog.
             </p>
           </div>
@@ -554,10 +555,12 @@ export const CropLibraryPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-5">
           {crops.map((crop) => {
             const localizedTitle = getLocalizedName(crop);
-            const primaryImage =
-              crop.images && crop.images.length > 0
-                ? crop.images[0].path
-                : crop.imageUrl || '/crops/placeholder.svg';
+            const useFallback = crop.imageStatus === 'use-fallback';
+            const primaryImage = useFallback
+              ? null
+              : (crop.images && crop.images.length > 0
+                  ? crop.images[0].path
+                  : crop.imageUrl || `/crops/${crop.id}.webp`);
 
             return (
               <motion.div
@@ -572,6 +575,7 @@ export const CropLibraryPage: React.FC = () => {
                   <CropImage
                     cropId={crop.id}
                     src={primaryImage}
+                    useFallback={useFallback}
                     alt={crop.name}
                     cropName={crop.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
@@ -615,13 +619,13 @@ export const CropLibraryPage: React.FC = () => {
                     </div>
 
                     {/* Crop Name */}
-                    <h3 className="text-base font-extrabold text-dark-text group-hover:text-forest transition line-clamp-1">
+                    <h3 className="text-base font-extrabold text-gray-900 group-hover:text-forest transition line-clamp-1">
                       {localizedTitle}
                     </h3>
 
                     {/* Secondary name if different */}
                     {localizedTitle !== crop.name && (
-                      <p className="text-xs text-dark-muted truncate mt-0.5">{crop.name}</p>
+                      <p className="text-xs text-gray-600 truncate mt-0.5">{crop.name}</p>
                     )}
                   </div>
 
@@ -670,7 +674,7 @@ export const CropLibraryPage: React.FC = () => {
           </button>
 
           <div className="flex items-center gap-1">
-            <span className="text-xs font-extrabold text-dark-text">
+            <span className="text-xs font-extrabold text-gray-900">
               Page {pagination.page} of {pagination.totalPages}
             </span>
           </div>
@@ -697,7 +701,7 @@ export const CropLibraryPage: React.FC = () => {
               className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl p-6 space-y-4 max-h-[85vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-2 border-b border-gray-100">
-                <h3 className="text-base font-extrabold text-dark-text">Filter Crop Catalog</h3>
+                <h3 className="text-base font-extrabold text-gray-900">Filter Crop Catalog</h3>
                 <button
                   onClick={() => setShowFiltersModal(false)}
                   className="p-1 rounded-full hover:bg-gray-100 text-gray-500"

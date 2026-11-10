@@ -167,8 +167,10 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
                       <CropImage
                         cropId={crop.id}
                         src={crop.imageUrl}
+                        useFallback={crop.imageStatus === 'use-fallback'}
                         alt={crop.name}
                         cropName={crop.name}
+                        showFallbackLabel={false}
                         className="w-full h-full object-cover"
                       />
                     </div>

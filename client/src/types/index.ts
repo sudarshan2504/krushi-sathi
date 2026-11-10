@@ -98,6 +98,7 @@ export interface RecommendationResult {
   risks: string[];
   benefits: string[];
   imageUrl: string;
+  imageStatus?: 'pending-review' | 'approved' | 'use-fallback';
   scientificName?: string;
   durationType?: 'short' | 'medium' | 'long' | 'perennial';
   sowingMonths?: string[];
@@ -161,6 +162,7 @@ export interface CropItem {
   descriptionTa: string;
   descriptionTe: string;
   imageUrl: string;
+  imageStatus?: 'pending-review' | 'approved' | 'use-fallback';
   risks: string[];
   benefits: string[];
   durationType?: 'short' | 'medium' | 'long' | 'perennial';

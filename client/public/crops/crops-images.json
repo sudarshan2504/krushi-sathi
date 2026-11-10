@@ -1165,7 +1165,7 @@
     "photographer": "Wikimedia Commons Contributor",
     "license": "CC BY-SA 4.0",
     "status": "pending-review",
-    "updatedAt": "2026-11-09T03:44:38.525Z"
+    "updatedAt": "2026-11-10T05:14:23.610Z"
   },
   {
     "cropId": "fenugreek-methi",
@@ -1224,12 +1224,12 @@
     "nameTelugu": "గడ్డి జొన్న (Fodder Sorghum)",
     "category": "fodder",
     "filePath": "/crops/fodder-sorghum-multicut.webp",
-    "source": "Wikimedia Commons",
-    "sourceUrl": "https://commons.wikimedia.org",
-    "photographer": "Botanical Archive",
-    "license": "CC BY-SA",
+    "source": "iNaturalist",
+    "sourceUrl": "https://www.inaturalist.org/taxa/1493006",
+    "photographer": "(c) User:MarkusHagenlocher, some rights reserved (CC BY-SA)",
+    "license": "CC-BY-SA",
     "status": "pending-review",
-    "updatedAt": "2026-11-09T03:44:45.892Z"
+    "updatedAt": "2026-11-10T05:14:04.600Z"
   },
   {
     "cropId": "foxtail-millet-navane",
@@ -2088,12 +2088,12 @@
     "nameTelugu": "సూపర్ నేపియర్ గడ్డి (CO-5)",
     "category": "fodder",
     "filePath": "/crops/super-napier-co5.webp",
-    "source": "Wikimedia Commons",
-    "sourceUrl": "https://commons.wikimedia.org",
-    "photographer": "Botanical Archive",
-    "license": "CC BY-SA",
+    "source": "iNaturalist",
+    "sourceUrl": "https://www.inaturalist.org/taxa/370562",
+    "photographer": "no rights reserved, uploaded by 葉子",
+    "license": "CC0",
     "status": "pending-review",
-    "updatedAt": "2026-11-09T03:46:32.930Z"
+    "updatedAt": "2026-11-10T05:14:10.495Z"
   },
   {
     "cropId": "sweet-orange-mosambi",
@@ -2136,12 +2136,12 @@
     "nameTelugu": "తీపి జొన్న (Sweet Sorghum)",
     "category": "cereal_millet",
     "filePath": "/crops/sorghum-sweet.webp",
-    "source": "Wikimedia Commons",
-    "sourceUrl": "https://commons.wikimedia.org",
-    "photographer": "Botanical Archive",
-    "license": "CC BY-SA",
+    "source": "iNaturalist",
+    "sourceUrl": "https://www.inaturalist.org/taxa/181685",
+    "photographer": "(c) Tara Severns, some rights reserved (CC BY), uploaded by Tara Severns",
+    "license": "CC-BY",
     "status": "pending-review",
-    "updatedAt": "2026-11-09T03:46:39.538Z"
+    "updatedAt": "2026-11-10T05:19:02.929Z"
   },
   {
     "cropId": "tapioca-cassava",

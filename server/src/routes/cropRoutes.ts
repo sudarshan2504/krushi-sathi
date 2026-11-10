@@ -8,9 +8,24 @@ import {
   getCatalogCredits,
   getCatalogConfidenceReport,
 } from '../services/catalogService';
+import { getCropImageMetadataMap } from '../services/cropImageService';
 import prisma from '../utils/prisma';
 
 const router = Router();
+
+function resolveCropImageFields(cropId: string, defaultUrl: string) {
+  const meta = getCropImageMetadataMap().get(cropId);
+  if (meta) {
+    return {
+      imageStatus: meta.status,
+      imageUrl: meta.status === 'use-fallback' ? '' : `/crops/${cropId}.webp`,
+    };
+  }
+  return {
+    imageStatus: defaultUrl ? ('approved' as const) : ('use-fallback' as const),
+    imageUrl: defaultUrl || '',
+  };
+}
 
 // Standard categories metadata with translations and icons
 export const CROP_CATEGORIES = [
@@ -157,27 +172,31 @@ router.get('/seasonal-fruits', (req: Request, res: Response) => {
 
   res.json({
     success: true,
-    data: fruits.map(f => ({
-      id: f.id,
-      name: f.name,
-      nameKannada: f.nameKannada,
-      nameTamil: f.nameTamil,
-      nameTelugu: f.nameTelugu,
-      category: f.category,
-      fruitingTime: f.fruitingTime || 'Seasonal',
-      gestationYears: f.gestationYears || 1,
-      sowingMonths: f.sowingMonths || [],
-      harvestMonths: f.harvestMonths || [],
-      potentialYieldPerAcre: f.potentialYieldPerAcre,
-      estimatedCostPerAcre: f.estimatedCostPerAcre,
-      waterRequirement: f.waterRequirement,
-      imageUrl: f.imageUrl,
-      description: f.description,
-      descriptionKn: f.descriptionKn,
-      descriptionTa: f.descriptionTa,
-      descriptionTe: f.descriptionTe,
-      benefits: f.benefits,
-    })),
+    data: fruits.map(f => {
+      const imgFields = resolveCropImageFields(f.id, f.imageUrl);
+      return {
+        id: f.id,
+        name: f.name,
+        scientificName: f.scientificName,
+        nameKannada: f.nameKannada,
+        nameTamil: f.nameTamil,
+        nameTelugu: f.nameTelugu,
+        category: f.category,
+        fruitingTime: f.fruitingTime || 'Seasonal',
+        gestationYears: f.gestationYears || 1,
+        sowingMonths: f.sowingMonths || [],
+        harvestMonths: f.harvestMonths || [],
+        potentialYieldPerAcre: f.potentialYieldPerAcre,
+        estimatedCostPerAcre: f.estimatedCostPerAcre,
+        waterRequirement: f.waterRequirement,
+        ...imgFields,
+        description: f.description,
+        descriptionKn: f.descriptionKn,
+        descriptionTa: f.descriptionTa,
+        descriptionTe: f.descriptionTe,
+        benefits: f.benefits,
+      };
+    }),
   });
 });
 
@@ -189,28 +208,32 @@ router.get('/long-term', (req: Request, res: Response) => {
 
   res.json({
     success: true,
-    data: plantationCrops.map(c => ({
-      id: c.id,
-      name: c.name,
-      nameKannada: c.nameKannada,
-      nameTamil: c.nameTamil,
-      nameTelugu: c.nameTelugu,
-      category: c.category,
-      gestationYears: c.gestationYears ?? 4,
-      intercroppingOptions: c.intercroppingOptions || ['Pulses', 'Vegetables', 'Banana'],
-      roiEstimate: c.roiEstimate || '₹1.5L - ₹3.0L / acre / year at maturity',
-      estimatedCostPerAcre: c.estimatedCostPerAcre,
-      potentialYieldPerAcre: c.potentialYieldPerAcre,
-      waterRequirement: c.waterRequirement,
-      idealSoilTypes: c.idealSoilTypes,
-      imageUrl: c.imageUrl,
-      description: c.description,
-      descriptionKn: c.descriptionKn,
-      descriptionTa: c.descriptionTa,
-      descriptionTe: c.descriptionTe,
-      benefits: c.benefits,
-      risks: c.risks,
-    })),
+    data: plantationCrops.map(c => {
+      const imgFields = resolveCropImageFields(c.id, c.imageUrl);
+      return {
+        id: c.id,
+        name: c.name,
+        scientificName: c.scientificName,
+        nameKannada: c.nameKannada,
+        nameTamil: c.nameTamil,
+        nameTelugu: c.nameTelugu,
+        category: c.category,
+        gestationYears: c.gestationYears ?? 4,
+        intercroppingOptions: c.intercroppingOptions || ['Pulses', 'Vegetables', 'Banana'],
+        roiEstimate: c.roiEstimate || '₹1.5L - ₹3.0L / acre / year at maturity',
+        estimatedCostPerAcre: c.estimatedCostPerAcre,
+        potentialYieldPerAcre: c.potentialYieldPerAcre,
+        waterRequirement: c.waterRequirement,
+        idealSoilTypes: c.idealSoilTypes,
+        ...imgFields,
+        description: c.description,
+        descriptionKn: c.descriptionKn,
+        descriptionTa: c.descriptionTa,
+        descriptionTe: c.descriptionTe,
+        benefits: c.benefits,
+        risks: c.risks,
+      };
+    }),
   });
 });
 
@@ -334,64 +357,94 @@ router.get('/', async (req: Request, res: Response) => {
   res.json({
     success: true,
     totalCount: crops.length,
-    data: crops.map(c => ({
-      id: c.id,
-      name: c.name,
-      scientificName: c.scientificName,
-      nameKannada: c.nameKannada,
-      nameTamil: c.nameTamil,
-      nameTelugu: c.nameTelugu,
-      category: c.category,
-      idealSoilTypes: c.idealSoilTypes,
-      waterRequirement: c.waterRequirement,
-      durationDays: c.durationDays,
-      durationType: c.durationType || 'medium',
-      seasons: c.seasons,
-      sowingMonths: c.sowingMonths,
-      harvestMonths: c.harvestMonths,
-      gestationYears: c.gestationYears,
-      intercroppingOptions: c.intercroppingOptions,
-      roiEstimate: c.roiEstimate,
-      isSeasonalFruit: c.isSeasonalFruit,
-      isLongTerm: c.isLongTerm,
-      fruitingTime: c.fruitingTime,
-      estimatedCostPerAcre: c.estimatedCostPerAcre,
-      potentialYieldPerAcre: c.potentialYieldPerAcre,
-      imageUrl: c.imageUrl,
-      description: c.description,
-      descriptionKn: c.descriptionKn,
-      descriptionTa: c.descriptionTa,
-      descriptionTe: c.descriptionTe,
-      stageCount: c.stages.length,
-    })),
+    data: crops.map(c => {
+      const imgFields = resolveCropImageFields(c.id, c.imageUrl);
+      return {
+        id: c.id,
+        name: c.name,
+        scientificName: c.scientificName,
+        nameKannada: c.nameKannada,
+        nameTamil: c.nameTamil,
+        nameTelugu: c.nameTelugu,
+        category: c.category,
+        idealSoilTypes: c.idealSoilTypes,
+        waterRequirement: c.waterRequirement,
+        durationDays: c.durationDays,
+        durationType: c.durationType || 'medium',
+        seasons: c.seasons,
+        sowingMonths: c.sowingMonths,
+        harvestMonths: c.harvestMonths,
+        gestationYears: c.gestationYears,
+        intercroppingOptions: c.intercroppingOptions,
+        roiEstimate: c.roiEstimate,
+        isSeasonalFruit: c.isSeasonalFruit,
+        isLongTerm: c.isLongTerm,
+        fruitingTime: c.fruitingTime,
+        estimatedCostPerAcre: c.estimatedCostPerAcre,
+        potentialYieldPerAcre: c.potentialYieldPerAcre,
+        ...imgFields,
+        description: c.description,
+        descriptionKn: c.descriptionKn,
+        descriptionTa: c.descriptionTa,
+        descriptionTe: c.descriptionTe,
+        stageCount: c.stages.length,
+      };
+    }),
   });
 });
 
 // 5. Get single crop by id or slug
 router.get('/:id', (req: Request, res: Response) => {
   const q = (req.params.id || '').toLowerCase().trim();
-  const crop = CROPS_DATA.find(
+  const normQ = q.replace(/[^a-z0-9]/g, '');
+
+  // Priority 1: Exact ID match (CROPS_DATA or Master Catalog)
+  const exactCrop = CROPS_DATA.find(c => c.id.toLowerCase() === q);
+  if (exactCrop) {
+    return res.json({
+      success: true,
+      data: { ...exactCrop, ...resolveCropImageFields(exactCrop.id, exactCrop.imageUrl) },
+    });
+  }
+
+  const exactCatalog = getCatalogCropById(q);
+  if (exactCatalog && exactCatalog.id.toLowerCase() === q) {
+    return res.json({
+      success: true,
+      data: exactCatalog,
+    });
+  }
+
+  // Priority 2: Slug without "crop-" prefix in CROPS_DATA or catalog
+  const slugCrop = CROPS_DATA.find(c => c.id.replace(/^crop-/, '').toLowerCase() === q);
+  if (slugCrop) {
+    return res.json({
+      success: true,
+      data: { ...slugCrop, ...resolveCropImageFields(slugCrop.id, slugCrop.imageUrl) },
+    });
+  }
+
+  if (exactCatalog) {
+    return res.json({
+      success: true,
+      data: exactCatalog,
+    });
+  }
+
+  // Priority 3: Fuzzy name fallback
+  const fuzzyCrop = CROPS_DATA.find(
     c =>
-      c.id.toLowerCase() === q ||
-      c.id.replace('crop-', '').toLowerCase() === q ||
-      c.name.toLowerCase().replace(/[^a-z0-9]/g, '').includes(q.replace(/[^a-z0-9]/g, '')) ||
+      c.name.toLowerCase().replace(/[^a-z0-9]/g, '').includes(normQ) ||
       q.includes(c.id.replace('crop-', '').toLowerCase())
   );
 
-  if (!crop) {
-    const masterCrop = getCatalogCropById(q);
-    if (masterCrop) {
-      return res.json({
-        success: true,
-        data: masterCrop,
-      });
-    }
+  if (!fuzzyCrop) {
     return res.status(404).json({ success: false, message: 'Crop not found' });
   }
 
   res.json({
     success: true,
-    data: crop,
+    data: { ...fuzzyCrop, ...resolveCropImageFields(fuzzyCrop.id, fuzzyCrop.imageUrl) },
   });
 });
 

@@ -578,7 +578,14 @@ export const api = {
       }
       const q = new URLSearchParams(cleanedParams).toString();
       const res = await fetch(`${API_BASE}/crops/catalog?${q}`);
-      return handleResponse(res);
+      const json = await res.json();
+      if (!res.ok || json?.success === false) {
+        throw new Error(json?.message || `Failed to load catalog (${res.status})`);
+      }
+      return {
+        data: json?.data || [],
+        pagination: json?.pagination || null,
+      };
     },
 
     async getCatalogById(id: string): Promise<any> {

@@ -1,5 +1,6 @@
 import { CROPS_DATA, CropData } from '../data/cropKnowledge';
 import { detectSeasonFromLocation, getCropSowingStatus } from './seasonService';
+import { getCropImageMetadataMap } from './cropImageService';
 
 export interface SoilAssessmentInput {
   soilType: string; // red, black, sandy, clay, loamy, alluvial, laterite, unknown
@@ -57,6 +58,7 @@ export interface RecommendationResult {
   risks: string[];
   benefits: string[];
   imageUrl: string;
+  imageStatus?: 'pending-review' | 'approved' | 'use-fallback';
   sowingWindowStatus?: {
     status: 'open' | 'closing_soon' | 'closed' | 'opens_in_n_days';
     label: string;
@@ -323,6 +325,10 @@ export function calculateCropRecommendations(input: SoilAssessmentInput): Recomm
     const reasonsSummary = keyReasons.slice(0, 3).join('. ');
     const explanation = `${crop.name} scored ${finalScore}% suitability for your field. ${reasonsSummary}.`;
 
+    const meta = getCropImageMetadataMap().get(crop.id);
+    const resolvedImageStatus = meta?.status || (crop.imageUrl ? 'approved' : 'use-fallback');
+    const resolvedImageUrl = resolvedImageStatus === 'use-fallback' ? '' : `/crops/${crop.id}.webp`;
+
     results.push({
       cropId: crop.id,
       name: crop.name,
@@ -349,7 +355,8 @@ export function calculateCropRecommendations(input: SoilAssessmentInput): Recomm
       intercroppingOptions: crop.intercroppingOptions,
       risks: crop.risks,
       benefits: crop.benefits,
-      imageUrl: crop.imageUrl,
+      imageUrl: resolvedImageUrl,
+      imageStatus: resolvedImageStatus,
       sowingWindowStatus: sowingStatus,
       detectedSeasonName: detectedSeason?.localSeasonName || detectedSeason?.name,
     });

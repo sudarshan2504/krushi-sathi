@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../../context/LanguageContext';
 import { RecommendationResult } from '../../types';
+import { CropImage } from '../ui/CropImage';
 
 interface CropCompareViewProps {
   crops: (RecommendationResult | any)[];
@@ -106,14 +107,17 @@ export const CropCompareView: React.FC<CropCompareViewProps> = ({
                   className="bg-earth-50 rounded-2xl p-4 border border-earth-200 flex flex-col justify-between"
                 >
                   <div className="flex items-start gap-3">
-                    <img
-                      src={crop.imageUrl}
-                      alt={crop.name}
-                      className="w-14 h-14 rounded-xl object-cover border border-earth-200 flex-shrink-0"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
+                    <div className="w-14 h-14 rounded-xl overflow-hidden border border-earth-200 flex-shrink-0">
+                      <CropImage
+                        cropId={crop.cropId || crop.id}
+                        src={crop.imageUrl}
+                        useFallback={crop.imageStatus === 'use-fallback'}
+                        alt={crop.name}
+                        cropName={crop.name}
+                        showFallbackLabel={false}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
                     <div className="min-w-0">
                       <h3 className="font-bold text-earth-900 text-sm leading-tight truncate">
                         {getLocalizedName(crop)}

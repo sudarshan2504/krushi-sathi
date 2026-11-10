@@ -129,9 +129,12 @@ export const LongTermCropsSection: React.FC<LongTermCropsSectionProps> = ({
                   <CropImage
                     cropId={crop.id}
                     src={crop.imageUrl}
+                    useFallback={crop.imageStatus === 'use-fallback'}
                     alt={crop.name}
                     cropName={getLocalizedName(crop)}
-                    className="w-12 h-12 rounded-xl object-cover border border-forest-600 flex-shrink-0"
+                    showFallbackLabel={false}
+                    containerClassName="w-12 h-12 rounded-xl overflow-hidden border border-forest-600 flex-shrink-0 relative"
+                    className="w-full h-full object-cover"
                   />
                   <div className="min-w-0 flex-1">
                     <h4 className="font-bold text-sm text-white truncate">{getLocalizedName(crop)}</h4>
