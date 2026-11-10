@@ -126,27 +126,36 @@ export const HomePage: React.FC = () => {
       <div
         className="absolute top-0 inset-x-0 h-[46vh] min-h-[360px] max-h-[420px] pointer-events-none overflow-hidden select-none z-0"
         style={{
-          maskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 65%, transparent 100%)',
+          maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
         }}
       >
         <img
           src="/design/sunrise-landscape-full.webp"
           alt=""
-          className="w-full h-full object-cover object-[28%_center]"
+          className="w-full h-full object-cover"
+          style={{ objectPosition: '30% center' }}
           loading="eager"
         />
         {/* Soft top gradient scrim so header text stays crisp */}
-        <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-white/70 via-white/20 to-transparent pointer-events-none" />
+        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/60 via-white/15 to-transparent pointer-events-none" />
+        {/* Right-side gradient so farmer blends into the sky */}
+        <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-sky-100/40 to-transparent pointer-events-none" />
       </div>
 
       {/* 2. Large Farmer Cutout on Right Side (about 40% screen width, head near top-right, shoulder behind weather card) */}
-      <div className="absolute top-[70px] sm:top-[74px] right-0 sm:right-2 w-[41%] max-w-[185px] pointer-events-none select-none z-10">
+      <div className="absolute top-[62px] sm:top-[68px] right-0 w-[42%] max-w-[190px] pointer-events-none select-none z-10"
+        style={{
+          maskImage: 'linear-gradient(to bottom, black 72%, transparent 100%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, black 72%, transparent 100%)',
+        }}
+      >
         <img
           src="/design/farmer-cutout-flipped.png"
           alt="Farmer gazing over field"
-          className="w-full h-auto object-contain drop-shadow-sm"
+          className="w-full h-auto object-contain"
           loading="eager"
+          style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}
         />
       </div>
 
