@@ -99,7 +99,9 @@ export const Button: React.FC<ButtonProps> = ({
         <span className="shrink-0" aria-hidden="true">{leftIcon}</span>
       )}
       {children && (
-        <span className={isCurrentlyLoading ? 'sr-only' : ''}>{children}</span>
+        <span className={isCurrentlyLoading ? 'sr-only' : 'inline-flex items-center justify-center gap-2'}>
+          {children}
+        </span>
       )}
       {!isCurrentlyLoading && rightIcon && (
         <span className="shrink-0" aria-hidden="true">{rightIcon}</span>

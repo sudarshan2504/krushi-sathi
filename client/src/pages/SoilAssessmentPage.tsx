@@ -424,7 +424,7 @@ export const SoilAssessmentPage: React.FC = () => {
   );
 
   return (
-    <div className="max-w-2xl mx-auto py-2 px-3 sm:px-0">
+    <div className="max-w-2xl mx-auto py-2 pb-24 px-3 sm:px-0">
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <button

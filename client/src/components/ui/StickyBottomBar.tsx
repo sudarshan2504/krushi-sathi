@@ -28,7 +28,7 @@ export const StickyBottomBar: React.FC<StickyBottomBarProps> = ({
         'fixed left-0 right-0 z-30 transition-all duration-200 pointer-events-none',
         'sm:max-w-[440px] sm:mx-auto',
         isOffsetForNav
-          ? 'bottom-[calc(68px+env(safe-area-inset-bottom,0px))]'
+          ? 'bottom-[calc(86px+env(safe-area-inset-bottom,0px))]'
           : 'bottom-0 pb-[max(0.75rem,env(safe-area-inset-bottom,0px))]',
         className,
       ].join(' ')}

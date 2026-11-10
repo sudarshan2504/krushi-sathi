@@ -56,7 +56,11 @@ export function setCachedData<T>(key: string, data: T): void {
 async function handleResponse<T>(res: Response): Promise<T> {
   const data = await res.json();
   if (!res.ok) {
-    throw new Error(data.message || `Request failed with status ${res.status}`);
+    const err: Error & { status?: number } = new Error(
+      data.message || `Request failed with status ${res.status}`
+    );
+    err.status = res.status;
+    throw err;
   }
   return data.data;
 }

@@ -498,7 +498,7 @@ export const ChatPage: React.FC = () => {
         </div>
       ) : (
         /* Classic Text Chat Mode */
-        <div className="flex-1 flex flex-col px-3 sm:px-4 pt-2 pb-2">
+        <div className="flex-1 flex flex-col px-3 sm:px-4 pt-2 pb-24">
           <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-white dark:bg-dark-surface rounded-3xl border border-gray-200 dark:border-dark-border shadow-card mb-2 h-[calc(100dvh-310px)] md:h-[calc(100dvh-340px)]">
             {messages.length === 0 ? (
               <div className="my-auto flex flex-col items-center justify-center py-10 text-center">

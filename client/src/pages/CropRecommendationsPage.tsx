@@ -566,7 +566,7 @@ export const CropRecommendationsPage: React.FC = () => {
 
       {/* Floating Compare Drawer when items are selected */}
       {selectedForCompare.length > 0 && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-forest-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center gap-4 border border-forest-700 backdrop-blur-md">
+        <div className="fixed bottom-[calc(88px+env(safe-area-inset-bottom,0px))] left-1/2 -translate-x-1/2 z-[35] w-[calc(100%-24px)] max-w-[406px] bg-forest-900 text-white px-4 py-3 rounded-2xl shadow-2xl flex items-center justify-between gap-3 border border-forest-700 backdrop-blur-md">
           <div className="flex items-center gap-2">
             <Scale className="w-5 h-5 text-mint-300" />
             <span className="text-xs font-bold">

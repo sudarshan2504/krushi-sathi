@@ -17,15 +17,14 @@ import prisma from '../utils/prisma';
 
 const router = Router();
 
-// Apply simple rate limiting to all /api/auth routes
-router.use(authRateLimiter);
-
+// Apply brute-force rate limiting explicitly to login, OTP, and registration routes
+// (Authenticated GET /me and profile reads stay accessible across normal client reloads)
 /**
  * POST /api/auth/demo-login
  * - Instant one-tap demo login as Ramesh Kumar (Mandya, Karnataka).
  * - Returns 404 unless DEMO_MODE=true.
  */
-router.post('/demo-login', async (req: Request, res: Response) => {
+router.post('/demo-login', authRateLimiter, async (req: Request, res: Response) => {
   if (!isDemoModeActive()) {
     return res.status(404).json({ success: false, message: 'Endpoint not found' });
   }
@@ -57,7 +56,7 @@ router.post('/demo-login', async (req: Request, res: Response) => {
  * POST /api/auth/guest-login
  * - Legacy demo login alias; returns 404 unless DEMO_MODE=true.
  */
-router.post('/guest-login', async (req: Request, res: Response) => {
+router.post('/guest-login', authRateLimiter, async (req: Request, res: Response) => {
   if (!isDemoModeActive()) {
     return res.status(404).json({ success: false, message: 'Endpoint not found' });
   }
@@ -90,7 +89,7 @@ router.post('/guest-login', async (req: Request, res: Response) => {
  * POST /api/auth/direct-login
  * - Legacy demo direct login; returns 404 unless DEMO_MODE=true.
  */
-router.post('/direct-login', async (req: Request, res: Response) => {
+router.post('/direct-login', authRateLimiter, async (req: Request, res: Response) => {
   if (!isDemoModeActive()) {
     return res.status(404).json({ success: false, message: 'Endpoint not found' });
   }
@@ -132,7 +131,7 @@ router.post('/direct-login', async (req: Request, res: Response) => {
  * - Issues JWT in httpOnly cookie and returns { user, isNewUser }
  * - Returns clear 401 if token is invalid or has no phone number
  */
-router.post('/firebase-login', async (req: Request, res: Response) => {
+router.post('/firebase-login', authRateLimiter, async (req: Request, res: Response) => {
   try {
     const { idToken } = req.body;
     if (!idToken || typeof idToken !== 'string') {
@@ -171,7 +170,7 @@ router.post('/firebase-login', async (req: Request, res: Response) => {
 });
 
 // Send OTP (Demo Path — Disabled in production or unless DEMO_OTP_ENABLED=true)
-router.post('/send-otp', async (req: Request, res: Response) => {
+router.post('/send-otp', authRateLimiter, async (req: Request, res: Response) => {
   if (!isDemoOtpActive()) {
     return res.status(404).json({
       success: false,
@@ -198,7 +197,7 @@ router.post('/send-otp', async (req: Request, res: Response) => {
 });
 
 // Verify OTP (Demo Path — Disabled in production or unless DEMO_OTP_ENABLED=true)
-router.post('/verify-otp', async (req: Request, res: Response) => {
+router.post('/verify-otp', authRateLimiter, async (req: Request, res: Response) => {
   if (!isDemoOtpActive()) {
     return res.status(404).json({
       success: false,
@@ -235,7 +234,7 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
 });
 
 // Register (Requires verified OTP or Firebase ID token; blocks existing phone takeover)
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', authRateLimiter, async (req: Request, res: Response) => {
   try {
     const {
       name,

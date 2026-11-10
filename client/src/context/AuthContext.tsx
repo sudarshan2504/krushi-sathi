@@ -65,8 +65,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(me);
           return;
         }
-      } catch {
-        localStorage.removeItem('krishi_sathi_token');
+      } catch (err: any) {
+        if (err?.status === 401 || err?.status === 403) {
+          localStorage.removeItem('krishi_sathi_token');
+        }
       }
     }
   };

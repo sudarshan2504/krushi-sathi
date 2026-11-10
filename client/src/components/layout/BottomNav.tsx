@@ -61,7 +61,7 @@ export const BottomNav: React.FC = () => {
           'transition-all duration-200 pointer-events-none',
         ].join(' ')}
       >
-        <div className="pointer-events-auto relative w-full h-[68px] bg-white dark:bg-[#272E2A] rounded-3xl border border-zinc-200/90 dark:border-zinc-700/70 shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] p-1.5 grid grid-cols-4 items-center">
+        <div className="pointer-events-auto relative w-full h-[68px] bg-white dark:bg-[#272E2A] rounded-3xl border border-zinc-200/90 dark:border-zinc-700/70 shadow-[0_8px_30px_rgba(0,0,0,0.08)] dark:shadow-[0_8px_30px_rgba(0,0,0,0.3)] p-1.5 grid grid-cols-4 grid-rows-1 items-center">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = item.exact
@@ -74,7 +74,7 @@ export const BottomNav: React.FC = () => {
                 to={item.to}
                 aria-label={item.label}
                 aria-current={isActive ? 'page' : undefined}
-                className="relative flex flex-col items-center justify-center h-full w-full rounded-2xl select-none group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
+                className="relative flex flex-col items-center justify-center h-full w-full min-w-0 min-h-[44px] rounded-2xl select-none group focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-600"
               >
                 {/* Active forest-green pill background filling ONLY this cell */}
                 {isActive && (
@@ -102,7 +102,7 @@ export const BottomNav: React.FC = () => {
 
                 {/* Label: 11px, font-medium, one line, centered, truncate with ellipsis, leading >= 1.4 */}
                 <span
-                  className={`relative z-10 text-[11px] font-medium leading-[1.4] text-center w-full px-1 truncate transition-colors font-['Plus_Jakarta_Sans','Noto_Sans_Kannada','Noto_Sans_Tamil','Noto_Sans_Telugu',sans-serif] ${
+                  className={`relative z-10 text-[11px] font-medium leading-[1.45] text-center w-full px-1 truncate transition-colors font-['Plus_Jakarta_Sans','Noto_Sans_Kannada','Noto_Sans_Tamil','Noto_Sans_Telugu',sans-serif] ${
                     isActive
                       ? 'text-white'
                       : 'text-[#5B7362] dark:text-[#9BB1A1] group-hover:text-zinc-800 dark:group-hover:text-zinc-200'

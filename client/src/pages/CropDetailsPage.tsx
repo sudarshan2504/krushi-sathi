@@ -231,12 +231,12 @@ export const CropDetailsPage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-5 py-4 px-3 sm:px-6">
+    <div className="max-w-4xl mx-auto space-y-5 py-4 pb-24 px-3 sm:px-6">
       {/* Top Bar */}
       <div className="flex items-center justify-between">
         <button
           onClick={() => navigate(-1)}
-          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-dark-text hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-forest transition"
+          className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full bg-white border border-gray-200 text-gray-800 hover:bg-gray-50 focus-visible:ring-2 focus-visible:ring-forest transition"
           aria-label="Back"
         >
           <ArrowLeft className="w-5 h-5" />
