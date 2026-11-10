@@ -16,6 +16,7 @@ import { api } from '../../services/api';
 import { Modal } from '../ui/Modal';
 import { LanguageCode } from '../../i18n';
 import { IconButton } from '../ui/IconButton';
+import { BrandLogo } from '../ui/BrandLogo';
 
 const PAGE_TITLES: Record<string, string> = {
   '/home':      '',          // Home shows brand logo
@@ -90,16 +91,7 @@ export const Header: React.FC = () => {
             aria-label="Krushi Sathi home"
           >
             {/* Logo mark */}
-            <picture className="w-8 h-8 flex items-center justify-center shrink-0">
-              <source srcSet="/krushi-sathi-icon.webp" type="image/webp" />
-              <img
-                src="/krushi-sathi-icon.png"
-                alt="Krushi Sathi"
-                width="32"
-                height="32"
-                className="w-full h-full object-contain"
-              />
-            </picture>
+            <BrandLogo size="sm" variant="emblem" />
             <span className="font-extrabold text-[16px] text-gray-900 dark:text-gray-100 leading-tight tracking-tight whitespace-nowrap">
               Krushi Sathi
             </span>

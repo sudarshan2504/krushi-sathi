@@ -16,6 +16,7 @@ import {
   Info,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { BrandLogo } from '../components/ui/BrandLogo';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { LanguageCode } from '../i18n';
@@ -327,16 +328,11 @@ export const RegisterPage: React.FC = () => {
         className="pt-2 text-center"
       >
         <Link to="/" className="inline-block group focus:outline-none mb-2">
-          <picture>
-            <source srcSet="/design/krushi-sathi-logo.webp" type="image/webp" />
-            <img
-              src="/design/krushi-sathi-logo.webp"
-              alt="Krushi Sathi Logo"
-              width="160"
-              height="80"
-              className="h-14 sm:h-16 w-auto object-contain mx-auto drop-shadow-sm transition-transform group-hover:scale-105"
-            />
-          </picture>
+          <BrandLogo
+            size="md"
+            variant="full"
+            className="mx-auto transition-transform group-hover:scale-105"
+          />
         </Link>
         <h1 className="text-2xl font-extrabold text-[#0D2B18] dark:text-cream">{t('createAccount')}</h1>
         <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">

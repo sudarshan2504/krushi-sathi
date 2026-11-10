@@ -20,10 +20,7 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: 'auto',
       includeAssets: [
-        'krushi-sathi-logo.png',
         'krushi-sathi-logo.webp',
-        'fonts/*.woff2',
-        'fonts/fonts.css',
       ],
       manifest: {
         name: 'Krushi Sathi — Your Farming Companion',
@@ -59,7 +56,7 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: false,
         // Precache app shell including html with revision hash for offline navigation fallback
-        globPatterns: ['**/*.{js,css,html,woff2}', 'icons/*.png', 'krushi-sathi-logo.*'],
+        globPatterns: ['**/*.{js,css,html,woff2}', 'fonts/fonts.css'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/api/],
         runtimeCaching: [
