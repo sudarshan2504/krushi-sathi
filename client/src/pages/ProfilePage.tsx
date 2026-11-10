@@ -31,6 +31,7 @@ import { LanguagePill } from '../components/ui/LanguagePill';
 import { IconTile } from '../components/ui/IconTile';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
+import { SceneBackground } from '../components/ui/SceneBackground';
 
 export const ProfilePage: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
@@ -138,13 +139,21 @@ export const ProfilePage: React.FC = () => {
 
   const farmerName = user?.name || 'Ramesh Kumar';
   const farmerPhone = user?.phone || '9876543210';
-  const locationLabel = `${user?.village || 'Koppa'}, ${user?.taluk || 'Maddur'}, ${user?.district || 'Mandya'}, ${user?.state || 'Karnataka'}`;
+  const rawLocationParts = [
+    user?.village || 'Koppa',
+    user?.taluk || 'Maddur',
+    user?.district || 'Mandya',
+    user?.state || 'Karnataka',
+  ]
+    .flatMap((part) => (part || '').split(','))
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const locationLabel = Array.from(new Set(rawLocationParts)).join(', ');
   const landSize = user?.farmSize ?? 2.5;
 
   return (
-    <div className="min-h-screen min-h-dvh w-full bg-[#FAF8F2] dark:bg-[#1E2320] flex justify-center pb-32 safe-bottom selection:bg-emerald-100 selection:text-forest-dark overflow-x-hidden">
-      <div className="w-full max-w-[430px] min-h-screen min-h-dvh flex flex-col px-4 pt-3 space-y-4">
-        {/* 1. TOP BAR: Back Button + "Profile" + Language Pill */}
+    <SceneBackground variant="profile" className="px-4 pt-3 space-y-4 pb-32 safe-bottom">
+      {/* 1. TOP BAR: Back Button + "Profile" + Language Pill */}
         <header className="flex items-center justify-between py-1.5 z-20">
           <button
             type="button"
@@ -162,26 +171,23 @@ export const ProfilePage: React.FC = () => {
           <LanguagePill variant="compact" />
         </header>
 
-        {/* 2. HERO CARD: Sunrise Landscape Banner + Farmer RK Avatar + Location + Edit Button */}
+        {/* 2. HERO CARD: Farmer RK Avatar overlapping Top Sunrise Banner + Location + Edit Button */}
         <motion.div
           initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.25 }}
-          className="rounded-3xl bg-white dark:bg-zinc-800/95 border border-zinc-200/60 dark:border-zinc-700/60 shadow-card overflow-hidden text-center relative"
+          className="rounded-3xl bg-white dark:bg-zinc-800/95 border border-zinc-200/60 dark:border-zinc-700/60 shadow-card overflow-visible text-center relative !mt-14 pt-11 pb-1"
         >
-          {/* Top Landscape Strip Banner */}
-          <div className="w-full h-20 sm:h-24 overflow-hidden relative select-none">
-            <img
-              src="/design/sunrise-landscape-strip.webp"
-              alt=""
-              className="w-full h-full object-cover object-bottom"
-              loading="eager"
-            />
-            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-white dark:to-zinc-850 pointer-events-none" />
+          {/* Subtle decorative leaf accent curves inside top corners of hero card */}
+          <div className="absolute inset-x-0 top-0 h-14 overflow-hidden rounded-t-3xl pointer-events-none select-none">
+            <svg className="w-full h-full text-emerald-100/80 dark:text-emerald-900/30" viewBox="0 0 400 60" preserveAspectRatio="none" fill="currentColor">
+              <path d="M0,0 L160,0 C110,40 40,35 0,55 Z" />
+              <path d="M400,0 L260,0 C310,30 370,25 400,45 Z" opacity="0.6" />
+            </svg>
           </div>
 
-          {/* Large Circular Avatar with Camera Badge Button */}
-          <div className="relative -mt-11 mb-2 inline-block mx-auto">
+          {/* Large Circular Avatar overlapping top edge with Camera Badge Button */}
+          <div className="absolute -top-10 left-1/2 -translate-x-1/2 inline-block">
             <div className="w-20 h-20 rounded-full bg-[#144D29] text-white flex items-center justify-center font-extrabold text-2xl shadow-md border-4 border-white dark:border-zinc-800 overflow-hidden">
               {user?.avatar ? (
                 <img src={user.avatar} alt={farmerName} className="w-full h-full object-cover" />
@@ -278,7 +284,7 @@ export const ProfilePage: React.FC = () => {
                 </span>
               </div>
               <div className="mt-2 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
-                Region: {user?.village || 'Koppa'}, {user?.taluk || 'Maddur'} Hobli
+                Region: {(user?.village || 'Koppa').split(',')[0].trim()}, {user?.taluk || 'Maddur'} Hobli
               </div>
             </div>
           </div>
@@ -289,6 +295,10 @@ export const ProfilePage: React.FC = () => {
               src="/design/farmhouse-field-footer.webp"
               alt=""
               className="w-full h-full object-cover object-center"
+              style={{
+                maskImage: 'linear-gradient(to bottom, transparent 0%, black 35%)',
+                WebkitMaskImage: 'linear-gradient(to bottom, transparent 0%, black 35%)',
+              }}
               loading="lazy"
             />
           </div>
@@ -563,8 +573,7 @@ export const ProfilePage: React.FC = () => {
             </div>
           </div>
         </Modal>
-      </div>
-    </div>
+    </SceneBackground>
   );
 };
 

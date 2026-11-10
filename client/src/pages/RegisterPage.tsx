@@ -330,7 +330,7 @@ export const RegisterPage: React.FC = () => {
           <picture>
             <source srcSet="/design/krushi-sathi-logo.webp" type="image/webp" />
             <img
-              src="/design/krushi-sathi-logo.png"
+              src="/design/krushi-sathi-logo.webp"
               alt="Krushi Sathi Logo"
               width="160"
               height="80"

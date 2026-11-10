@@ -14,7 +14,11 @@ async function captureScreenshots() {
     args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-gpu'],
   });
 
+  const context = browser.defaultBrowserContext();
+  await context.overridePermissions('http://localhost:5173', ['geolocation']);
+
   const page = await browser.newPage();
+  await page.setGeolocation({ latitude: 12.5218, longitude: 76.8951 });
 
   // Test at 390x844
   await page.setViewport({ width: 390, height: 844, deviceScaleFactor: 2 });
@@ -55,7 +59,11 @@ async function captureScreenshots() {
 
   console.log('Capturing Home Dashboard...');
   await page.goto('http://localhost:5173/home', { waitUntil: 'networkidle2' });
-  await new Promise(r => setTimeout(r, 1500));
+  await page.waitForFunction(
+    () => !document.body.innerText.includes('Fetching local farm weather'),
+    { timeout: 12000 }
+  ).catch(() => {});
+  await new Promise(r => setTimeout(r, 800));
   await page.screenshot({ path: path.join(artifactDir, 'verification-home-390.png') });
 
   // 5. Profile Page

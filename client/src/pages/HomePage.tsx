@@ -24,7 +24,7 @@ import { BrandLogo } from '../components/ui/BrandLogo';
 import { LanguagePill } from '../components/ui/LanguagePill';
 import { IconTile } from '../components/ui/IconTile';
 import { SectionHeader } from '../components/ui/SectionHeader';
-import { LeafCorners } from '../components/ui/LeafCorners';
+import { SceneBackground } from '../components/ui/SceneBackground';
 
 export const HomePage: React.FC = () => {
   const navigate = useNavigate();
@@ -116,54 +116,8 @@ export const HomePage: React.FC = () => {
   const farmerName = user?.name ? user.name.split(' ')[0] : 'Ramesh';
 
   return (
-    <div
-      className="min-h-screen min-h-dvh w-full flex justify-center pb-36 safe-bottom selection:bg-emerald-100 selection:text-forest-dark overflow-x-hidden relative"
-      style={{
-        background: 'linear-gradient(180deg, #E6F0F8 0%, #F5F9F6 18%, #FAF8F2 38%, #FAF8F2 100%)',
-      }}
-    >
-      {/* 1. Full-Bleed Hero Background Layer (covers ~46% of viewport height at top) */}
-      <div
-        className="absolute top-0 inset-x-0 h-[46vh] min-h-[360px] max-h-[420px] pointer-events-none overflow-hidden select-none z-0"
-        style={{
-          maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-        }}
-      >
-        <img
-          src="/design/sunrise-landscape-full.webp"
-          alt=""
-          className="w-full h-full object-cover"
-          style={{ objectPosition: '30% center' }}
-          loading="eager"
-        />
-        {/* Soft top gradient scrim so header text stays crisp */}
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-white/60 via-white/15 to-transparent pointer-events-none" />
-        {/* Right-side gradient so farmer blends into the sky */}
-        <div className="absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-sky-100/40 to-transparent pointer-events-none" />
-      </div>
-
-      {/* 2. Large Farmer Cutout on Right Side (about 40% screen width, head near top-right, shoulder behind weather card) */}
-      <div className="absolute top-[62px] sm:top-[68px] right-0 w-[42%] max-w-[190px] pointer-events-none select-none z-10"
-        style={{
-          maskImage: 'linear-gradient(to bottom, black 72%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 72%, transparent 100%)',
-        }}
-      >
-        <img
-          src="/design/farmer-cutout-flipped.png"
-          alt="Farmer gazing over field"
-          className="w-full h-auto object-contain"
-          loading="eager"
-          style={{ filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.18))' }}
-        />
-      </div>
-
-      <div className="w-full max-w-[430px] min-h-screen min-h-dvh flex flex-col px-4 pt-3 space-y-4 relative z-10">
-        {/* Leaf corner branches hanging in the top corners */}
-        <LeafCorners showLeft showRight className="z-10" />
-
-        {/* 1. TOP BAR (3-7% screen height): Logo + Language Pill + Bell with unread dot */}
+    <SceneBackground variant="hero" className="px-4 pt-3 space-y-3 pb-36 safe-bottom">
+      {/* 1. TOP BAR (3-7% screen height): Logo + Language Pill + Bell with unread dot */}
         <header className="flex items-center justify-between py-1.5 relative z-20">
           <div className="flex items-center gap-2">
             <BrandLogo size="sm" variant="emblem" />
@@ -200,7 +154,7 @@ export const HomePage: React.FC = () => {
         </header>
 
         {/* 2. GREETING: placed over the sky area on the left */}
-        <div className="pt-5 sm:pt-7 pb-1 relative z-20 max-w-[62%]">
+        <div className="pt-3 sm:pt-4 pb-0.5 relative z-20 max-w-[62%]">
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[#0D2B18] dark:text-cream inline-flex items-center gap-1.5 leading-tight">
             <span>{t('helloGreeting', { name: farmerName })}</span>
             <Sprout className="w-5 h-5 text-[#228B22] dark:text-emerald-400 rotate-12 inline-block shrink-0 -mt-1" />
@@ -298,8 +252,7 @@ export const HomePage: React.FC = () => {
             showToast(`Location updated to ${newDistrict}, ${newState}`, 'success');
           }}
         />
-      </div>
-    </div>
+    </SceneBackground>
   );
 };
 

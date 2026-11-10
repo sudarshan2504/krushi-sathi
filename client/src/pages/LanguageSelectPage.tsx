@@ -5,7 +5,6 @@ import { Check, ArrowRight, Sprout } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { LanguageCode } from '../i18n';
 import { BrandLogo } from '../components/ui/BrandLogo';
-import { LeafCorners } from '../components/ui/LeafCorners';
 import { WaveFooter } from '../components/ui/WaveFooter';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { SceneBackground } from '../components/ui/SceneBackground';
@@ -20,10 +19,7 @@ export const LanguageSelectPage: React.FC = () => {
   };
 
   return (
-    <SceneBackground variant="sky-cream" className="justify-between relative">
-      {/* 1. Leaf corner accents with gentle natural wind sway */}
-      <LeafCorners showLeft showRight />
-
+    <SceneBackground variant="language" className="justify-between relative">
       {/* Top Header Region (3-15% screen height) */}
       <div className="pt-8 px-6 flex flex-col items-center text-center relative z-10">
         {/* Centered Brand Emblem + Logo Wordmark */}
@@ -134,8 +130,8 @@ export const LanguageSelectPage: React.FC = () => {
           />
         </div>
 
-        {/* Wave Footer with Continue CTA */}
-        <WaveFooter heightClass="min-h-[110px] pb-6 pt-1">
+        {/* Wave Footer with Continue CTA overlapping the bottom of the sunrise field */}
+        <WaveFooter heightClass="min-h-[110px] pb-6 pt-1" className="-mt-9 sm:-mt-11" >
           <PrimaryButton
             size="md"
             onClick={handleContinue}

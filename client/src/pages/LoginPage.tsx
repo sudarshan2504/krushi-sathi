@@ -17,12 +17,11 @@ import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import { BrandLogo } from '../components/ui/BrandLogo';
-import { LeafCorners } from '../components/ui/LeafCorners';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { WaveFooter } from '../components/ui/WaveFooter';
 import { IconTile } from '../components/ui/IconTile';
 import { OTPInput } from '../components/ui/OTPInput';
-import { SceneBackground } from '../components/ui/SceneBackground';
+import { SceneBackground, SceneStrip } from '../components/ui/SceneBackground';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -117,11 +116,8 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <SceneBackground variant="clean-cream" className="justify-between relative">
-      {/* 1. Swaying Leaf Corners */}
-      <LeafCorners showLeft showRight />
-
-      {/* 2. Top Header & Brand (3-18% screen height) */}
+    <SceneBackground variant="login" className="justify-between relative">
+      {/* 1. Top Header & Brand (3-18% screen height) */}
       <div className="pt-7 px-5 flex flex-col items-center text-center relative z-10">
         <motion.div
           initial={shouldReduceMotion ? false : { opacity: 0, y: -6 }}
@@ -141,22 +137,10 @@ export const LoginPage: React.FC = () => {
         </p>
       </div>
 
-      {/* 3. Farmer Sunrise Scene Strip (20-33% screen height) */}
-      <div className="relative w-full overflow-hidden select-none my-1">
-        <img
-          src="/design/farmer-sunrise-strip.webp"
-          alt=""
-          className="w-full h-24 sm:h-28 object-cover object-center"
-          loading="eager"
-        />
-        {/* Soft bottom cream fade */}
-        <div
-          className="absolute inset-x-0 bottom-0 h-10 bg-gradient-to-t from-[#FAF8F2] dark:from-[#1E2320] to-transparent pointer-events-none"
-          aria-hidden="true"
-        />
-      </div>
+      {/* 2. Farmer Sunrise Scene Strip (20-33% screen height) */}
+      <SceneStrip showFarmer farmerPosition="left" className="my-1" />
 
-      {/* 4. Instant Demo Card (29-53% screen height) */}
+      {/* 3. Instant Demo Card (29-53% screen height) */}
       <div className="px-5 relative z-10 -mt-4">
         <div className="w-full max-w-sm mx-auto rounded-3xl bg-gradient-to-b from-[#144D29] via-[#104022] to-[#0A2E16] text-white p-4 sm:p-5 shadow-lg border border-[#84CC16]/40 relative overflow-hidden">
           {/* Subtle leaf watermark inside card */}

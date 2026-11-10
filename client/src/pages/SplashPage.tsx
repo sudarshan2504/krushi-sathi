@@ -20,7 +20,7 @@ import { LanguagePill } from '../components/ui/LanguagePill';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { OutlineButton } from '../components/ui/OutlineButton';
 import { WaveFooter } from '../components/ui/WaveFooter';
-import { LeafCorners } from '../components/ui/LeafCorners';
+import { SceneBackground } from '../components/ui/SceneBackground';
 
 export const SplashPage: React.FC = () => {
   const navigate = useNavigate();
@@ -102,39 +102,9 @@ export const SplashPage: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen min-h-dvh w-full bg-[#FAF8F2] flex justify-center selection:bg-emerald-100 selection:text-forest-dark overflow-hidden">
-      <div className="w-full max-w-[430px] min-h-screen min-h-dvh relative flex flex-col justify-between overflow-hidden shadow-2xl">
-        {/* 1. Full-Bleed Photo with Ken Burns Zoom Animation */}
-        <motion.div
-          animate={
-            shouldReduceMotion
-              ? {}
-              : {
-                  scale: [1, 1.04, 1],
-                  transition: { duration: 20, repeat: Infinity, ease: 'linear' },
-                }
-          }
-          className="absolute inset-0 w-full h-full pointer-events-none select-none z-0"
-        >
-          <img
-            src="/design/splash-hero-bg.webp"
-            alt=""
-            className="w-full h-full object-cover object-bottom"
-            loading="eager"
-          />
-        </motion.div>
-
-        {/* Leaf corner accent */}
-        <LeafCorners showLeft showRight={false} className="z-10" />
-
-        {/* 2. Top subtle gradient scrim */}
-        <div
-          className="absolute inset-x-0 top-0 h-[45%] bg-gradient-to-b from-white/30 via-white/10 to-transparent pointer-events-none z-1"
-          aria-hidden="true"
-        />
-
-        {/* 3. Top Action Bar (2.6-6.1% screen height) */}
-        <div className="relative z-10 pt-5 px-5 flex items-center justify-between">
+    <SceneBackground variant="splash">
+      {/* 1. Top Action Bar (2.6-6.1% screen height) */}
+      <div className="relative z-30 pt-5 px-5 flex items-center justify-between">
           {/* Left Pill: Sprout + "Krushi Sathi" */}
           <WhitePill className="py-1 px-3 text-[11px] font-bold gap-1.5 shadow-xs">
             <Sprout className="w-3.5 h-3.5 text-forest shrink-0" />
@@ -282,7 +252,6 @@ export const SplashPage: React.FC = () => {
             )}
           </WaveFooter>
         </div>
-      </div>
-    </div>
+    </SceneBackground>
   );
 };
