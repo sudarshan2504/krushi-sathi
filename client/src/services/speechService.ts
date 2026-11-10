@@ -581,7 +581,9 @@ class SpeechService {
       return this.speakBrowser(cleanText, langCode, options, token);
     }
 
-    const shouldTryBackend = options?.preferCloud !== false && this.preferCloud;
+    const hasAuthToken =
+      typeof localStorage !== 'undefined' && Boolean(localStorage.getItem('krishi_sathi_token'));
+    const shouldTryBackend = options?.preferCloud !== false && this.preferCloud && hasAuthToken;
 
     if (shouldTryBackend) {
       const cacheKey = `${langCode}_${gender}_${providerChoice}_${cleanText}`;

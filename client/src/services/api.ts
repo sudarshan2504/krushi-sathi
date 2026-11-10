@@ -110,22 +110,29 @@ export async function fetchWithRetry<T>(
 
 export const api = {
   auth: {
-    async sendOtp(phone: string) {
+    async sendOtp(phone: string, purpose: 'login' | 'register' = 'login') {
       const res = await fetch(`${API_BASE}/auth/send-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone }),
+        body: JSON.stringify({ phone, purpose }),
       });
       return handleResponse<{ phone: string; isExistingUser: boolean; userName: string | null; demoOtpNote: string }>(res);
     },
 
-    async verifyOtp(phone: string, otp: string) {
+    async verifyOtp(phone: string, otp: string, purpose: 'login' | 'register' = 'login') {
       const res = await fetch(`${API_BASE}/auth/verify-otp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, otp }),
+        body: JSON.stringify({ phone, otp, purpose }),
       });
-      const data = await handleResponse<{ token: string; user: User; isNewUser: boolean }>(res);
+      const data = await handleResponse<{
+        token?: string;
+        user?: User;
+        isNewUser: boolean;
+        verified?: boolean;
+        verificationToken?: string;
+        phone?: string;
+      }>(res);
       if (data.token) {
         localStorage.setItem('krishi_sathi_token', data.token);
       }
@@ -138,6 +145,19 @@ export const api = {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ idToken }),
+      });
+      const data = await handleResponse<{ token: string; user: User; isNewUser: boolean }>(res);
+      if (data.token) {
+        localStorage.setItem('krishi_sathi_token', data.token);
+      }
+      return data;
+    },
+
+    async demoLogin() {
+      const res = await fetch(`${API_BASE}/auth/demo-login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
       });
       const data = await handleResponse<{ token: string; user: User; isNewUser: boolean }>(res);
       if (data.token) {
@@ -177,6 +197,9 @@ export const api = {
     async register(formData: {
       name: string;
       phone: string;
+      otp?: string;
+      verificationToken?: string;
+      firebaseIdToken?: string;
       language: string;
       state: string;
       district: string;
@@ -731,12 +754,13 @@ export const api = {
       if (data instanceof FormData) {
         res = await fetch(`${API_BASE}/diseases/diagnose`, {
           method: 'POST',
+          headers: { ...getAuthHeader() },
           body: data,
         });
       } else {
         res = await fetch(`${API_BASE}/diseases/diagnose`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
           body: JSON.stringify(data),
         });
       }
@@ -767,7 +791,7 @@ export const api = {
       }
       const res = await fetch(`${API_BASE}/diseases/analyze-photo`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify(payload),
       });
       return handleResponse<any>(res);
@@ -785,7 +809,7 @@ export const api = {
     }) {
       const res = await fetch(`${API_BASE}/diseases/feedback`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify(feedback),
       });
       return handleResponse<any>(res);
@@ -964,7 +988,7 @@ export const api = {
     }) {
       const res = await fetch(`${API_BASE}/chat/keys`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
         body: JSON.stringify(keys),
       });
       return handleResponse<any>(res);

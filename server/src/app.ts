@@ -21,22 +21,36 @@ import { config } from './config';
 const app = express();
 
 // Security HTTP headers
-app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
 // Middleware
-// Dynamically configurable CORS supporting localhost, LAN IPs, Tunnels, Capacitor & Production URLs
-const configuredOrigins = process.env.ALLOWED_ORIGINS
-  ? process.env.ALLOWED_ORIGINS.split(',').map((o) => o.trim())
-  : [
-      config.clientUrl,
-      'http://localhost:5173',
-      'http://127.0.0.1:5173',
-      'http://localhost:4173',
-      'http://127.0.0.1:4173',
-      'capacitor://localhost',
-      'http://localhost',
-      'https://localhost',
-    ];
+// Strict CORS derived dynamically from CLIENT_URL (plus Capacitor origins)
+const CAPACITOR_ORIGINS = ['capacitor://localhost', 'http://localhost', 'https://localhost'];
+
+function getAllowedCorsOrigins(): Set<string> {
+  const allowed = new Set<string>(CAPACITOR_ORIGINS);
+  const sources = [
+    process.env.CLIENT_URL !== undefined ? process.env.CLIENT_URL : config.clientUrl,
+    process.env.ALLOWED_ORIGINS !== undefined ? process.env.ALLOWED_ORIGINS : config.allowedOrigins,
+  ];
+
+  for (const rawList of sources) {
+    if (!rawList) continue;
+    for (const item of rawList.split(',')) {
+      const normalized = item.trim().replace(/\/$/, '');
+      if (normalized) {
+        allowed.add(normalized);
+      }
+    }
+  }
+  return allowed;
+}
 
 app.use(
   cors({
@@ -44,17 +58,8 @@ app.use(
       // Allow requests with no origin (mobile native apps, curl, server-to-server)
       if (!origin) return callback(null, true);
 
-      // Check explicit allowed origins list
-      if (configuredOrigins.includes(origin)) return callback(null, true);
-
-      // Allow local LAN IPs (192.168.x.x, 10.x.x.x, 172.16-31.x.x) and tunnels (ngrok, trycloudflare, loca.lt)
-      if (
-        /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+|172\.(1[6-9]|2\d|3[01])\.\d+\.\d+)(:\d+)?$/.test(
-          origin
-        ) ||
-        /\.(ngrok-free\.app|trycloudflare\.com|loca\.lt)$/.test(origin) ||
-        origin.startsWith('capacitor://')
-      ) {
+      const normalizedOrigin = origin.replace(/\/$/, '');
+      if (getAllowedCorsOrigins().has(normalizedOrigin)) {
         return callback(null, true);
       }
 

@@ -11,12 +11,14 @@ import {
   CheckCircle2,
   AlertCircle,
   Shield,
+  ShieldCheck,
   Sparkles,
   ChevronDown,
   Info,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
 import { BrandLogo } from '../components/ui/BrandLogo';
+import { OTPInput } from '../components/ui/OTPInput';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { LanguageCode } from '../i18n';
@@ -69,9 +71,25 @@ export const RegisterPage: React.FC = () => {
     langName: string;
   } | null>(null);
 
-  // Form submission state
+  // Form submission & OTP verification state
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [otp, setOtp] = useState('');
+  const [isOtpSent, setIsOtpSent] = useState(false);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [isVerifyingOtp, setIsVerifyingOtp] = useState(false);
+  const [otpError, setOtpError] = useState<string | null>(null);
+  const [verificationToken, setVerificationToken] = useState<string | null>(null);
+  const [verifiedPhone, setVerifiedPhone] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(0);
+
+  useEffect(() => {
+    if (resendTimer <= 0) return;
+    const timer = setInterval(() => {
+      setResendTimer((prev) => prev - 1);
+    }, 1000);
+    return () => clearInterval(timer);
+  }, [resendTimer]);
 
   // Target ref for editing location
   const stateSelectRef = useRef<HTMLSelectElement>(null);
@@ -281,6 +299,53 @@ export const RegisterPage: React.FC = () => {
     }
   };
 
+  // Send OTP for registration
+  const handleSendRegOtp = async () => {
+    const cleanNumber = formData.phone.trim().replace(/\D/g, '');
+    if (cleanNumber.length !== 10 || !/^[6-9]\d{9}$/.test(cleanNumber)) {
+      setOtpError('Please enter a valid 10-digit Indian mobile number starting with 6-9.');
+      return;
+    }
+
+    setOtpError(null);
+    setError(null);
+    setIsSendingOtp(true);
+    try {
+      await api.auth.sendOtp(cleanNumber, 'register');
+      setIsOtpSent(true);
+      setResendTimer(30);
+    } catch (err: any) {
+      setOtpError(err?.message || 'Failed to send verification code.');
+    } finally {
+      setIsSendingOtp(false);
+    }
+  };
+
+  // Verify OTP for registration
+  const handleVerifyRegOtp = async () => {
+    const cleanNumber = formData.phone.trim().replace(/\D/g, '');
+    if (otp.length < 6) {
+      setOtpError('Please enter the 6-digit OTP.');
+      return;
+    }
+
+    setOtpError(null);
+    setError(null);
+    setIsVerifyingOtp(true);
+    try {
+      const res = await api.auth.verifyOtp(cleanNumber, otp, 'register');
+      if (res.verificationToken) {
+        setVerificationToken(res.verificationToken);
+        setVerifiedPhone(cleanNumber);
+        setIsOtpSent(false);
+      }
+    } catch (err: any) {
+      setOtpError(err?.message || 'Invalid OTP code. Please try again.');
+    } finally {
+      setIsVerifyingOtp(false);
+    }
+  };
+
   // Form Submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,12 +356,40 @@ export const RegisterPage: React.FC = () => {
       return;
     }
 
+    const cleanNumber = formData.phone.trim().replace(/\D/g, '');
+    if (cleanNumber.length !== 10 || !/^[6-9]\d{9}$/.test(cleanNumber)) {
+      setError('Please enter a valid 10-digit Indian mobile number starting with 6-9.');
+      return;
+    }
+
+    let activeToken = verificationToken;
+    if (!activeToken || verifiedPhone !== cleanNumber) {
+      if (isOtpSent && otp.length === 6) {
+        setIsLoading(true);
+        try {
+          const verifyRes = await api.auth.verifyOtp(cleanNumber, otp, 'register');
+          activeToken = verifyRes.verificationToken || null;
+          setVerificationToken(activeToken);
+          setVerifiedPhone(cleanNumber);
+        } catch (err: any) {
+          setIsLoading(false);
+          setError(err?.message || t('verifyPhoneFirst'));
+          return;
+        }
+      } else {
+        setError(t('verifyPhoneFirst'));
+        return;
+      }
+    }
+
     setIsLoading(true);
 
     try {
       await register({
         name: formData.name,
-        phone: formData.phone,
+        phone: cleanNumber,
+        otp: otp || undefined,
+        verificationToken: activeToken || undefined,
         language: formData.language,
         state: formData.state,
         district: formData.district,
@@ -524,11 +617,19 @@ export const RegisterPage: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Number */}
+        {/* Mobile Number & OTP Verification */}
         <div>
-          <label className="block text-sm font-bold text-dark-text mb-1">
-            {t('phoneNumber')} *
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label className="block text-sm font-bold text-dark-text">
+              {t('phoneNumber')} *
+            </label>
+            {verificationToken && verifiedPhone === formData.phone.trim().replace(/\D/g, '') && (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[11px] font-bold">
+                <ShieldCheck className="w-3.5 h-3.5" />
+                {t('mobileVerifiedBadge')}
+              </span>
+            )}
+          </div>
           <div className="relative flex items-center">
             <div className="absolute left-3 flex items-center gap-1 text-sm font-bold text-dark-muted border-r border-gray-200 pr-2">
               <Phone className="w-3.5 h-3.5 text-forest" />
@@ -542,13 +643,76 @@ export const RegisterPage: React.FC = () => {
               required
               maxLength={10}
               value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '') })
-              }
+              onChange={(e) => {
+                const nextPhone = e.target.value.replace(/\D/g, '');
+                setFormData({ ...formData, phone: nextPhone });
+                if (nextPhone !== verifiedPhone) {
+                  setVerificationToken(null);
+                  setVerifiedPhone(null);
+                  setIsOtpSent(false);
+                  setOtp('');
+                  setOtpError(null);
+                }
+              }}
               placeholder="98765 43210"
               className="w-full pl-20 pr-4 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 focus:border-forest outline-none text-base font-bold tracking-wide"
             />
           </div>
+
+          {!(verificationToken && verifiedPhone === formData.phone.trim().replace(/\D/g, '')) && (
+            <div className="mt-2.5 p-3 rounded-2xl bg-white border border-forest/15 space-y-2.5">
+              {!isOtpSent ? (
+                <button
+                  type="button"
+                  onClick={handleSendRegOtp}
+                  disabled={isSendingOtp || formData.phone.length < 10}
+                  className="w-full min-h-[44px] px-4 py-2 rounded-xl bg-forest/10 hover:bg-forest hover:text-white text-forest text-xs font-bold transition flex items-center justify-center gap-2 disabled:opacity-50 cursor-pointer"
+                >
+                  {isSendingOtp ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                  <span>{t('sendVerificationCode')}</span>
+                </button>
+              ) : (
+                <div className="space-y-2.5">
+                  <OTPInput
+                    value={otp}
+                    onChange={setOtp}
+                    label={t('verifyMobileOtpTitle')}
+                    autoFocus
+                  />
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleVerifyRegOtp}
+                      disabled={isVerifyingOtp || otp.length < 6}
+                      className="flex-1 min-h-[44px] px-4 py-2 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition disabled:opacity-50 cursor-pointer"
+                    >
+                      {isVerifyingOtp ? t('loadingData') : t('verifyAndLogin')}
+                    </button>
+                    {resendTimer > 0 ? (
+                      <span className="text-xs text-dark-muted font-medium px-2">
+                        {resendTimer}s
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={handleSendRegOtp}
+                        className="min-h-[44px] px-3 text-xs font-bold text-forest hover:underline cursor-pointer"
+                      >
+                        {t('resendOtp')}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {otpError && (
+                <div role="alert" className="p-2 rounded-xl bg-red-50 text-red-700 text-xs flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                  <span>{otpError}</span>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Preferred Language */}

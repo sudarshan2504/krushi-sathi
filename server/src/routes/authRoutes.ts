@@ -8,25 +8,26 @@ import {
   verifyFirebaseLogin,
   guestLogin,
   demoLogin,
+  isDemoModeActive,
+  isDemoOtpActive,
 } from '../services/authService';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { authRateLimiter } from '../middleware/rateLimiter';
-import { config } from '../config';
 import prisma from '../utils/prisma';
 
 const router = Router();
 
-// Apply simple rate limiting (10 requests per minute per IP) to all /api/auth routes
+// Apply simple rate limiting to all /api/auth routes
 router.use(authRateLimiter);
 
 /**
  * POST /api/auth/demo-login
  * - Instant one-tap demo login as Ramesh Kumar (Mandya, Karnataka).
- * - Guarded by DEMO_MODE !== 'false'.
+ * - Returns 404 unless DEMO_MODE=true.
  */
 router.post('/demo-login', async (req: Request, res: Response) => {
-  if (process.env.DEMO_MODE === 'false') {
-    return res.status(403).json({ success: false, message: 'Demo mode is disabled in production.' });
+  if (!isDemoModeActive()) {
+    return res.status(404).json({ success: false, message: 'Endpoint not found' });
   }
 
   try {
@@ -54,10 +55,13 @@ router.post('/demo-login', async (req: Request, res: Response) => {
 
 /**
  * POST /api/auth/guest-login
- * - Instant one-tap demo login (no OTP, no phone number required).
- * - Issues JWT in httpOnly cookie and returns { token, user, isNewUser }.
+ * - Legacy demo login alias; returns 404 unless DEMO_MODE=true.
  */
 router.post('/guest-login', async (req: Request, res: Response) => {
+  if (!isDemoModeActive()) {
+    return res.status(404).json({ success: false, message: 'Endpoint not found' });
+  }
+
   try {
     const { preferredPhone, preferredName } = req.body || {};
     const result = await guestLogin(preferredPhone, preferredName);
@@ -84,10 +88,13 @@ router.post('/guest-login', async (req: Request, res: Response) => {
 
 /**
  * POST /api/auth/direct-login
- * - Instant phone login without OTP / SMS code.
- * - Accepts { phone, name }
+ * - Legacy demo direct login; returns 404 unless DEMO_MODE=true.
  */
 router.post('/direct-login', async (req: Request, res: Response) => {
+  if (!isDemoModeActive()) {
+    return res.status(404).json({ success: false, message: 'Endpoint not found' });
+  }
+
   try {
     const { phone, name } = req.body || {};
     if (!phone) {
@@ -163,9 +170,9 @@ router.post('/firebase-login', async (req: Request, res: Response) => {
   }
 });
 
-// Send OTP (Demo Path — Disabled unless NODE_ENV === 'development' AND DEMO_OTP_ENABLED === 'true')
+// Send OTP (Demo Path — Disabled in production or unless DEMO_OTP_ENABLED=true)
 router.post('/send-otp', async (req: Request, res: Response) => {
-  if (!(config.nodeEnv === 'development' && config.demoOtpEnabled)) {
+  if (!isDemoOtpActive()) {
     return res.status(404).json({
       success: false,
       message: 'Demo OTP is disabled. Please use real Firebase Phone Authentication via /api/auth/firebase-login',
@@ -173,25 +180,26 @@ router.post('/send-otp', async (req: Request, res: Response) => {
   }
 
   try {
-    const { phone } = req.body;
+    const { phone, purpose } = req.body || {};
     if (!phone) {
       return res.status(400).json({ success: false, message: 'Mobile number is required' });
     }
 
-    const result = await createOtpChallenge(phone);
+    const safePurpose = purpose === 'register' ? 'register' : 'login';
+    const result = await createOtpChallenge(phone, safePurpose);
     res.json({
       success: true,
       data: result,
       message: 'OTP sent successfully. For local testing, use Demo OTP: 123456',
     });
   } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message || 'Failed to send OTP' });
+    res.status(err.status || 400).json({ success: false, message: err.message || 'Failed to send OTP' });
   }
 });
 
-// Verify OTP (Demo Path — Disabled unless NODE_ENV === 'development' AND DEMO_OTP_ENABLED === 'true')
+// Verify OTP (Demo Path — Disabled in production or unless DEMO_OTP_ENABLED=true)
 router.post('/verify-otp', async (req: Request, res: Response) => {
-  if (!(config.nodeEnv === 'development' && config.demoOtpEnabled)) {
+  if (!isDemoOtpActive()) {
     return res.status(404).json({
       success: false,
       message: 'Demo OTP is disabled. Please use real Firebase Phone Authentication via /api/auth/firebase-login',
@@ -199,37 +207,43 @@ router.post('/verify-otp', async (req: Request, res: Response) => {
   }
 
   try {
-    const { phone, otp } = req.body;
+    const { phone, otp, purpose } = req.body || {};
     if (!phone || !otp) {
       return res.status(400).json({ success: false, message: 'Phone and OTP are required' });
     }
 
-    const result = await verifyOtp(phone, otp);
+    const safePurpose = purpose === 'register' ? 'register' : 'login';
+    const result: any = await verifyOtp(phone, otp, safePurpose);
 
-    // Set HTTP-only cookie for secure development session
-    res.cookie('token', result.token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: 'lax',
-    });
+    if (result.token) {
+      res.cookie('token', result.token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+        sameSite: 'lax',
+      });
+    }
 
     res.json({
       success: true,
       data: result,
-      message: 'Login successful',
+      message: safePurpose === 'register' ? 'Mobile number verified for registration' : 'Login successful',
     });
   } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message || 'OTP verification failed' });
+    res.status(err.status || 400).json({ success: false, message: err.message || 'OTP verification failed' });
   }
 });
 
-// Register
+// Register (Requires verified OTP or Firebase ID token; blocks existing phone takeover)
 router.post('/register', async (req: Request, res: Response) => {
   try {
     const {
       name,
       phone,
+      otp,
+      verificationToken,
+      firebaseIdToken,
+      idToken,
       language,
       state,
       district,
@@ -241,11 +255,18 @@ router.post('/register', async (req: Request, res: Response) => {
       longitude,
       locationAccuracy,
       locationSource,
-    } = req.body;
+    } = req.body || {};
+
+    if (!phone || !name) {
+      return res.status(400).json({ success: false, message: 'Name and phone number are required' });
+    }
 
     const result = await registerFarmer({
       name,
       phone,
+      otp,
+      verificationToken,
+      firebaseIdToken: firebaseIdToken || idToken,
       language: language || 'en',
       state: state || 'Karnataka',
       district: district || 'Mandya',
@@ -266,13 +287,13 @@ router.post('/register', async (req: Request, res: Response) => {
       sameSite: 'lax',
     });
 
-    res.json({
+    res.status(201).json({
       success: true,
       data: result,
       message: 'Registration successful! Welcome to Krishi Sathi.',
     });
   } catch (err: any) {
-    res.status(400).json({ success: false, message: err.message || 'Registration failed' });
+    res.status(err.status || 400).json({ success: false, message: err.message || 'Registration failed' });
   }
 });
 

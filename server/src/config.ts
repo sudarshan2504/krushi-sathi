@@ -1,13 +1,31 @@
 import dotenv from 'dotenv';
 import path from 'path';
 
-// Load .env from server directory or root
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
+// Load server/.env in non-test environments unless explicitly skipped
+if (process.env.SKIP_DOTENV !== 'true' && process.env.NODE_ENV !== 'test') {
+  dotenv.config({ path: path.resolve(__dirname, '../.env') });
+}
+
+const KNOWN_INSECURE_SECRETS = new Set([
+  'krishi-sathi-local-jwt-secret-key-492716',
+  'replace-with-a-long-random-jwt-secret-min-32-chars',
+  'your_jwt_secret',
+  'changeme',
+  'secret',
+]);
+
+const rawJwtSecret = process.env.JWT_SECRET?.trim();
+if (!rawJwtSecret || rawJwtSecret.length < 16 || KNOWN_INSECURE_SECRETS.has(rawJwtSecret)) {
+  throw new Error(
+    'FATAL: JWT_SECRET environment variable is missing, too short (<16 chars), or uses an insecure placeholder. Server startup aborted.'
+  );
+}
 
 export const config = {
   port: parseInt(process.env.PORT || '5000', 10),
   nodeEnv: process.env.NODE_ENV || 'development',
-  jwtSecret: process.env.JWT_SECRET || 'krishi-sathi-local-jwt-secret-key-492716',
+  jwtSecret: rawJwtSecret,
+  demoMode: process.env.DEMO_MODE === 'true',
   demoOtp: process.env.DEMO_OTP || '123456',
   demoOtpEnabled: process.env.DEMO_OTP_ENABLED === 'true',
   firebaseProjectId: process.env.FIREBASE_PROJECT_ID || '',
@@ -24,8 +42,4 @@ export const config = {
   allowedOrigins: process.env.ALLOWED_ORIGINS || '',
 };
 
-// Enforce JWT_SECRET security check in production
-if (config.nodeEnv === 'production' && (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 16)) {
-  console.warn('SECURITY WARNING: JWT_SECRET should be explicitly configured with a strong key in production.');
-}
 

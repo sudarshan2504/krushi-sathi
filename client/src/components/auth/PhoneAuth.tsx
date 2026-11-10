@@ -14,7 +14,7 @@ interface PhoneAuthProps {
 
 export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home' }) => {
   const navigate = useNavigate();
-  const { guestLogin, directLogin, login } = useAuth();
+  const { demoLogin, login } = useAuth();
   const { t } = useTranslation();
 
   const [phone, setPhone] = useState('');
@@ -43,13 +43,13 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
     setError(null);
     setIsLoadingDemo(true);
     try {
-      const res = await guestLogin('9876543210', 'Ramesh Kumar');
+      const res = await demoLogin();
       setSuccessName(res.user?.name || 'Ramesh Kumar');
       setIsSuccess(true);
       await new Promise((resolve) => setTimeout(resolve, 500));
       navigate(onSuccessRedirect, { replace: true });
     } catch (err: any) {
-      console.error('[PhoneAuth] Guest login failed:', err);
+      console.error('[PhoneAuth] Demo login failed:', err);
       setError(err?.message || 'Demo login failed. Please check backend connection.');
       setIsLoadingDemo(false);
     }
@@ -67,14 +67,12 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
     setError(null);
     setIsLoadingSubmit(true);
     try {
-      // Send OTP via backend or enable direct mode
-      await api.auth.sendOtp(cleanNumber).catch(() => {});
+      await api.auth.sendOtp(cleanNumber, 'login');
       setIsOtpSent(true);
       setResendTimer(30);
     } catch (err: any) {
-      console.warn('Send OTP warning, enabling OTP input anyway:', err);
-      setIsOtpSent(true);
-      setResendTimer(30);
+      console.error('[PhoneAuth] Send OTP failed:', err);
+      setError(err?.message || 'Failed to send verification code. Please check your mobile number.');
     } finally {
       setIsLoadingSubmit(false);
     }
@@ -92,15 +90,8 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
     setError(null);
     setIsLoadingSubmit(true);
     try {
-      let isNewUser = false;
-      try {
-        const res = await login(cleanNumber, otp);
-        isNewUser = res.isNewUser;
-      } catch {
-        // Fallback to directLogin for demo OTP
-        const directRes = await directLogin(cleanNumber);
-        isNewUser = directRes.isNewUser;
-      }
+      const res = await login(cleanNumber, otp);
+      const isNewUser = res.isNewUser;
 
       setSuccessName('Farmer');
       setIsSuccess(true);
@@ -113,7 +104,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
       }
     } catch (err: any) {
       console.error('[PhoneAuth] Verification failed:', err);
-      setError(err?.message || 'Verification failed. Demo code: 123456');
+      setError(err?.message || 'Verification failed. Please check your OTP and try again.');
       setIsLoadingSubmit(false);
     }
   };

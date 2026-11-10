@@ -1,27 +1,63 @@
+import crypto from 'crypto';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import prisma from '../utils/prisma';
-import admin from '../utils/firebaseAdmin';
+import admin, { verifyFirebaseIdToken } from '../utils/firebaseAdmin';
 
 interface OtpChallenge {
   phone: string;
   otp: string;
   createdAt: number;
   attempts: number;
+  purpose: 'login' | 'register';
+}
+
+interface VerifiedRegistration {
+  jti: string;
+  expiresAt: number;
 }
 
 // In-memory OTP challenge store with 5-minute expiry
 const otpStore = new Map<string, OtpChallenge>();
+// In-memory store for phones that completed register-purpose OTP verification (10-minute TTL)
+const verifiedRegistrationStore = new Map<string, VerifiedRegistration>();
+// Track consumed registration verification JTIs (10-minute TTL)
+const consumedRegistrationJtis = new Map<string, number>();
 
-// Clean up expired challenges periodically
-setInterval(() => {
+export function isDemoOtpActive(): boolean {
+  if (process.env.NODE_ENV === 'production') return false;
+  if (process.env.DEMO_OTP_ENABLED !== undefined) {
+    return process.env.DEMO_OTP_ENABLED === 'true';
+  }
+  return config.demoOtpEnabled;
+}
+
+export function isDemoModeActive(): boolean {
+  return process.env.DEMO_MODE === 'true';
+}
+
+// Clean up expired challenges periodically (unref so test processes can exit cleanly)
+const otpCleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [phone, challenge] of otpStore.entries()) {
     if (now - challenge.createdAt > 5 * 60 * 1000) {
       otpStore.delete(phone);
     }
   }
+  for (const [phone, reg] of verifiedRegistrationStore.entries()) {
+    if (now > reg.expiresAt) {
+      verifiedRegistrationStore.delete(phone);
+    }
+  }
+  for (const [jti, exp] of consumedRegistrationJtis.entries()) {
+    if (now > exp) {
+      consumedRegistrationJtis.delete(jti);
+    }
+  }
 }, 60 * 1000);
+if (typeof otpCleanupTimer.unref === 'function') {
+  otpCleanupTimer.unref();
+}
 
 export function isValidIndianPhone(phone: string): boolean {
   const cleaned = phone.replace(/\D/g, '');
@@ -111,14 +147,27 @@ export async function verifyFirebaseLogin(idToken: string) {
   };
 }
 
-export async function createOtpChallenge(rawPhone: string) {
-  if (!(config.nodeEnv === 'development' && config.demoOtpEnabled)) {
-    throw new Error('Demo OTP is disabled. Please use real Firebase Phone Authentication.');
+export async function createOtpChallenge(rawPhone: string, purpose: 'login' | 'register' = 'login') {
+  if (!isDemoOtpActive()) {
+    const err: any = new Error('Demo OTP is disabled. Please use real Firebase Phone Authentication.');
+    err.status = 404;
+    throw err;
   }
 
   const phone = cleanPhone(rawPhone);
   if (!isValidIndianPhone(phone)) {
     throw new Error('Please enter a valid 10-digit Indian mobile number');
+  }
+
+  // Check if user already exists in SQLite
+  const existingUser = await prisma.user.findUnique({
+    where: { phone },
+  });
+
+  if (purpose === 'register' && existingUser) {
+    const err: any = new Error('An account with this mobile number already exists. Please login instead.');
+    err.status = 409;
+    throw err;
   }
 
   // Development/Demo mode fixed OTP
@@ -129,11 +178,7 @@ export async function createOtpChallenge(rawPhone: string) {
     otp: demoOtp,
     createdAt: Date.now(),
     attempts: 0,
-  });
-
-  // Check if user already exists in SQLite
-  const existingUser = await prisma.user.findUnique({
-    where: { phone },
+    purpose,
   });
 
   return {
@@ -145,9 +190,15 @@ export async function createOtpChallenge(rawPhone: string) {
   };
 }
 
-export async function verifyOtp(rawPhone: string, enteredOtp: string) {
-  if (!(config.nodeEnv === 'development' && config.demoOtpEnabled)) {
-    throw new Error('Demo OTP is disabled. Please use real Firebase Phone Authentication.');
+export async function verifyOtp(
+  rawPhone: string,
+  enteredOtp: string,
+  purpose: 'login' | 'register' = 'login'
+) {
+  if (!isDemoOtpActive()) {
+    const err: any = new Error('Demo OTP is disabled. Please use real Firebase Phone Authentication.');
+    err.status = 404;
+    throw err;
   }
 
   const phone = cleanPhone(rawPhone);
@@ -158,37 +209,67 @@ export async function verifyOtp(rawPhone: string, enteredOtp: string) {
   const challenge = otpStore.get(phone);
   const fixedDemoOtp = config.demoOtp || '123456';
 
-  // In demo development mode, accept either stored challenge or fixed demo OTP
-  if (!challenge && enteredOtp !== fixedDemoOtp) {
-    throw new Error('OTP expired or not requested. Please request a new OTP.');
-  }
-
   if (challenge) {
+    if (Date.now() - challenge.createdAt > 5 * 60 * 1000) {
+      otpStore.delete(phone);
+      throw new Error('OTP expired. Please request a new OTP.');
+    }
+
     if (challenge.attempts >= 5) {
       otpStore.delete(phone);
       throw new Error('Too many failed attempts. Please request a fresh OTP.');
     }
 
-    if (challenge.otp !== enteredOtp && enteredOtp !== fixedDemoOtp) {
+    if (enteredOtp !== challenge.otp) {
       challenge.attempts += 1;
       throw new Error(`Invalid OTP entered. Please try again. (Hint: Test OTP is ${fixedDemoOtp})`);
     }
 
     // OTP is valid!
     otpStore.delete(phone);
-  } else if (enteredOtp !== fixedDemoOtp) {
-    throw new Error(`Invalid OTP. Use Demo OTP: ${fixedDemoOtp}`);
+  } else if (purpose === 'register' || enteredOtp !== fixedDemoOtp) {
+    throw new Error(
+      purpose === 'register'
+        ? 'OTP expired or not requested. Please request a new OTP before verifying.'
+        : `Invalid OTP. Use Demo OTP: ${fixedDemoOtp}`
+    );
   }
 
-  // Find or create local user
+  // Check local user
   let user = await prisma.user.findUnique({
     where: { phone },
   });
 
+  if (purpose === 'register') {
+    if (user) {
+      const err: any = new Error('An account with this mobile number already exists. Please login instead.');
+      err.status = 409;
+      throw err;
+    }
+
+    const jti = crypto.randomUUID();
+    const verificationToken = jwt.sign(
+      { phone, purpose: 'register_verified', jti },
+      config.jwtSecret,
+      { expiresIn: '10m' }
+    );
+    verifiedRegistrationStore.set(phone, {
+      jti,
+      expiresAt: Date.now() + 10 * 60 * 1000,
+    });
+
+    return {
+      verified: true,
+      isNewUser: true,
+      phone,
+      verificationToken,
+    };
+  }
+
   const isNewUser = !user;
 
   if (!user) {
-    // Create preliminary user profile
+    // Create preliminary user profile on first OTP login
     user = await prisma.user.create({
       data: {
         phone,
@@ -224,6 +305,9 @@ export async function verifyOtp(rawPhone: string, enteredOtp: string) {
 export async function registerFarmer(data: {
   name: string;
   phone: string;
+  otp?: string;
+  verificationToken?: string;
+  firebaseIdToken?: string;
   language: string;
   state: string;
   district: string;
@@ -238,11 +322,120 @@ export async function registerFarmer(data: {
 }) {
   const phone = cleanPhone(data.phone);
   if (!isValidIndianPhone(phone)) {
-    throw new Error('Please enter a valid 10-digit Indian mobile number');
+    const err: any = new Error('Please enter a valid 10-digit Indian mobile number');
+    err.status = 400;
+    throw err;
   }
 
   if (!data.name || data.name.trim().length < 2) {
-    throw new Error('Please enter farmer name (minimum 2 letters)');
+    const err: any = new Error('Please enter farmer name (minimum 2 letters)');
+    err.status = 400;
+    throw err;
+  }
+
+  // Block overwriting or taking over an existing registered phone number
+  const existing = await prisma.user.findUnique({
+    where: { phone },
+  });
+  if (existing) {
+    const err: any = new Error('An account with this mobile number already exists. Please login instead.');
+    err.status = 409;
+    throw err;
+  }
+
+  // Require proof of phone OTP verification before creating the account
+  let otpVerified = false;
+
+  if (data.verificationToken && typeof data.verificationToken === 'string') {
+    let decoded: { phone?: string; purpose?: string; jti?: string };
+    try {
+      decoded = jwt.verify(data.verificationToken, config.jwtSecret) as {
+        phone?: string;
+        purpose?: string;
+        jti?: string;
+      };
+    } catch {
+      const err: any = new Error('Invalid or expired OTP verification token. Please verify your mobile number again.');
+      err.status = 401;
+      throw err;
+    }
+
+    if (
+      decoded.purpose !== 'register_verified' ||
+      decoded.phone !== phone ||
+      !decoded.jti ||
+      consumedRegistrationJtis.has(decoded.jti)
+    ) {
+      const err: any = new Error('OTP verification token is invalid or does not match this mobile number.');
+      err.status = 401;
+      throw err;
+    }
+
+    consumedRegistrationJtis.set(decoded.jti, Date.now() + 10 * 60 * 1000);
+    verifiedRegistrationStore.delete(phone);
+    otpVerified = true;
+  } else if (data.firebaseIdToken && typeof data.firebaseIdToken === 'string') {
+    const decodedFb = await verifyFirebaseIdToken(data.firebaseIdToken);
+    if (!decodedFb.phone_number || cleanPhone(decodedFb.phone_number) !== phone) {
+      const err: any = new Error('Firebase verification token does not match the provided mobile number.');
+      err.status = 401;
+      throw err;
+    }
+    otpVerified = true;
+  } else if (data.otp && typeof data.otp === 'string') {
+    if (!isDemoOtpActive()) {
+      const err: any = new Error('Demo OTP registration is disabled. Please verify your phone number.');
+      err.status = 401;
+      throw err;
+    }
+
+    const pendingVerified = verifiedRegistrationStore.get(phone);
+    const challenge = otpStore.get(phone);
+
+    if (challenge) {
+      if (Date.now() - challenge.createdAt > 5 * 60 * 1000) {
+        otpStore.delete(phone);
+        const err: any = new Error('OTP expired. Please request a new OTP.');
+        err.status = 400;
+        throw err;
+      }
+      if (challenge.attempts >= 5) {
+        otpStore.delete(phone);
+        const err: any = new Error('Too many failed attempts. Please request a fresh OTP.');
+        err.status = 429;
+        throw err;
+      }
+      if (data.otp !== challenge.otp) {
+        challenge.attempts += 1;
+        const err: any = new Error('Invalid OTP entered. Please check the verification code.');
+        err.status = 400;
+        throw err;
+      }
+      otpStore.delete(phone);
+      otpVerified = true;
+    } else if (pendingVerified && Date.now() <= pendingVerified.expiresAt) {
+      consumedRegistrationJtis.set(pendingVerified.jti, pendingVerified.expiresAt);
+      verifiedRegistrationStore.delete(phone);
+      otpVerified = true;
+    } else {
+      const err: any = new Error('Please request and verify an OTP for this mobile number before registering.');
+      err.status = 401;
+      throw err;
+    }
+  } else {
+    // Allow if caller previously verified via /verify-otp with purpose='register'
+    const pendingVerified = verifiedRegistrationStore.get(phone);
+    if (pendingVerified && Date.now() <= pendingVerified.expiresAt) {
+      consumedRegistrationJtis.set(pendingVerified.jti, pendingVerified.expiresAt);
+      verifiedRegistrationStore.delete(phone);
+      otpVerified = true;
+    }
+  }
+
+  if (!otpVerified) {
+    const err: any = new Error('Verified OTP is required before creating an account.');
+    err.status = 401;
+    throw err;
   }
 
   // Validate and sanitize location data
@@ -266,48 +459,23 @@ export async function registerFarmer(data: {
   const cleanTaluk = data.taluk ? String(data.taluk).trim().slice(0, 100) : null;
   const cleanVillage = data.village !== undefined ? String(data.village).trim().slice(0, 100) : null;
 
-  const existing = await prisma.user.findUnique({
-    where: { phone },
+  const user = await prisma.user.create({
+    data: {
+      phone,
+      name: data.name.trim().slice(0, 100),
+      language: data.language || 'en',
+      state: data.state || 'Karnataka',
+      district: data.district || 'Mandya',
+      village: cleanVillage || '',
+      taluk: cleanTaluk || '',
+      latitude: validLat,
+      longitude: validLon,
+      locationAccuracy: validAccuracy,
+      locationSource: validSource,
+      farmSize: data.farmSize || 2.5,
+      farmUnit: data.farmUnit || 'Acres',
+    },
   });
-
-  let user;
-  if (existing) {
-    user = await prisma.user.update({
-      where: { phone },
-      data: {
-        name: data.name.trim().slice(0, 100),
-        language: data.language || existing.language,
-        state: data.state || existing.state,
-        district: data.district || existing.district,
-        village: cleanVillage !== null ? cleanVillage : existing.village,
-        taluk: cleanTaluk !== null ? cleanTaluk : existing.taluk,
-        latitude: validLat !== null ? validLat : existing.latitude,
-        longitude: validLon !== null ? validLon : existing.longitude,
-        locationAccuracy: validAccuracy !== null ? validAccuracy : existing.locationAccuracy,
-        locationSource: validSource || existing.locationSource,
-        farmSize: data.farmSize ?? existing.farmSize,
-        farmUnit: data.farmUnit || existing.farmUnit,
-      },
-    });
-  } else {
-    user = await prisma.user.create({
-      data: {
-        phone,
-        name: data.name.trim().slice(0, 100),
-        language: data.language || 'en',
-        state: data.state || 'Karnataka',
-        district: data.district || 'Mandya',
-        village: cleanVillage || '',
-        taluk: cleanTaluk || '',
-        latitude: validLat,
-        longitude: validLon,
-        locationAccuracy: validAccuracy,
-        locationSource: validSource,
-        farmSize: data.farmSize || 2.5,
-        farmUnit: data.farmUnit || 'Acres',
-      },
-    });
-  }
 
   const token = jwt.sign(
     {

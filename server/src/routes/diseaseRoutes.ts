@@ -1,10 +1,31 @@
 import { Router, Request, Response } from 'express';
 import prisma from '../utils/prisma';
 import { config } from '../config';
+import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { createRateLimiter } from '../middleware/rateLimiter';
 import { diagnoseCropProblem } from '../services/diagnosisService';
 import { analyzeCropPhotos } from '../services/photoAnalysisService';
 
 const router = Router();
+
+function parsePositiveInt(val: string | undefined, fallback: number): number {
+  const parsed = parseInt(val || '', 10);
+  return !isNaN(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+const diagnoseRateLimiter = createRateLimiter({
+  keyPrefix: 'disease-diagnose',
+  windowMs: 60 * 1000,
+  maxRequests: () => parsePositiveInt(process.env.DIAGNOSE_RATE_LIMIT_MAX, 30),
+  message: 'Rate limit exceeded. Please wait a minute before requesting another crop diagnosis.',
+});
+
+const analyzePhotoRateLimiter = createRateLimiter({
+  keyPrefix: 'disease-photo',
+  windowMs: 60 * 1000,
+  maxRequests: () => parsePositiveInt(process.env.ANALYZE_PHOTO_RATE_LIMIT_MAX, 15),
+  message: 'Rate limit exceeded. Please wait a minute before requesting another photo analysis.',
+});
 
 // Helper to format a Problem record into API response with backward-compatible aliases
 export function formatProblemResponse(p: any) {
@@ -263,34 +284,9 @@ router.get('/:id', async (req: Request, res: Response) => {
   }
 });
 
-// In-memory rate limiting map (IP -> timestamps array)
-const rateLimitMap = new Map<string, number[]>();
-
-function checkRateLimit(ip: string, maxRequests = 30, windowMs = 60000): boolean {
-  const now = Date.now();
-  const timestamps = rateLimitMap.get(ip) || [];
-  const validTimestamps = timestamps.filter(t => now - t < windowMs);
-
-  if (validTimestamps.length >= maxRequests) {
-    return false;
-  }
-
-  validTimestamps.push(now);
-  rateLimitMap.set(ip, validTimestamps);
-  return true;
-}
-
-// 5. Intelligent /diagnose (Reads from Database, Weighted Scoring, Multilingual Note, Gemini Vision)
-router.post('/diagnose', async (req: Request, res: Response) => {
+// 5. Intelligent /diagnose (Auth + Rate Limited; reads from Database, Weighted Scoring, Multilingual Note, Gemini Vision)
+router.post('/diagnose', authMiddleware, diagnoseRateLimiter, async (req: AuthRequest, res: Response) => {
   try {
-    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
-    if (!checkRateLimit(clientIp)) {
-      return res.status(429).json({
-        success: false,
-        message: 'Rate limit exceeded. Please wait a minute before requesting another crop diagnosis.',
-      });
-    }
-
     const {
       crop,
       cropName,
@@ -312,6 +308,13 @@ router.post('/diagnose', async (req: Request, res: Response) => {
     const effectiveCrop = cropSlug || crop || cropName;
     const effectiveNote = note || symptomsDescription;
     const effectiveImage = imageData || image;
+
+    if (!effectiveCrop && !plantPart && !pattern && !colour && !effectiveNote && !effectiveImage) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please specify a crop, symptoms, or plant photo for diagnosis.',
+      });
+    }
 
     const result = await diagnoseCropProblem({
       crop: effectiveCrop,
@@ -339,16 +342,8 @@ router.post('/diagnose', async (req: Request, res: Response) => {
 });
 
 // 6. REAL MULTI-PHOTO VISION ANALYSIS (POST /api/diseases/analyze-photo)
-router.post('/analyze-photo', async (req: Request, res: Response) => {
+router.post('/analyze-photo', authMiddleware, analyzePhotoRateLimiter, async (req: AuthRequest, res: Response) => {
   try {
-    const clientIp = req.ip || req.socket.remoteAddress || 'unknown';
-    if (!checkRateLimit(clientIp, 15, 60000)) {
-      return res.status(429).json({
-        success: false,
-        message: 'Rate limit exceeded. Please wait a minute before requesting another photo analysis.',
-      });
-    }
-
     const {
       photos,
       crop,
@@ -398,7 +393,7 @@ router.post('/analyze-photo', async (req: Request, res: Response) => {
 });
 
 // 7. RECORD DIAGNOSIS ACCURACY FEEDBACK (POST /api/diseases/feedback)
-router.post('/feedback', async (req: Request, res: Response) => {
+router.post('/feedback', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const {
       problemSlug,

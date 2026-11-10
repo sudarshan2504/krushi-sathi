@@ -26,7 +26,7 @@ import { SceneBackground, SceneStrip } from '../components/ui/SceneBackground';
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
   const { t, language } = useTranslation();
-  const { guestLogin, login } = useAuth();
+  const { demoLogin, login } = useAuth();
   const shouldReduceMotion = useReducedMotion();
 
   const [phone, setPhone] = useState('');
@@ -53,7 +53,7 @@ export const LoginPage: React.FC = () => {
     setError(null);
     setIsLoadingDemo(true);
     try {
-      await guestLogin('9876543210', 'Ramesh Kumar');
+      await demoLogin();
       navigate('/home', { replace: true });
     } catch (err: any) {
       console.error('[LoginPage] Demo login failed:', err);
@@ -75,13 +75,12 @@ export const LoginPage: React.FC = () => {
     setError(null);
     setIsLoadingSubmit(true);
     try {
-      await api.auth.sendOtp(cleanNumber).catch(() => {});
+      await api.auth.sendOtp(cleanNumber, 'login');
       setIsOtpSent(true);
       setResendTimer(30);
     } catch (err: any) {
-      console.warn('Send OTP caught, advancing to OTP input anyway:', err);
-      setIsOtpSent(true);
-      setResendTimer(30);
+      console.error('[LoginPage] Send OTP failed:', err);
+      setError(err?.message || 'Failed to send verification code. Please check your mobile number.');
     } finally {
       setIsLoadingSubmit(false);
     }
@@ -103,13 +102,7 @@ export const LoginPage: React.FC = () => {
       navigate('/home', { replace: true });
     } catch (err: any) {
       console.error('[LoginPage] Verify OTP error:', err);
-      // Fallback for demo direct login
-      try {
-        await guestLogin(cleanNumber, 'Farmer');
-        navigate('/home', { replace: true });
-      } catch {
-        setError(err?.message || 'Invalid verification code. Please check or use demo code 123456.');
-      }
+      setError(err?.message || 'Invalid verification code. Please check and try again.');
     } finally {
       setIsLoadingSubmit(false);
     }
@@ -256,7 +249,7 @@ export const LoginPage: React.FC = () => {
               </div>
 
               {error && (
-                <div className="p-2 rounded-xl bg-red-50 text-red-700 text-xs flex items-center gap-1.5">
+                <div role="alert" className="p-2 rounded-xl bg-red-50 text-red-700 text-xs flex items-center gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>{error}</span>
                 </div>
@@ -309,7 +302,7 @@ export const LoginPage: React.FC = () => {
               </div>
 
               {error && (
-                <div className="p-2 rounded-xl bg-red-50 text-red-700 text-xs flex items-center gap-1.5">
+                <div role="alert" className="p-2 rounded-xl bg-red-50 text-red-700 text-xs flex items-center gap-1.5">
                   <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>{error}</span>
                 </div>

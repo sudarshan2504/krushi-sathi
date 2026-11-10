@@ -15,6 +15,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (phone: string, otp: string) => Promise<{ isNewUser: boolean }>;
   firebaseLogin: (idToken: string) => Promise<{ token: string; user: User; isNewUser: boolean }>;
+  demoLogin: () => Promise<{ token: string; user: User; isNewUser: boolean }>;
   guestLogin: (preferredPhone?: string, preferredName?: string) => Promise<{ token: string; user: User; isNewUser: boolean }>;
   directLogin: (phone: string, name?: string) => Promise<{ token: string; user: User; isNewUser: boolean }>;
   setFirebaseSession: (fbUser: FirebaseUser | null, backendUser?: User | null) => void;
@@ -140,6 +141,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res;
   };
 
+  const demoLogin = async () => {
+    setIsLoading(true);
+    try {
+      const res = await api.auth.demoLogin();
+      setUser(res.user);
+      return res;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const guestLogin = async (preferredPhone?: string, preferredName?: string) => {
     setIsLoading(true);
     try {
@@ -163,8 +175,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const login = async (phone: string, otp: string) => {
-    const res = await api.auth.verifyOtp(phone, otp);
-    setUser(res.user);
+    const res = await api.auth.verifyOtp(phone, otp, 'login');
+    if (res.user) {
+      setUser(res.user);
+    }
     return { isNewUser: res.isNewUser };
   };
 
@@ -210,6 +224,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isLoading,
         login,
         firebaseLogin,
+        demoLogin,
         guestLogin,
         directLogin,
         setFirebaseSession,

@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { optionalAuthMiddleware, AuthRequest, authMiddleware } from '../middleware/auth';
+import { createRateLimiter } from '../middleware/rateLimiter';
 import prisma from '../utils/prisma';
 import {
   generateChatResponse,
@@ -23,22 +24,24 @@ import path from 'path';
 
 const router = Router();
 
-// In-memory rate limiter: max 30 requests per minute per IP/user
-const rateLimitWindow = 60 * 1000;
-const maxRequestsPerMinute = 30;
-const ipRateLimitMap = new Map<string, { count: number; resetTime: number }>();
-
-function isRateLimited(key: string): boolean {
-  const now = Date.now();
-  const entry = ipRateLimitMap.get(key);
-  if (!entry || now > entry.resetTime) {
-    ipRateLimitMap.set(key, { count: 1, resetTime: now + rateLimitWindow });
-    return false;
-  }
-  if (entry.count >= maxRequestsPerMinute) return true;
-  entry.count++;
-  return false;
+function parsePositiveInt(val: string | undefined, fallback: number): number {
+  const parsed = parseInt(val || '', 10);
+  return !isNaN(parsed) && parsed > 0 ? parsed : fallback;
 }
+
+const chatMessageRateLimiter = createRateLimiter({
+  keyPrefix: 'chat-messages',
+  windowMs: 60 * 1000,
+  maxRequests: () => parsePositiveInt(process.env.CHAT_RATE_LIMIT_MAX, 30),
+  message: 'Rate limit exceeded: You have sent too many requests. Please wait a minute before trying again.',
+});
+
+const ttsRateLimiter = createRateLimiter({
+  keyPrefix: 'chat-tts',
+  windowMs: 60 * 1000,
+  maxRequests: () => parsePositiveInt(process.env.TTS_RATE_LIMIT_MAX, 30),
+  message: 'Rate limit exceeded for speech synthesis. Please wait a minute before trying again.',
+});
 
 // SSE helper: write a named SSE event
 function sseWrite(res: Response, event: string, data: object) {
@@ -59,16 +62,7 @@ function sseWrite(res: Response, event: string, data: object) {
  * UTF-8 safety: the Gemini SDK streams complete Unicode code points (the SDK buffers
  * internally per chunk boundary), so no partial-character handling is needed here.
  */
-router.post('/messages', optionalAuthMiddleware, async (req: AuthRequest, res: Response) => {
-  // Rate-limit check must happen before SSE headers are sent
-  const rateLimitKey = req.user ? `user-${req.user.id}` : `ip-${req.ip || 'anon'}`;
-  if (isRateLimited(rateLimitKey)) {
-    return res.status(429).json({
-      success: false,
-      message: 'Rate limit exceeded: You have sent too many requests. Please wait a minute before trying again.',
-    });
-  }
-
+router.post('/messages', optionalAuthMiddleware, chatMessageRateLimiter, async (req: AuthRequest, res: Response) => {
   const { language = 'en', conversationId } = req.body;
   const message = req.body.message || req.body.content;
 
@@ -97,7 +91,7 @@ router.post('/messages', optionalAuthMiddleware, async (req: AuthRequest, res: R
         },
       });
       if (!existingConv) return res.status(404).json({ success: false, message: 'Conversation not found' });
-      if (user && existingConv.userId !== user.id) {
+      if (existingConv.userId && (!user || existingConv.userId !== user.id)) {
         return res.status(403).json({ success: false, message: "Unauthorized: You do not have permission to access another farmer's conversation." });
       }
       history = existingConv.messages
@@ -396,17 +390,7 @@ router.post('/messages', optionalAuthMiddleware, async (req: AuthRequest, res: R
 });
 
 // Synthesize natural regional speech using Gemini 3.8 Flash TTS or Edge Regional Neural TTS with graceful browser fallback
-router.post('/tts', async (req: Request, res: Response) => {
-  const rateLimitKey = `tts-${req.ip || 'anon'}`;
-  if (isRateLimited(rateLimitKey)) {
-    return res.status(429).json({
-      success: false,
-      fallbackToBrowser: true,
-      message: 'Rate limit exceeded for speech synthesis. Falling back to browser audio.',
-      data: { provider: 'browser' },
-    });
-  }
-
+router.post('/tts', authMiddleware, ttsRateLimiter, async (req: AuthRequest, res: Response) => {
   try {
     const { text, language = 'en', gender = 'female', provider = 'auto', speed = 1.0 } = req.body;
     if (!text || typeof text !== 'string' || text.trim() === '') {
@@ -547,8 +531,8 @@ router.get('/status', (req, res) => {
   });
 });
 
-// Update AI Keys dynamically (Protected - disabled in production)
-router.post('/keys', (req: Request, res: Response) => {
+// Update AI Keys dynamically (Auth-protected & disabled in production)
+router.post('/keys', authMiddleware, (req: AuthRequest, res: Response) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(403).json({
       success: false,
@@ -557,7 +541,21 @@ router.post('/keys', (req: Request, res: Response) => {
   }
 
   try {
-    const { geminiApiKey, geminiModel } = req.body;
+    const { geminiApiKey, geminiModel } = req.body || {};
+
+    if (geminiApiKey === undefined && geminiModel === undefined) {
+      return res.status(400).json({
+        success: false,
+        message: 'At least one configuration field (geminiApiKey or geminiModel) is required.',
+      });
+    }
+
+    if (geminiApiKey !== undefined && typeof geminiApiKey !== 'string') {
+      return res.status(400).json({ success: false, message: 'geminiApiKey must be a string' });
+    }
+    if (geminiModel !== undefined && typeof geminiModel !== 'string') {
+      return res.status(400).json({ success: false, message: 'geminiModel must be a string' });
+    }
 
     if (geminiApiKey !== undefined) {
       config.geminiApiKey = geminiApiKey.trim();
@@ -568,9 +566,9 @@ router.post('/keys', (req: Request, res: Response) => {
       process.env.GEMINI_MODEL = geminiModel.trim();
     }
 
-    // Persist to server/.env if file exists
+    // Persist to server/.env only in active local development (never during test runs)
     const envPath = path.resolve(__dirname, '../../.env');
-    if (fs.existsSync(envPath)) {
+    if (process.env.NODE_ENV === 'development' && fs.existsSync(envPath)) {
       let envContent = fs.readFileSync(envPath, 'utf8');
       if (geminiApiKey !== undefined) {
         if (/^GEMINI_API_KEY=/m.test(envContent)) {
