@@ -97,6 +97,11 @@ export function useVoiceAssistant({
     stateRef.current = state;
   }, [state]);
 
+  const updateState = useCallback((next: VoiceAssistantState) => {
+    stateRef.current = next;
+    setState(next);
+  }, []);
+
   const autoListenRef = useRef(autoListen);
   useEffect(() => {
     autoListenRef.current = autoListen;
@@ -131,21 +136,21 @@ export function useVoiceAssistant({
   const cancelListening = useCallback(() => {
     speechService.stopRecognition();
     setInterimTranscript('');
-    setState('ready');
-  }, []);
+    updateState('ready');
+  }, [updateState]);
 
   // Stop speaking
   const stopSpeaking = useCallback(() => {
     speechService.stopSpeaking();
-    setState('ready');
-  }, []);
+    updateState('ready');
+  }, [updateState]);
 
   // Submit recognized query to existing backend
   const submitQuery = useCallback(
     async (text: string) => {
       const trimmed = text.trim();
       if (!trimmed) {
-        setState('ready');
+        updateState('ready');
         return;
       }
 
@@ -155,7 +160,7 @@ export function useVoiceAssistant({
       const tSubmit = performance.now();
       console.log(`[Voice Perf] Submitting query: "${trimmed}"`);
 
-      setState('preparing');
+      updateState('preparing');
       setErrorMessage(null);
 
       // Create optimistic user message
@@ -203,7 +208,7 @@ export function useVoiceAssistant({
         }
 
         // Start speaking the natural spoken version
-        setState('speaking');
+        updateState('speaking');
         speechService.speakNatural(spokenText, activeLang, {
           gender: voiceGenderRef.current,
           provider: providerChoiceRef.current,
@@ -214,7 +219,7 @@ export function useVoiceAssistant({
                 tChat - tSubmit
               )}ms, TTS/Audio Start: ${Math.round(tPlayback - tChat)}ms)`
             );
-            setState('speaking');
+            updateState('speaking');
           },
           onProviderSelected: (provider, vName) => {
             setTtsProvider(provider);
@@ -244,23 +249,23 @@ export function useVoiceAssistant({
                 startListening();
               }, 800);
             } else {
-              setState('ready');
+              updateState('ready');
             }
           },
           onInterrupted: () => {
             // Already handled
           },
           onError: () => {
-            setState('ready');
+            updateState('ready');
           },
         });
       } catch (err: any) {
         console.error('[Voice Assistant error]', err);
         setErrorMessage(err.message || 'Could not get answer. Please tap microphone to try again.');
-        setState('error');
+        updateState('error');
       }
     },
-    [onNewMessage, onConversationIdChange, onLanguageChange]
+    [onNewMessage, onConversationIdChange, onLanguageChange, updateState]
   );
 
   // Start listening session with turn-taking and interruption support
@@ -270,7 +275,7 @@ export function useVoiceAssistant({
 
     // If currently speaking, handle interruption with brief transition
     if (stateRef.current === 'speaking') {
-      setState('interrupted');
+      updateState('interrupted');
       setTimeout(() => {
         executeListening();
       }, 150);
@@ -283,11 +288,14 @@ export function useVoiceAssistant({
       setErrorMessage(null);
       setIsPermissionDenied(false);
       setInterimTranscript('');
-      setState('listening');
+      updateState('listening');
+
+      let hadError = false;
+      let hadFinal = false;
 
       const ok = speechService.startRecognition(languageRef.current, {
         onStart: () => {
-          setState('listening');
+          updateState('listening');
         },
         onInterimResult: (interim) => {
           setInterimTranscript(interim);
@@ -296,40 +304,44 @@ export function useVoiceAssistant({
           // Check if recognized words are an echo of the assistant's previous reply
           if (isEchoOfAssistant(final, lastAssistantWordsRef.current, lastSpokenSummaryRef.current)) {
             console.log('[Voice Perf] Ignored microphone echo of assistant speech:', final);
+            hadFinal = true;
             setInterimTranscript('');
             if (autoListenRef.current) {
               setTimeout(() => {
                 executeListening();
               }, 800);
             } else {
-              setState('ready');
+              updateState('ready');
             }
             return;
           }
 
+          hadFinal = true;
           setInterimTranscript(final);
           setLastFarmerWords(final);
-          setState('understanding');
+          updateState('understanding');
           // Immediate submission without artificial 350ms delay
           submitQuery(final);
         },
         onError: (err) => {
+          hadError = true;
           setErrorMessage(err.message);
           setIsPermissionDenied(err.isPermissionDenied);
-          setState('error');
+          updateState('error');
         },
         onEnd: () => {
-          if (stateRef.current === 'listening') {
-            setState('ready');
+          if (!hadError && !hadFinal && stateRef.current === 'listening') {
+            updateState('ready');
           }
         },
       });
 
       if (!ok) {
-        setState('error');
+        hadError = true;
+        updateState('error');
       }
     }
-  }, [submitQuery]);
+  }, [submitQuery, updateState]);
 
   // Repeat previous response aloud
   const repeatResponse = useCallback(() => {
@@ -339,12 +351,12 @@ export function useVoiceAssistant({
     // Cleanly cancel any previous speech before starting repeat
     speechService.stopSpeaking();
 
-    setState('speaking');
+    updateState('speaking');
     speechService.speakNatural(textToRepeat, languageRef.current, {
       gender: voiceGenderRef.current,
       provider: providerChoiceRef.current,
       onStart: () => {
-        setState('speaking');
+        updateState('speaking');
       },
       onProviderSelected: (provider, vName) => {
         setTtsProvider(provider);
@@ -358,16 +370,16 @@ export function useVoiceAssistant({
         }
       },
       onEnd: () => {
-        setState('ready');
+        updateState('ready');
       },
       onError: () => {
-        setState('ready');
+        updateState('ready');
       },
       onInterrupted: () => {
         // Handled
       },
     });
-  }, [lastSpokenSummary, lastAssistantWords]);
+  }, [lastSpokenSummary, lastAssistantWords, updateState]);
 
   return {
     state,

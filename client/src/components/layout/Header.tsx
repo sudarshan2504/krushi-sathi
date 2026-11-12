@@ -90,9 +90,9 @@ export const Header: React.FC = () => {
 
         {/* Center — page title (inner pages only) */}
         {!isHome && pageTitle && (
-          <h1 className="flex-1 text-[16px] font-bold text-gray-900 dark:text-gray-100 text-center truncate">
+          <span className="flex-1 text-[16px] font-bold text-gray-900 dark:text-gray-100 text-center truncate">
             {pageTitle}
-          </h1>
+          </span>
         )}
         {/* Spacer so right controls align on home */}
         {isHome && <div className="flex-1" />}

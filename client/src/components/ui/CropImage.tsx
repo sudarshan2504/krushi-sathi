@@ -69,7 +69,7 @@ export const CropImage: React.FC<CropImageProps> = ({
           <Sprout className="w-4 h-4 text-forest stroke-[2.2]" />
         </div>
         {showFallbackLabel && (
-          <span className="text-[10px] font-extrabold text-forest line-clamp-1 max-w-full px-1 truncate leading-tight">
+          <span className="text-[11px] font-extrabold text-forest line-clamp-1 max-w-full px-1 truncate leading-tight">
             {shortName}
           </span>
         )}

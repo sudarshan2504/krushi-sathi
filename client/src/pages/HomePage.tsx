@@ -132,7 +132,7 @@ export const HomePage: React.FC = () => {
               <span className="font-extrabold text-sm sm:text-base text-forest-dark dark:text-cream leading-tight">
                 Krushi Sathi
               </span>
-              <span className="text-[10px] font-semibold text-zinc-600 dark:text-zinc-400">
+              <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-400">
                 AI Farming Companion
               </span>
             </div>
@@ -210,7 +210,7 @@ export const HomePage: React.FC = () => {
                     <h3 className="text-[13px] sm:text-sm font-bold text-[#0D2B18] dark:text-zinc-100 leading-snug">
                       {item.title}
                     </h3>
-                    <p className="text-[10px] sm:text-[11px] text-zinc-500 dark:text-zinc-400 font-medium mt-0.5 line-clamp-1">
+                    <p className="text-[11px] sm:text-[11px] text-zinc-600 dark:text-zinc-400 font-medium mt-0.5 line-clamp-1">
                       {item.subtitle}
                     </p>
                   </div>
@@ -244,7 +244,7 @@ export const HomePage: React.FC = () => {
                   Stage: {currentPlan.currentStage || 'Growing'}
                 </span>
               </div>
-              <p className="text-xs text-zinc-500 dark:text-zinc-400 mb-3">
+              <p className="text-xs text-zinc-600 dark:text-zinc-400 mb-3">
                 Planted on {new Date(currentPlan.startDate).toLocaleDateString()} • {currentPlan.areaAcre ? `${currentPlan.areaAcre} Acres` : 'Active Plan'}
               </p>
               <div className="w-full bg-zinc-100 rounded-full h-2">

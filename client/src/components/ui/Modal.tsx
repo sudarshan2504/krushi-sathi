@@ -1,4 +1,5 @@
 import React, { useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X } from 'lucide-react';
 
@@ -71,10 +72,10 @@ export const Modal: React.FC<ModalProps> = ({
     ? { duration: 0 }
     : { type: 'spring' as const, damping: 28, stiffness: 340 };
 
-  return (
+  const modalContent = (
     <AnimatePresence>
       {isOpen && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-4 sm:p-6">
+        <div className="fixed inset-0 z-[9990] flex items-end sm:items-center justify-center p-4 sm:p-6">
           {/* Backdrop */}
           <motion.div
             initial={{ opacity: 0 }}
@@ -112,9 +113,10 @@ export const Modal: React.FC<ModalProps> = ({
                 </h3>
               )}
               <button
+                type="button"
                 onClick={onClose}
                 className={[
-                  'w-8 h-8 flex items-center justify-center rounded-xl',
+                  'min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl',
                   'text-gray-500 hover:bg-gray-100 dark:hover:bg-dark-elevated',
                   'transition-colors focus-visible:ring-2 focus-visible:ring-brand',
                   !title ? 'ml-auto' : '',
@@ -134,4 +136,9 @@ export const Modal: React.FC<ModalProps> = ({
       )}
     </AnimatePresence>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 };

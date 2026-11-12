@@ -76,13 +76,13 @@ export const CropLifecyclePage: React.FC = () => {
     return (
       <div className="max-w-md mx-auto text-center p-8 bg-white rounded-3xl border border-gray-100 shadow-card">
         <Sprout className="w-12 h-12 text-forest/40 mx-auto mb-3" />
-        <h2 className="text-lg font-bold text-dark-text mb-1">No Active Crop Plan Found</h2>
-        <p className="text-xs text-dark-muted mb-4">
+        <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100 mb-1">No Active Crop Plan Found</h2>
+        <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
           Complete a soil assessment or select a crop from our recommendations catalog to start your step-by-step farming plan.
         </p>
         <button
           onClick={() => navigate('/soil')}
-          className="py-3 px-6 rounded-2xl bg-forest text-white text-xs font-bold shadow-md hover:bg-forest-dark"
+          className="min-h-[44px] py-3 px-6 rounded-2xl bg-forest text-white text-xs font-bold shadow-md hover:bg-forest-dark"
         >
           Check My Soil & Recommend Crop
         </button>
@@ -97,17 +97,17 @@ export const CropLifecyclePage: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate('/home')}
-          className="min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl bg-white border border-gray-200 text-dark-text hover:bg-gray-50 active:scale-95 transition cursor-pointer"
+          className="min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl bg-white border border-gray-200 text-gray-900 dark:text-gray-100 hover:bg-gray-50 active:scale-95 transition cursor-pointer"
           aria-label={t('navBack')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
         <div className="text-center">
-          <h1 className="text-base font-extrabold text-dark-text leading-tight">
+          <h1 className="text-base font-extrabold text-gray-900 dark:text-gray-100 leading-tight">
             {plan.cropName} — Timeline
           </h1>
-          <span className="text-xs text-dark-muted font-medium">
+          <span className="text-xs text-gray-600 dark:text-gray-400 font-medium">
             {t('stepByStepGuide')}
           </span>
         </div>
@@ -118,12 +118,12 @@ export const CropLifecyclePage: React.FC = () => {
       {/* Crop Progress Banner */}
       <div className="p-5 rounded-3xl bg-white border border-gray-100 shadow-card flex items-center justify-between gap-4">
         <div>
-          <span className="text-xs font-bold text-dark-muted block">Overall Completion</span>
+          <span className="text-xs font-bold text-gray-600 dark:text-gray-400 block">Overall Completion</span>
           <div className="flex items-baseline gap-2 mt-0.5">
             <span className="text-2xl font-black text-forest">
               <AnimatedCounter value={plan.progressPercentage} suffix="%" />
             </span>
-            <span className="text-xs text-dark-muted">
+            <span className="text-xs text-gray-600 dark:text-gray-400">
               ({plan.completedTasks} of {plan.totalTasks} tasks done)
             </span>
           </div>
@@ -177,48 +177,51 @@ export const CropLifecyclePage: React.FC = () => {
                   </span>
 
                   <button
+                    type="button"
                     onClick={() => navigate(`/crops/stage/${plan.id}/${encodeURIComponent(stageGroup.stage)}`)}
-                    className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
+                    className="min-h-[44px] px-2 text-xs font-bold text-forest hover:underline flex items-center gap-1"
                   >
                     <span>Detailed Guide</span>
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
-                <h3 className="text-base font-extrabold text-dark-text mb-3">
+                <h3 className="text-base font-extrabold text-gray-900 dark:text-gray-100 mb-3">
                   {stageGroup.stage}
                 </h3>
 
                 {/* Tasks Checklist */}
                 <div className="space-y-2">
                   {stageGroup.tasks.map((task) => (
-                    <div
+                    <button
+                      type="button"
                       key={task.id}
+                      aria-pressed={task.isCompleted}
                       onClick={() => handleToggleTask(task.id, task.isCompleted)}
-                      className={`flex items-start gap-2.5 p-3 rounded-2xl border cursor-pointer select-none transition-colors ${
+                      className={`w-full text-left flex items-start gap-2.5 p-3 rounded-2xl border cursor-pointer select-none transition-colors min-h-[48px] ${
                         task.isCompleted
-                          ? 'bg-gray-50 border-gray-100 text-dark-muted line-through'
-                          : 'bg-cream-light/40 border-gray-100 hover:border-forest/30 text-dark-text'
+                          ? 'bg-gray-50 border-gray-100 text-gray-600 dark:text-gray-400 line-through'
+                          : 'bg-cream-light/40 border-gray-100 hover:border-forest/30 text-gray-900 dark:text-gray-100'
                       }`}
                     >
-                      <button className="mt-0.5 text-forest flex-shrink-0">
+                      <span className="mt-0.5 text-forest flex-shrink-0" aria-hidden="true">
                         {task.isCompleted ? (
                           <CheckCircle2 className="w-4 h-4 text-forest" />
                         ) : (
-                          <Circle className="w-4 h-4 text-gray-400" />
+                          <Circle className="w-4 h-4 text-gray-500" />
                         )}
-                      </button>
+                      </span>
                       <div className="flex-1">
                         <span className="text-xs font-bold block leading-tight">
                           {language === 'kn' ? (task.titleKn || task.title) :
                            language === 'ta' ? (task.titleTa || task.title) :
                            language === 'te' ? (task.titleTe || task.title) : task.title}
                         </span>
-                        <span className="text-[11px] text-dark-muted leading-tight mt-0.5 block">
+                        <span className="text-[11px] text-gray-600 dark:text-gray-400 leading-tight mt-0.5 block">
                           {task.description}
                         </span>
                       </div>
-                    </div>
+                    </button>
                   ))}
                 </div>
 

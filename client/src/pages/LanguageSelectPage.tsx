@@ -58,7 +58,7 @@ export const LanguageSelectPage: React.FC = () => {
               </span>
             )}
           </h1>
-          <p className="text-xs sm:text-[13px] text-zinc-500 dark:text-zinc-400 font-medium mt-1.5 max-w-xs mx-auto">
+          <p className="text-xs sm:text-[13px] text-zinc-600 dark:text-zinc-400 font-medium mt-1.5 max-w-xs mx-auto">
             {t('selectLanguageComfortable')}
           </p>
         </motion.div>
@@ -109,7 +109,7 @@ export const LanguageSelectPage: React.FC = () => {
                 </span>
 
                 {/* English Name (Mid-Gray) */}
-                <span className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-1">
+                <span className="text-xs font-medium text-zinc-600 dark:text-zinc-400 mt-1">
                   {lang.label}
                 </span>
               </motion.button>

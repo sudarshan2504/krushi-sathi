@@ -440,7 +440,15 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
 
   // Watch position for > 5 km movement while active live GPS is enabled
   useEffect(() => {
-    if (!navigator.geolocation || !hasLiveGpsRef.current || fallbackHint !== null || activeMode !== 'gps') return;
+    if (
+      !navigator.geolocation ||
+      typeof navigator.geolocation.watchPosition !== 'function' ||
+      !hasLiveGpsRef.current ||
+      fallbackHint !== null ||
+      activeMode !== 'gps'
+    ) {
+      return;
+    }
     const isLocalhost =
       window.location.hostname === 'localhost' ||
       window.location.hostname === '127.0.0.1';
@@ -463,7 +471,11 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
       { enableHighAccuracy: false, maximumAge: 180000 }
     );
 
-    return () => navigator.geolocation.clearWatch(watchId);
+    return () => {
+      if (typeof navigator.geolocation?.clearWatch === 'function') {
+        navigator.geolocation.clearWatch(watchId);
+      }
+    };
   }, [currentCoords, fallbackHint, activeMode, loadWeatherByCoords, persistCoords]);
 
   const handleManualRefresh = () => {
@@ -516,7 +528,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
         </div>
         <div>
           <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-100">Location Needed</h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs mx-auto">
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 max-w-xs mx-auto">
             Allow device location or select your farm district to load local weather and advisories.
           </p>
         </div>
@@ -550,7 +562,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
         </div>
         <div>
           <h3 className="text-sm font-bold text-zinc-800 dark:text-zinc-100">Weather Unavailable</h3>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-1 max-w-xs mx-auto">{error}</p>
+          <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 max-w-xs mx-auto">{error}</p>
         </div>
         <div className="pt-1 flex items-center justify-center flex-wrap gap-2">
           <button
@@ -646,9 +658,11 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
                 <button
                   type="button"
                   onClick={onChangeLocationClick}
-                  className="px-2.5 py-0.5 rounded-full bg-white/20 hover:bg-white/30 active:scale-95 text-white text-[11px] font-bold tracking-wide transition cursor-pointer select-none shrink-0"
+                  className="min-h-[44px] min-w-[44px] -my-2 px-1 inline-flex items-center justify-center active:scale-95 transition cursor-pointer select-none shrink-0"
                 >
-                  Change
+                  <span className="px-2.5 py-0.5 rounded-full bg-white/20 hover:bg-white/30 text-white text-[11px] font-bold tracking-wide">
+                    Change
+                  </span>
                 </button>
               )}
             </div>
@@ -657,7 +671,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
               type="button"
               onClick={handleManualRefresh}
               aria-label="Refresh weather data"
-              className="w-8 h-8 rounded-full flex items-center justify-center text-emerald-200 hover:text-white transition active:scale-95 shrink-0 cursor-pointer"
+              className="min-w-[44px] min-h-[44px] -my-2 -mr-2 rounded-full flex items-center justify-center text-emerald-200 hover:text-white transition active:scale-95 shrink-0 cursor-pointer"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
             </button>
@@ -715,7 +729,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
         {/* 2. LOWER SECTION: Overlapping White Forecast Tray + Peach Alert */}
         <div className="px-2.5 sm:px-4 pb-3.5 pt-0 bg-white dark:bg-zinc-800 space-y-3 relative z-10">
           {/* Overlapping White Forecast Tray (negative top margin overlaps green section) */}
-          <div className="-mt-5 rounded-2xl bg-white dark:bg-zinc-850 p-1.5 sm:p-2.5 shadow-md border border-zinc-100 dark:border-zinc-700/70">
+          <div className="-mt-5 rounded-2xl bg-white dark:bg-zinc-800 p-1.5 sm:p-2.5 shadow-md border border-zinc-100 dark:border-zinc-700/70">
             <div className="grid grid-cols-5 divide-x divide-zinc-100 dark:divide-zinc-700/60">
               {forecastDays.map((day, idx) => {
                 const isToday = idx === 0;
@@ -740,7 +754,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
                     >
                       {day.tempMax}° / {day.tempMin || Math.round(day.tempMax * 0.7)}°
                     </span>
-                    <span className="text-[11px] text-blue-600 dark:text-blue-400 font-semibold tabular-nums mt-0.5 whitespace-nowrap">
+                    <span className="text-[11px] text-blue-700 dark:text-blue-400 font-semibold tabular-nums mt-0.5 whitespace-nowrap">
                       {day.rainChance ?? 0}%
                     </span>
                   </div>
@@ -810,7 +824,7 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
           <button
             type="button"
             onClick={() => requestLocation(true)}
-            className="font-bold underline text-amber-900 dark:text-amber-100 hover:text-amber-700 text-xs shrink-0 cursor-pointer select-none py-0.5 ml-auto"
+            className="font-bold underline text-amber-900 dark:text-amber-100 hover:text-amber-700 text-xs shrink-0 cursor-pointer select-none min-h-[44px] -my-2 inline-flex items-center ml-auto"
           >
             Use my current location
           </button>

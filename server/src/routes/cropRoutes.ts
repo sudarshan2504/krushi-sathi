@@ -466,7 +466,22 @@ router.post('/recommend', optionalAuthMiddleware, (req: AuthRequest, res: Respon
       npkPhosphorus,
       npkPotassium,
       agroZone,
-    } = req.body;
+    } = req.body || {};
+
+    if (soilType !== undefined && typeof soilType !== 'string') {
+      return res.status(400).json({ success: false, message: 'soilType must be a string' });
+    }
+    if (waterSource !== undefined && typeof waterSource !== 'string') {
+      return res.status(400).json({ success: false, message: 'waterSource must be a string' });
+    }
+
+    let parsedPh: number | undefined;
+    if (ph !== undefined && ph !== null && ph !== '') {
+      parsedPh = Number(ph);
+      if (!Number.isFinite(parsedPh) || parsedPh < 0 || parsedPh > 14) {
+        return res.status(400).json({ success: false, message: 'Soil pH must be between 0 and 14' });
+      }
+    }
 
     const recommendations = calculateCropRecommendations({
       soilType: soilType || 'loamy',
@@ -474,7 +489,7 @@ router.post('/recommend', optionalAuthMiddleware, (req: AuthRequest, res: Respon
       season: season || 'Kharif',
       previousCrop,
       budget,
-      ph: ph ? parseFloat(ph) : undefined,
+      ph: parsedPh,
       drainage,
       category,
       organicMatter,

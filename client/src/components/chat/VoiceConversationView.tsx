@@ -318,7 +318,7 @@ export const VoiceConversationView: React.FC<VoiceConversationViewProps> = ({
             <button
               type="button"
               onClick={() => setIsNoticeDismissed(true)}
-              className="min-w-[48px] min-h-[48px] flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer -mr-2"
+              className="min-w-[48px] min-h-[48px] flex items-center justify-center text-gray-600 hover:text-gray-800 cursor-pointer -mr-2"
               aria-label={txt.close}
             >
               <X className="w-4 h-4" />
@@ -346,7 +346,7 @@ export const VoiceConversationView: React.FC<VoiceConversationViewProps> = ({
             animate={{ opacity: 1, y: 0 }}
             className="border-l-2 border-forest/40 pl-3.5 py-1"
           >
-            <p className="text-xs text-gray-400 font-semibold mb-1 uppercase tracking-wider">
+            <p className="text-xs text-gray-600 font-semibold mb-1 uppercase tracking-wider">
               {txt.youAsked}
             </p>
             <p className={`text-gray-700 italic font-medium ${quoteClass}`}>
@@ -463,7 +463,7 @@ export const VoiceConversationView: React.FC<VoiceConversationViewProps> = ({
             <button
               type="button"
               onClick={onStartListening}
-              className="text-[13px] text-red-600 font-semibold hover:underline cursor-pointer"
+              className="min-h-[44px] inline-flex items-center px-3 text-[13px] text-red-600 font-semibold hover:underline cursor-pointer"
             >
               {errorMessage || txt.tapToRetry}
             </button>
@@ -483,6 +483,7 @@ export const VoiceConversationView: React.FC<VoiceConversationViewProps> = ({
 
           <button
             type="button"
+            data-testid="voice-mic-button"
             onClick={handleMicClick}
             disabled={isThinking}
             aria-label={
@@ -558,7 +559,7 @@ export const VoiceConversationView: React.FC<VoiceConversationViewProps> = ({
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               onClick={() => setIsSettingsOpen(false)}
-              className="fixed inset-0 bg-black/25 z-40 backdrop-blur-2xs"
+              className="fixed inset-0 bg-black/25 z-[9980] backdrop-blur-2xs"
             />
 
             {/* Bottom Sheet Modal */}
@@ -567,7 +568,7 @@ export const VoiceConversationView: React.FC<VoiceConversationViewProps> = ({
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', damping: 28, stiffness: 300 }}
-              className="fixed bottom-0 inset-x-0 bg-white rounded-t-3xl p-5 shadow-xl z-50 max-w-md mx-auto border-t border-gray-150"
+              className="fixed bottom-0 inset-x-0 bg-white rounded-t-3xl p-5 shadow-xl z-[9990] max-w-md mx-auto border-t border-gray-150"
             >
               {/* Sheet Header */}
               <div className="flex items-center justify-between pb-3 border-b border-gray-150">
@@ -577,7 +578,7 @@ export const VoiceConversationView: React.FC<VoiceConversationViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsSettingsOpen(false)}
-                  className="min-h-[48px] min-w-[48px] flex items-center justify-center text-gray-400 hover:text-gray-700 cursor-pointer -mr-2"
+                  className="min-h-[48px] min-w-[48px] flex items-center justify-center text-gray-600 hover:text-gray-900 cursor-pointer -mr-2"
                   aria-label={txt.close}
                 >
                   <X className="w-5 h-5" />

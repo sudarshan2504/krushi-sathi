@@ -140,15 +140,16 @@ export const CropDetailsPage: React.FC = () => {
           <AlertTriangle className="w-7 h-7" />
         </div>
         <div>
-          <h2 className="text-base font-extrabold text-dark-text">Crop Details Unavailable</h2>
-          <p className="text-xs text-dark-muted mt-1 leading-relaxed">
+          <h2 className="text-base font-extrabold text-gray-900 dark:text-gray-100">Crop Details Unavailable</h2>
+          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
             {loadError || 'Unable to retrieve crop information from the agricultural database.'}
           </p>
         </div>
         <div className="flex gap-2 justify-center pt-2">
           <button
+            type="button"
             onClick={() => navigate('/crops')}
-            className="py-2.5 px-4 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
+            className="min-h-[44px] py-2.5 px-4 rounded-xl border border-gray-200 text-xs font-bold text-gray-700 hover:bg-gray-50 transition cursor-pointer"
           >
             Back to Crops
           </button>
@@ -247,8 +248,9 @@ export const CropDetailsPage: React.FC = () => {
         </span>
 
         <button
+          type="button"
           onClick={() => navigate('/credits')}
-          className="text-xs font-bold text-gray-600 hover:text-forest transition"
+          className="min-h-[44px] inline-flex items-center px-2 text-xs font-bold text-gray-600 hover:text-forest transition cursor-pointer"
         >
           Image Credits
         </button>
@@ -324,10 +326,11 @@ export const CropDetailsPage: React.FC = () => {
               return (
                 <button
                   key={`${img.path}-${idx}`}
+                  type="button"
                   onClick={() => {
                     setSelectedImageIndex(idx);
                   }}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shrink-0 ${
+                  className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer ${
                     isSelected
                       ? 'bg-forest text-white shadow-sm ring-2 ring-forest/30 scale-102'
                       : 'bg-white text-gray-700 border border-gray-200 hover:bg-gray-100'
@@ -357,7 +360,7 @@ export const CropDetailsPage: React.FC = () => {
                   href={currentImage.attributionUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-forest hover:underline flex items-center gap-0.5 font-bold"
+                  className="min-h-[44px] text-forest hover:underline inline-flex items-center gap-0.5 font-bold"
                 >
                   <span>License details</span>
                   <ExternalLink className="w-3 h-3" />
@@ -404,24 +407,24 @@ export const CropDetailsPage: React.FC = () => {
 
         {/* Multilingual Names Strip */}
         <div className="p-3.5 bg-gray-50 border-b border-gray-100 text-xs">
-          <span className="font-bold text-gray-500 text-[10px] uppercase tracking-wider block mb-1">
+          <span className="font-bold text-gray-500 text-[11px] uppercase tracking-wider block mb-1">
             Names across South Indian Languages:
           </span>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
             <div className="p-2 rounded-xl bg-white border border-gray-200">
-              <span className="text-[10px] text-gray-400 block">English</span>
+              <span className="text-[11px] text-gray-600 block">English</span>
               <span className="font-extrabold text-gray-900 truncate block">{crop.name}</span>
             </div>
             <div className="p-2 rounded-xl bg-white border border-gray-200">
-              <span className="text-[10px] text-gray-400 block">ಕನ್ನಡ (Kannada)</span>
+              <span className="text-[11px] text-gray-600 block">ಕನ್ನಡ (Kannada)</span>
               <span className="font-extrabold text-gray-900 truncate block">{crop.nameKannada || '-'}</span>
             </div>
             <div className="p-2 rounded-xl bg-white border border-gray-200">
-              <span className="text-[10px] text-gray-400 block">தமிழ் (Tamil)</span>
+              <span className="text-[11px] text-gray-600 block">தமிழ் (Tamil)</span>
               <span className="font-extrabold text-gray-900 truncate block">{crop.nameTamil || '-'}</span>
             </div>
             <div className="p-2 rounded-xl bg-white border border-gray-200">
-              <span className="text-[10px] text-gray-400 block">తెలుగు (Telugu)</span>
+              <span className="text-[11px] text-gray-600 block">తెలుగు (Telugu)</span>
               <span className="font-extrabold text-gray-900 truncate block">{crop.nameTelugu || '-'}</span>
             </div>
           </div>
@@ -479,7 +482,7 @@ export const CropDetailsPage: React.FC = () => {
                 <p className="text-[11px] text-emerald-800">
                   {crop.confidenceNote || 'Package of practices benchmarked from ICAR-IIHR, UAS Bangalore and TNAU agronomic bulletins.'}
                 </p>
-                <p className="text-[10px] text-emerald-700 italic">
+                <p className="text-[11px] text-emerald-700 italic">
                   Note: Verify specific seed varieties and localized microclimate recommendations with your local Raitha Samparka Kendra / Krishi Vigyan Kendra (KVK).
                 </p>
               </div>
@@ -542,19 +545,19 @@ export const CropDetailsPage: React.FC = () => {
                   <div className="grid grid-cols-2 gap-2 text-[11px]">
                     {crop.gestationYears && (
                       <div className="p-2 rounded-xl bg-white/80 border border-amber-100">
-                        <span className="text-amber-800 block text-[10px]">Gestation Period</span>
+                        <span className="text-amber-800 block text-[11px]">Gestation Period</span>
                         <span className="font-bold text-amber-950">{crop.gestationYears} Years to commercial yield</span>
                       </div>
                     )}
                     {crop.fruitingTime && (
                       <div className="p-2 rounded-xl bg-white/80 border border-amber-100">
-                        <span className="text-amber-800 block text-[10px]">Fruiting Schedule</span>
+                        <span className="text-amber-800 block text-[11px]">Fruiting Schedule</span>
                         <span className="font-bold text-amber-950">{crop.fruitingTime}</span>
                       </div>
                     )}
                     {crop.roiEstimate && (
                       <div className="p-2 rounded-xl bg-white/80 border border-amber-100 col-span-2">
-                        <span className="text-amber-800 block text-[10px]">Projected Economic ROI</span>
+                        <span className="text-amber-800 block text-[11px]">Projected Economic ROI</span>
                         <span className="font-bold text-forest">{crop.roiEstimate}</span>
                       </div>
                     )}
@@ -569,7 +572,7 @@ export const CropDetailsPage: React.FC = () => {
                         {crop.intercroppingOptions.map((opt: string, idx: number) => (
                           <span
                             key={idx}
-                            className="py-0.5 px-2 rounded-md bg-white text-amber-900 text-[10px] font-bold border border-amber-200"
+                            className="py-0.5 px-2 rounded-md bg-white text-amber-900 text-[11px] font-bold border border-amber-200"
                           >
                             + {opt}
                           </span>
@@ -589,7 +592,7 @@ export const CropDetailsPage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Sowing Time & Months</span>
+                  <span className="text-gray-500 font-semibold block text-[11px] uppercase">Sowing Time & Months</span>
                   <span className="font-bold text-gray-900 text-sm">
                     {Array.isArray(crop.sowingMonths) ? crop.sowingMonths.join(', ') : crop.sowingMonths || 'June - July'}
                   </span>
@@ -599,7 +602,7 @@ export const CropDetailsPage: React.FC = () => {
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                  <span className="text-gray-500 font-semibold block text-[10px] uppercase">Recommended Spacing</span>
+                  <span className="text-gray-500 font-semibold block text-[11px] uppercase">Recommended Spacing</span>
                   <span className="font-bold text-gray-900 text-sm">
                     {crop.spacing || '45 cm × 15 cm'}
                   </span>
@@ -652,13 +655,13 @@ export const CropDetailsPage: React.FC = () => {
                       key={idx}
                       className="p-3 rounded-2xl bg-cream-light border border-gray-100 flex items-start gap-3"
                     >
-                      <div className="w-6 h-6 rounded-full bg-forest text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0">
+                      <div className="w-6 h-6 rounded-full bg-forest text-white flex items-center justify-center font-bold text-[11px] flex-shrink-0">
                         {idx + 1}
                       </div>
                       <div className="flex-1">
                         <div className="flex justify-between items-center">
                           <span className="font-extrabold text-gray-900">{st.stage}</span>
-                          <span className="text-[10px] text-forest font-bold">
+                          <span className="text-[11px] text-forest font-bold">
                             Days {st.dayRange || st.duration}
                           </span>
                         </div>
@@ -731,19 +734,19 @@ export const CropDetailsPage: React.FC = () => {
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="p-3.5 rounded-2xl bg-gray-50 border border-gray-100 space-y-1">
-                  <span className="text-gray-500 block text-[10px] uppercase font-bold">Approx. Cultivation Cost</span>
+                  <span className="text-gray-500 block text-[11px] uppercase font-bold">Approx. Cultivation Cost</span>
                   <span className="text-lg font-extrabold text-gray-900">
                     {crop.estimatedCost || crop.estimatedCostPerAcre || '₹18,000 - ₹24,000'}
                   </span>
-                  <p className="text-[10px] text-gray-500">Includes land prep, seed, fertilizer & labor</p>
+                  <p className="text-[11px] text-gray-500">Includes land prep, seed, fertilizer & labor</p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-mint border border-forest/20 space-y-1">
-                  <span className="text-forest block text-[10px] uppercase font-bold">Potential Harvest Yield</span>
+                  <span className="text-forest block text-[11px] uppercase font-bold">Potential Harvest Yield</span>
                   <span className="text-lg font-extrabold text-forest">
                     {crop.potentialYield || crop.potentialYieldPerAcre || '22 - 28 Quintals'}
                   </span>
-                  <p className="text-[10px] text-forest/80">Under recommended ICAR scientific package</p>
+                  <p className="text-[11px] text-forest/80">Under recommended ICAR scientific package</p>
                 </div>
               </div>
 

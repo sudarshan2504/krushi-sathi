@@ -44,9 +44,9 @@ export const OfflineBanner: React.FC = () => {
           transition={{ duration: 0.2 }}
           role="status"
           aria-live="polite"
-          className="sticky top-0 z-50 w-full bg-amber-500 text-dark-text py-2 px-4 shadow-md flex items-center justify-center gap-2.5 text-xs sm:text-sm font-bold border-b border-amber-600/30"
+          className="sticky top-0 z-50 w-full bg-amber-500 text-gray-900 py-2 px-4 shadow-md flex items-center justify-center gap-2.5 text-xs sm:text-sm font-bold border-b border-amber-600/30"
         >
-          <WifiOff className="w-4 h-4 shrink-0 text-dark-text animate-pulse" />
+          <WifiOff className="w-4 h-4 shrink-0 text-gray-900 animate-pulse" />
           <span>
             {t('offlineBannerTitle')}: {t('offlineBannerMessage')}
           </span>

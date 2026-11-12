@@ -26,7 +26,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
             {title}
           </h2>
           {subtitle && (
-            <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-0.5">
               {subtitle}
             </p>
           )}
@@ -37,7 +37,7 @@ export const SectionHeader: React.FC<SectionHeaderProps> = ({
         <button
           type="button"
           onClick={onAction}
-          className="text-xs font-bold text-forest dark:text-emerald-400 hover:text-forest-dark hover:underline flex items-center gap-0.5 cursor-pointer"
+          className="text-xs font-bold text-forest dark:text-emerald-400 hover:text-forest-dark hover:underline flex items-center gap-0.5 cursor-pointer min-h-[44px] px-1"
         >
           <span>{actionText}</span>
         </button>

@@ -323,6 +323,14 @@ const MAX_WEATHER_CACHE_SIZE = 100;
 const weatherMemoryCache = new Map<string, WeatherCacheEntry>();
 const inFlightWeatherRequests = new Map<string, Promise<WeatherData>>();
 
+export function clearWeatherCachesForTest(): void {
+  weatherMemoryCache.clear();
+  reverseGeocodeCache.clear();
+  forwardGeocodeCache.clear();
+  inFlightWeatherRequests.clear();
+  lastNominatimTimestamp = 0;
+}
+
 export async function fetchWeatherData(
   districtName?: string,
   customLat?: number,

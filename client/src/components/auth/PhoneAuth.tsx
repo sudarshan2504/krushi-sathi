@@ -141,7 +141,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
             <h3 className="text-[17px] font-bold text-gray-900 dark:text-gray-100">
               {t('welcomeBack') || 'Welcome Back'}, {successName}!
             </h3>
-            <p className="text-[13px] text-gray-500 dark:text-gray-400 font-medium">
+            <p className="text-[13px] text-gray-600 dark:text-gray-400 font-medium">
               Signing you in...
             </p>
           </motion.div>
@@ -155,7 +155,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
                     <Sparkles className="w-4 h-4" />
                   </span>
                   <div>
-                    <span className="inline-block text-[10px] font-bold uppercase tracking-wider bg-white/20 text-white px-2 py-0.5 rounded-full mb-0.5">
+                    <span className="inline-block text-[11px] font-bold uppercase tracking-wider bg-white/20 text-white px-2 py-0.5 rounded-full mb-0.5">
                       Instant Demo
                     </span>
                     <h3 className="text-[15px] font-bold text-white leading-tight">
@@ -193,7 +193,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-gray-200 dark:border-dark-border" />
               </div>
-              <span className="relative bg-bg dark:bg-dark-bg px-3 text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+              <span className="relative bg-bg dark:bg-dark-bg px-3 text-[11px] font-bold text-gray-600 dark:text-gray-400 uppercase tracking-wider">
                 Or With Phone & OTP
               </span>
             </div>
@@ -205,17 +205,17 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
             >
               {!isOtpSent ? (
                 <div>
-                  <label className="block text-[13px] font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
+                  <label htmlFor="phone-auth-number" className="block text-[13px] font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
                     {t('phoneNumber') || 'Mobile Number'}
                   </label>
 
                   <div className="relative flex items-center">
-                    <div className="absolute left-3.5 flex items-center gap-1 text-[13px] font-bold text-gray-500 dark:text-gray-400 border-r border-gray-200 dark:border-dark-border pr-2">
+                    <div className="absolute left-3.5 flex items-center gap-1 text-[13px] font-bold text-gray-600 dark:text-gray-400 border-r border-gray-200 dark:border-dark-border pr-2">
                       <Phone className="w-3.5 h-3.5 text-brand-600" />
                       <select
                         value={countryCode}
                         onChange={(e) => setCountryCode(e.target.value)}
-                        className="bg-transparent font-bold outline-none cursor-pointer text-gray-800 dark:text-gray-200"
+                        className="bg-transparent font-bold outline-none cursor-pointer text-gray-800 dark:text-gray-200 min-h-[44px]"
                         aria-label="Country Code"
                       >
                         <option value="+91">+91</option>
@@ -225,6 +225,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
                     </div>
 
                     <input
+                      id="phone-auth-number"
                       type="tel"
                       inputMode="tel"
                       autoComplete="tel-national"
@@ -238,7 +239,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
                     />
                   </div>
 
-                  <p className="mt-2 text-[11px] text-gray-400 dark:text-gray-500 font-medium flex items-center gap-1.5">
+                  <p className="mt-2 text-[11px] text-gray-600 dark:text-gray-400 font-medium flex items-center gap-1.5">
                     <ShieldCheck className="w-3.5 h-3.5 text-brand-600 shrink-0" />
                     <span>Demo mode active. Any 10-digit number accepted.</span>
                   </p>
@@ -260,7 +261,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className="text-[11px] text-gray-400 font-medium">Verification code sent to</span>
+                      <span className="text-[11px] text-gray-600 dark:text-gray-400 font-medium">Verification code sent to</span>
                       <p className="text-[13px] font-bold text-gray-900 dark:text-gray-100">
                         {countryCode} {phone}
                       </p>
@@ -268,7 +269,7 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
                     <button
                       type="button"
                       onClick={() => setIsOtpSent(false)}
-                      className="text-xs text-brand-700 dark:text-brand-400 font-bold hover:underline"
+                      className="text-xs text-brand-700 dark:text-brand-400 font-bold hover:underline min-h-[44px] inline-flex items-center px-2"
                     >
                       Change
                     </button>
@@ -282,16 +283,16 @@ export const PhoneAuth: React.FC<PhoneAuthProps> = ({ onSuccessRedirect = '/home
                   />
 
                   <div className="flex items-center justify-between text-xs pt-1">
-                    <span className="text-gray-400">Demo OTP: 123456</span>
+                    <span className="text-gray-600 dark:text-gray-400">Demo OTP: 123456</span>
                     {resendTimer > 0 ? (
-                      <span className="text-gray-400 font-medium tabular">
+                      <span className="text-gray-600 dark:text-gray-400 font-medium tabular">
                         Resend in {resendTimer}s
                       </span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => handleSendOtp()}
-                        className="text-brand-700 dark:text-brand-400 font-bold hover:underline inline-flex items-center gap-1"
+                        className="text-brand-700 dark:text-brand-400 font-bold hover:underline inline-flex items-center gap-1 min-h-[44px] px-2"
                       >
                         <RefreshCw className="w-3 h-3" />
                         <span>Resend code</span>

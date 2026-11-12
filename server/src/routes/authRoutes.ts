@@ -256,12 +256,41 @@ router.post('/register', authRateLimiter, async (req: Request, res: Response) =>
       locationSource,
     } = req.body || {};
 
-    if (!phone || !name) {
-      return res.status(400).json({ success: false, message: 'Name and phone number are required' });
+    if (typeof phone !== 'string' || typeof name !== 'string' || !name.trim() || !phone.trim()) {
+      return res.status(400).json({ success: false, message: 'Valid name and phone number are required' });
+    }
+
+    const VALID_LANGS = ['en', 'kn', 'ta', 'te'];
+    if (language !== undefined && (typeof language !== 'string' || !VALID_LANGS.includes(language))) {
+      return res.status(400).json({ success: false, message: 'Invalid language selection' });
+    }
+
+    let parsedFarmSize = 2.5;
+    if (farmSize !== undefined && farmSize !== null && farmSize !== '') {
+      parsedFarmSize = Number(farmSize);
+      if (!Number.isFinite(parsedFarmSize) || parsedFarmSize <= 0 || parsedFarmSize > 100000) {
+        return res.status(400).json({ success: false, message: 'farmSize must be a positive number' });
+      }
+    }
+
+    let parsedLat: number | undefined;
+    if (latitude !== undefined && latitude !== null && latitude !== '') {
+      parsedLat = Number(latitude);
+      if (!Number.isFinite(parsedLat) || parsedLat < -90 || parsedLat > 90) {
+        return res.status(400).json({ success: false, message: 'latitude must be between -90 and 90' });
+      }
+    }
+
+    let parsedLon: number | undefined;
+    if (longitude !== undefined && longitude !== null && longitude !== '') {
+      parsedLon = Number(longitude);
+      if (!Number.isFinite(parsedLon) || parsedLon < -180 || parsedLon > 180) {
+        return res.status(400).json({ success: false, message: 'longitude must be between -180 and 180' });
+      }
     }
 
     const result = await registerFarmer({
-      name,
+      name: name.trim(),
       phone,
       otp,
       verificationToken,
@@ -271,10 +300,10 @@ router.post('/register', authRateLimiter, async (req: Request, res: Response) =>
       district: district || 'Mandya',
       village,
       taluk,
-      farmSize: farmSize ? parseFloat(farmSize) : 2.5,
+      farmSize: parsedFarmSize,
       farmUnit: farmUnit || 'Acres',
-      latitude: latitude !== undefined && latitude !== null ? parseFloat(latitude) : undefined,
-      longitude: longitude !== undefined && longitude !== null ? parseFloat(longitude) : undefined,
+      latitude: parsedLat,
+      longitude: parsedLon,
       locationAccuracy: locationAccuracy !== undefined && locationAccuracy !== null ? parseFloat(locationAccuracy) : undefined,
       locationSource,
     });
@@ -329,25 +358,61 @@ router.patch('/profile', authMiddleware, async (req: AuthRequest, res: Response)
       longitude,
       locationAccuracy,
       locationSource,
-    } = req.body;
+    } = req.body || {};
 
-    const latVal = latitude !== undefined ? parseFloat(latitude) : undefined;
-    const lonVal = longitude !== undefined ? parseFloat(longitude) : undefined;
+    const VALID_LANGS = ['en', 'kn', 'ta', 'te'];
+
+    if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
+      return res.status(400).json({ success: false, message: 'Name must be a non-empty string' });
+    }
+    if (language !== undefined && (typeof language !== 'string' || !VALID_LANGS.includes(language.trim()))) {
+      return res.status(400).json({ success: false, message: 'Invalid language selection. Allowed: en, kn, ta, te' });
+    }
+
+    let parsedFarmSize: number | undefined;
+    if (farmSize !== undefined && farmSize !== null && farmSize !== '') {
+      parsedFarmSize = Number(farmSize);
+      if (!Number.isFinite(parsedFarmSize) || parsedFarmSize <= 0 || parsedFarmSize > 100000) {
+        return res.status(400).json({ success: false, message: 'farmSize must be a positive number' });
+      }
+    }
+
+    let latVal: number | undefined;
+    if (latitude !== undefined && latitude !== null && latitude !== '') {
+      latVal = Number(latitude);
+      if (!Number.isFinite(latVal) || latVal < -90 || latVal > 90) {
+        return res.status(400).json({ success: false, message: 'latitude must be between -90 and 90' });
+      }
+    }
+
+    let lonVal: number | undefined;
+    if (longitude !== undefined && longitude !== null && longitude !== '') {
+      lonVal = Number(longitude);
+      if (!Number.isFinite(lonVal) || lonVal < -180 || lonVal > 180) {
+        return res.status(400).json({ success: false, message: 'longitude must be between -180 and 180' });
+      }
+    }
+
+    for (const [key, val] of Object.entries({ village, district, state, taluk, farmUnit })) {
+      if (val !== undefined && val !== null && typeof val !== 'string') {
+        return res.status(400).json({ success: false, message: `${key} must be a string` });
+      }
+    }
 
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: {
-        name: name !== undefined ? String(name).trim() : undefined,
-        village: village !== undefined ? String(village).trim() : undefined,
-        district: district !== undefined ? String(district).trim() : undefined,
-        state: state !== undefined ? String(state).trim() : undefined,
-        taluk: taluk !== undefined ? String(taluk).trim() : undefined,
-        farmSize: farmSize !== undefined ? parseFloat(farmSize) || null : undefined,
-        farmUnit: farmUnit !== undefined ? String(farmUnit).trim() : undefined,
-        language: language !== undefined ? String(language).trim() : undefined,
-        latitude: latVal !== undefined && !isNaN(latVal) && latVal >= -90 && latVal <= 90 ? latVal : undefined,
-        longitude: lonVal !== undefined && !isNaN(lonVal) && lonVal >= -180 && lonVal <= 180 ? lonVal : undefined,
-        locationAccuracy: locationAccuracy !== undefined ? parseFloat(locationAccuracy) || null : undefined,
+        name: name !== undefined ? name.trim() : undefined,
+        village: village !== undefined && village !== null ? village.trim() : village === null ? null : undefined,
+        district: district !== undefined && district !== null ? district.trim() : undefined,
+        state: state !== undefined && state !== null ? state.trim() : undefined,
+        taluk: taluk !== undefined && taluk !== null ? taluk.trim() : taluk === null ? null : undefined,
+        farmSize: parsedFarmSize,
+        farmUnit: farmUnit !== undefined && farmUnit !== null ? farmUnit.trim() : undefined,
+        language: language !== undefined ? language.trim() : undefined,
+        latitude: latVal,
+        longitude: lonVal,
+        locationAccuracy: locationAccuracy !== undefined && locationAccuracy !== null ? parseFloat(locationAccuracy) || null : undefined,
         locationSource: locationSource !== undefined ? String(locationSource) : undefined,
       },
     });

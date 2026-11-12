@@ -125,7 +125,7 @@ export const LoginPage: React.FC = () => {
           <span>{t('welcomeBack')}</span>
           <Sprout className="w-5 h-5 text-[#228B22] dark:text-emerald-400 rotate-12 inline-block shrink-0 -mt-1" />
         </h1>
-        <p className="text-xs sm:text-[13px] text-zinc-500 dark:text-zinc-400 font-medium mt-1">
+        <p className="text-xs sm:text-[13px] text-zinc-600 dark:text-zinc-400 font-medium mt-1">
           {t('loginToAccount')}
         </p>
       </div>
@@ -147,7 +147,7 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {/* INSTANT DEMO Badge with Zap Icon */}
-          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#84CC16] text-[#0A2E16] text-[10px] font-extrabold uppercase tracking-wider mb-2.5 shadow-xs">
+          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#84CC16] text-[#0A2E16] text-[11px] font-extrabold uppercase tracking-wider mb-2.5 shadow-xs">
             <Zap className="w-3 h-3 fill-current shrink-0" />
             <span>{t('instantDemoBadge')}</span>
           </div>
@@ -177,7 +177,7 @@ export const LoginPage: React.FC = () => {
             type="button"
             onClick={handleInstantDemoLogin}
             disabled={isLoadingDemo}
-            className="w-full py-3 px-4 rounded-full bg-white hover:bg-zinc-50 active:scale-98 text-[#0D2B18] font-bold text-xs sm:text-sm flex items-center justify-between shadow-md transition cursor-pointer select-none"
+            className="w-full min-h-[44px] py-3 px-4 rounded-full bg-white hover:bg-zinc-50 active:scale-98 text-[#0D2B18] font-bold text-xs sm:text-sm flex items-center justify-between shadow-md transition cursor-pointer select-none"
           >
             <div className="flex items-center gap-2">
               <div className="w-6 h-6 rounded-full bg-emerald-100 text-[#144D29] flex items-center justify-center">
@@ -197,7 +197,7 @@ export const LoginPage: React.FC = () => {
       {/* 5. Divider: "OR WITH PHONE & OTP" */}
       <div className="px-7 my-3 relative z-10 flex items-center gap-3 max-w-sm mx-auto w-full">
         <div className="flex-1 h-px bg-zinc-300 dark:bg-zinc-700" />
-        <span className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest">
+        <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-400 uppercase tracking-widest">
           {t('orWithPhoneOtp')}
         </span>
         <div className="flex-1 h-px bg-zinc-300 dark:bg-zinc-700" />
@@ -219,7 +219,7 @@ export const LoginPage: React.FC = () => {
           {!isOtpSent ? (
             /* Step A: Phone Number Input Pill */
             <form onSubmit={handleSendOtp} className="space-y-3">
-              <div className="flex items-center rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-3 py-2.5 focus-within:ring-2 focus-within:ring-forest transition">
+              <div className="flex items-center rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-3 py-0.5 min-h-[48px] focus-within:ring-2 focus-within:ring-forest transition">
                 {/* Indian Flag & Dial Code */}
                 <div className="flex items-center gap-1 pr-2.5 border-r border-zinc-200 dark:border-zinc-700 select-none">
                   <span className="text-base" role="img" aria-label="India flag">
@@ -238,12 +238,13 @@ export const LoginPage: React.FC = () => {
                   value={phone}
                   onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
                   placeholder={t('phonePlaceholder')}
-                  className="w-full bg-transparent pl-3 text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
+                  aria-label={t('phoneNumber')}
+                  className="w-full min-h-[44px] bg-transparent pl-3 text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none"
                 />
               </div>
 
               {/* Demo Mode Subtext */}
-              <div className="flex items-center gap-1.5 text-[11px] text-zinc-500 dark:text-zinc-400">
+              <div className="flex items-center gap-1.5 text-[11px] text-zinc-600 dark:text-zinc-400">
                 <ShieldCheck className="w-3.5 h-3.5 text-[#228B22] shrink-0" />
                 <span>{t('demoModeActiveNotice')}</span>
               </div>
@@ -271,7 +272,7 @@ export const LoginPage: React.FC = () => {
             /* Step B: 6-Digit OTP Verification Form */
             <form onSubmit={handleVerifyOtp} className="space-y-3">
               <div className="text-center pb-1">
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-zinc-600 dark:text-zinc-400">
                   Code sent to <span className="font-bold text-zinc-800 dark:text-zinc-200">+91 {phone}</span>
                 </p>
               </div>
@@ -280,11 +281,11 @@ export const LoginPage: React.FC = () => {
                 <OTPInput value={otp} onChange={setOtp} autoFocus />
               </div>
 
-              <div className="flex items-center justify-between text-xs text-zinc-500 pt-1">
+              <div className="flex items-center justify-between text-xs text-zinc-600 dark:text-zinc-400 pt-1">
                 <button
                   type="button"
                   onClick={() => setIsOtpSent(false)}
-                  className="text-forest hover:underline font-semibold cursor-pointer"
+                  className="text-forest hover:underline font-semibold cursor-pointer min-h-[44px] inline-flex items-center px-1"
                 >
                   Change Number
                 </button>
@@ -294,7 +295,7 @@ export const LoginPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleSendOtp()}
-                    className="text-forest font-bold hover:underline cursor-pointer"
+                    className="text-forest font-bold hover:underline cursor-pointer min-h-[44px] inline-flex items-center px-1"
                   >
                     Resend Code
                   </button>
@@ -329,7 +330,7 @@ export const LoginPage: React.FC = () => {
         <span>{t('dontHaveAccount')}</span>
         <Link
           to="/register"
-          className="text-[#144D29] dark:text-emerald-400 font-bold hover:underline"
+          className="text-[#144D29] dark:text-emerald-400 font-bold hover:underline min-h-[44px] inline-flex items-center px-1"
         >
           {t('signUp')}
         </Link>

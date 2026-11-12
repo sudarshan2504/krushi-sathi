@@ -397,7 +397,8 @@ export const ChatPage: React.FC = () => {
             type="button"
             onClick={() => setShowSettings(true)}
             title="Configure Gemini AI Model"
-            className="p-2 rounded-full bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm border border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-300 hover:text-brand-600 shadow-sm transition"
+            aria-label="Configure Gemini AI Model"
+            className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-full bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm border border-gray-200 dark:border-dark-border text-gray-700 dark:text-gray-200 hover:text-brand-600 shadow-sm transition cursor-pointer"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -406,7 +407,8 @@ export const ChatPage: React.FC = () => {
               type="button"
               onClick={handleClearChat}
               title="Clear Conversation"
-              className="p-2 rounded-full bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm border border-gray-200 dark:border-dark-border text-gray-600 dark:text-gray-300 hover:text-red-600 shadow-sm transition"
+              aria-label="Clear Conversation"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-full bg-white/90 dark:bg-dark-surface/90 backdrop-blur-sm border border-gray-200 dark:border-dark-border text-gray-700 dark:text-gray-200 hover:text-red-600 shadow-sm transition cursor-pointer"
             >
               <Trash2 className="w-4 h-4" />
             </button>
@@ -564,7 +566,7 @@ export const ChatPage: React.FC = () => {
                 key={idx}
                 type="button"
                 onClick={() => handleSendText(card.query)}
-                className="shrink-0 px-3 py-1.5 rounded-full bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-brand-500 hover:text-brand-700 dark:hover:text-brand-400 transition shadow-xs flex items-center gap-1.5"
+                className="min-h-[44px] shrink-0 px-3 py-1.5 rounded-full bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-xs font-semibold text-gray-700 dark:text-gray-300 hover:border-brand-500 hover:text-brand-700 dark:hover:text-brand-400 transition shadow-xs flex items-center gap-1.5 cursor-pointer"
               >
                 {getCardIcon(card.type)}
                 <span>{card.text.replace('\n', ' ')}</span>
@@ -582,7 +584,7 @@ export const ChatPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => handleSendText(failedMessage)}
-                className="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs min-h-[36px]"
+                className="bg-red-600 hover:bg-red-700 text-white font-bold px-3 py-1.5 rounded-xl text-xs min-h-[44px] cursor-pointer"
               >
                 Retry
               </button>
@@ -603,6 +605,7 @@ export const ChatPage: React.FC = () => {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask any farming question..."
+                aria-label="Ask any farming question"
                 autoComplete="off"
                 className="flex-1 px-4 py-2.5 rounded-2xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 focus:border-brand-600 outline-none text-sm font-semibold shadow-inner min-h-[44px]"
               />
@@ -652,7 +655,8 @@ export const ChatPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowSettings(false)}
-                className="p-1 rounded-full text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-dark-elevated"
+                aria-label="Close settings"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1 rounded-full text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 dark:hover:bg-dark-elevated cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -660,30 +664,32 @@ export const ChatPage: React.FC = () => {
 
             <form onSubmit={handleSaveKeys} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-bold text-gray-900 dark:text-gray-100 mb-1">
+                <label htmlFor="chat-gemini-model" className="block font-bold text-gray-900 dark:text-gray-100 mb-1">
                   Google Gemini Model
                 </label>
                 <input
+                  id="chat-gemini-model"
                   type="text"
                   value={geminiModel}
                   onChange={(e) => setGeminiModel(e.target.value)}
                   placeholder="gemini-3.5-flash"
-                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 focus:border-brand-600 outline-none font-mono text-xs"
+                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 focus:border-brand-600 outline-none font-mono text-xs"
                 />
               </div>
 
               <div>
-                <label className="block font-bold text-gray-900 dark:text-gray-100 mb-1">
+                <label htmlFor="chat-gemini-key" className="block font-bold text-gray-900 dark:text-gray-100 mb-1">
                   Google Gemini API Key
                 </label>
                 <input
+                  id="chat-gemini-key"
                   type="password"
                   value={geminiKey}
                   onChange={(e) => setGeminiKey(e.target.value)}
                   placeholder="AIzaSy..."
-                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 focus:border-brand-600 outline-none font-mono text-xs"
+                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 focus:border-brand-600 outline-none font-mono text-xs"
                 />
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-[11px] text-gray-600 dark:text-gray-300 mt-0.5">
                   {aiStatus?.hasGeminiKey
                     ? 'Gemini API key is currently saved on server.'
                     : 'Get your key at aistudio.google.com/apikey.'}
@@ -691,33 +697,34 @@ export const ChatPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block font-bold text-gray-900 dark:text-gray-100 mb-1">
+                <label htmlFor="chat-tts-engine" className="block font-bold text-gray-900 dark:text-gray-100 mb-1">
                   Text-to-Speech (TTS) Voice Engine
                 </label>
                 <select
+                  id="chat-tts-engine"
                   value={providerChoice}
                   onChange={(e) => setProviderChoice(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 focus:border-brand-600 outline-none text-xs"
+                  className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-white dark:bg-dark-surface border border-gray-200 dark:border-dark-border text-gray-900 dark:text-gray-100 focus:border-brand-600 outline-none text-xs"
                 >
                   <option value="auto">Auto (Best Quality: Gemini TTS → Regional Neural)</option>
                   <option value="edge-neural">Regional Neural Voice (Karnataka / Tamil / Telugu)</option>
                   <option value="gemini-tts">Google Gemini 3.8 Flash TTS</option>
                   <option value="browser">Device Browser Voice (Offline Fallback)</option>
                 </select>
-                <p className="text-[10px] text-gray-500 dark:text-gray-400 mt-0.5">
+                <p className="text-[11px] text-gray-600 dark:text-gray-300 mt-0.5">
                   Regional Neural provides fluent, authentic South Indian pronunciation with zero daily rate limits.
                 </p>
               </div>
 
               <div>
-                <label className="block font-bold text-gray-900 dark:text-gray-100 mb-1">
+                <span className="block font-bold text-gray-900 dark:text-gray-100 mb-1">
                   Assistant Voice Gender
-                </label>
+                </span>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => setVoiceGender('female')}
-                    className={`flex-1 py-2 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition ${
+                    className={`flex-1 min-h-[44px] py-2 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
                       voiceGender === 'female'
                         ? 'bg-brand-600 text-white border-brand-600'
                         : 'bg-white dark:bg-dark-surface text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'
@@ -728,7 +735,7 @@ export const ChatPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setVoiceGender('male')}
-                    className={`flex-1 py-2 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition ${
+                    className={`flex-1 min-h-[44px] py-2 rounded-xl border font-bold flex items-center justify-center gap-1.5 transition cursor-pointer ${
                       voiceGender === 'male'
                         ? 'bg-brand-600 text-white border-brand-600'
                         : 'bg-white dark:bg-dark-surface text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border'
@@ -750,13 +757,13 @@ export const ChatPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setShowSettings(false)}
-                  className="flex-1 py-2.5 rounded-xl border border-gray-200 dark:border-dark-border font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-elevated transition"
+                  className="flex-1 min-h-[44px] py-2.5 rounded-xl border border-gray-200 dark:border-dark-border font-bold text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-dark-elevated transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition shadow-sm"
+                  className="flex-1 min-h-[44px] py-2.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white font-bold transition shadow-sm cursor-pointer"
                 >
                   Save
                 </button>

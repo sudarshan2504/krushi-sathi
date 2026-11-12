@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, MapPin, Navigation, Loader2, Check, AlertCircle } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
@@ -148,9 +149,9 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
   if (!isOpen) return null;
 
-  return (
+  const modalContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-xs">
+      <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-xs">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -167,7 +168,7 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
                 <h3 className="font-extrabold text-base text-gray-900">
                   {t('editLocationTitle') || 'Change Farm Location'}
                 </h3>
-                <p className="text-xs text-gray-500 font-medium">
+                <p className="text-xs text-gray-600 font-medium">
                   {t('locationWhyNeeded')}
                 </p>
               </div>
@@ -214,10 +215,11 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
           <form onSubmit={handleSave} className="space-y-3 pt-1">
             {/* State Select */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
+              <label htmlFor="location-edit-state" className="block text-xs font-bold text-gray-800 mb-1">
                 {t('state')} *
               </label>
               <select
+                id="location-edit-state"
                 value={state}
                 onChange={(e) => {
                   const newSt = e.target.value;
@@ -242,10 +244,11 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
             {/* District Select */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
+              <label htmlFor="location-edit-district" className="block text-xs font-bold text-gray-800 mb-1">
                 {t('district')} *
               </label>
               <select
+                id="location-edit-district"
                 required
                 value={district}
                 onChange={(e) => {
@@ -267,10 +270,11 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
             {/* Village (Optional) */}
             <div>
-              <label className="block text-xs font-bold text-gray-800 mb-1">
+              <label htmlFor="location-edit-village" className="block text-xs font-bold text-gray-800 mb-1">
                 {t('village')} (Optional)
               </label>
               <input
+                id="location-edit-village"
                 type="text"
                 value={village}
                 onChange={(e) => setVillage(e.target.value)}
@@ -308,4 +312,9 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
       </div>
     </AnimatePresence>
   );
+
+  if (typeof document !== 'undefined') {
+    return createPortal(modalContent, document.body);
+  }
+  return modalContent;
 };

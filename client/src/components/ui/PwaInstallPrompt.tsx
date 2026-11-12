@@ -122,7 +122,7 @@ export const PwaInstallPrompt: React.FC = () => {
             </div>
             <button
               onClick={handleUpdate}
-              className="bg-harvest hover:bg-harvest-dark text-dark-text font-bold text-xs px-3.5 py-2 rounded-xl shrink-0 min-h-[44px] transition-all"
+              className="bg-harvest hover:bg-harvest-dark text-[#0D2B18] font-bold text-xs px-3.5 py-2 rounded-xl shrink-0 min-h-[44px] transition-all"
             >
               Update
             </button>
@@ -149,7 +149,7 @@ export const PwaInstallPrompt: React.FC = () => {
                 <p className="text-xs sm:text-sm font-extrabold text-[#18352B] truncate">
                   Install Krushi Sathi
                 </p>
-                <p className="text-[11px] text-dark-muted truncate">
+                <p className="text-[11px] text-gray-600 dark:text-gray-400 truncate">
                   Works offline • Instant phone access
                 </p>
               </div>
@@ -165,7 +165,7 @@ export const PwaInstallPrompt: React.FC = () => {
               </button>
               <button
                 onClick={handleDismiss}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-dark-muted hover:text-dark-text hover:bg-gray-100 min-h-[44px] min-w-[44px]"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 min-h-[44px] min-w-[44px]"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />
@@ -194,7 +194,7 @@ export const PwaInstallPrompt: React.FC = () => {
                 <p className="text-xs sm:text-sm font-extrabold text-[#18352B] truncate">
                   Install on iPhone
                 </p>
-                <p className="text-[11px] text-dark-muted truncate">
+                <p className="text-[11px] text-gray-600 dark:text-gray-400 truncate">
                   Add to home screen for full app experience
                 </p>
               </div>
@@ -209,7 +209,7 @@ export const PwaInstallPrompt: React.FC = () => {
               </button>
               <button
                 onClick={handleDismiss}
-                className="w-9 h-9 rounded-full flex items-center justify-center text-dark-muted hover:text-dark-text hover:bg-gray-100 min-h-[44px] min-w-[44px]"
+                className="w-9 h-9 rounded-full flex items-center justify-center text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-100 min-h-[44px] min-w-[44px]"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />
@@ -241,14 +241,14 @@ export const PwaInstallPrompt: React.FC = () => {
                 </button>
               </div>
 
-              <div className="space-y-3 text-xs text-dark-text">
+              <div className="space-y-3 text-xs text-gray-900 dark:text-gray-100">
                 <div className="flex items-start gap-3 p-2.5 rounded-2xl bg-cream-light border border-forest/10">
                   <span className="w-6 h-6 rounded-full bg-forest text-white font-bold text-xs flex items-center justify-center shrink-0">
                     1
                   </span>
                   <div>
                     <p className="font-bold">Tap the Share button</p>
-                    <p className="text-dark-muted text-[11px] mt-0.5 flex items-center gap-1">
+                    <p className="text-gray-600 dark:text-gray-400 text-[11px] mt-0.5 flex items-center gap-1">
                       Located at the bottom of your Safari toolbar (<Share className="w-3.5 h-3.5 inline text-blue-500" />)
                     </p>
                   </div>
@@ -260,7 +260,7 @@ export const PwaInstallPrompt: React.FC = () => {
                   </span>
                   <div>
                     <p className="font-bold">Scroll down and tap &ldquo;Add to Home Screen&rdquo;</p>
-                    <p className="text-dark-muted text-[11px] mt-0.5">
+                    <p className="text-gray-600 dark:text-gray-400 text-[11px] mt-0.5">
                       Looks like a square with a plus icon (+).
                     </p>
                   </div>
@@ -272,7 +272,7 @@ export const PwaInstallPrompt: React.FC = () => {
                   </span>
                   <div>
                     <p className="font-bold">Tap &ldquo;Add&rdquo; in the top-right corner</p>
-                    <p className="text-dark-muted text-[11px] mt-0.5">
+                    <p className="text-gray-600 dark:text-gray-400 text-[11px] mt-0.5">
                       Krushi Sathi will appear as an app on your home screen!
                     </p>
                   </div>

@@ -60,7 +60,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                     ? 'bg-white text-forest border-mint-dark shadow-forest/10'
                     : isError
                     ? 'bg-white text-red-700 border-red-200 shadow-red-900/10'
-                    : 'bg-white text-dark-text border-gray-200 shadow-gray-900/10'
+                    : 'bg-white text-gray-900 dark:text-gray-100 border-gray-200 shadow-gray-900/10'
                 }`}
               >
                 <div className="flex items-center gap-2.5 min-w-0">
@@ -74,7 +74,7 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                   type="button"
                   onClick={() => dismissToast(toast.id)}
                   aria-label="Close notification"
-                  className="p-1 rounded-full text-dark-muted hover:text-dark-text transition hover:bg-gray-100 min-w-[32px] min-h-[32px] flex items-center justify-center"
+                  className="p-1 rounded-full text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition hover:bg-gray-100 min-w-[44px] min-h-[44px] flex items-center justify-center"
                 >
                   <X className="w-4 h-4" />
                 </button>

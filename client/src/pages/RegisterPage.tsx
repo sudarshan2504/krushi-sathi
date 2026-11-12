@@ -428,7 +428,7 @@ export const RegisterPage: React.FC = () => {
           />
         </Link>
         <h1 className="text-2xl font-extrabold text-[#0D2B18] dark:text-cream">{t('createAccount')}</h1>
-        <p className="text-xs text-zinc-500 dark:text-zinc-400 font-medium">
+        <p className="text-xs text-zinc-600 dark:text-zinc-400 font-medium">
           {t('joinKrishiSathi')} — No password or Gmail needed
         </p>
       </motion.div>
@@ -461,10 +461,10 @@ export const RegisterPage: React.FC = () => {
                 <Navigation className="w-4 h-4" />
               </span>
               <div>
-                <h3 className="text-xs font-bold text-dark-text leading-tight">
+                <h3 className="text-xs font-bold text-gray-900 dark:text-gray-100 leading-tight">
                   {t('location')}
                 </h3>
-                <p className="text-[11px] text-dark-muted leading-snug mt-0.5">
+                <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-snug mt-0.5">
                   {t('locationWhyNeeded')}
                 </p>
               </div>
@@ -475,7 +475,7 @@ export const RegisterPage: React.FC = () => {
               type="button"
               onClick={detectLocation}
               disabled={isDetecting}
-              className="shrink-0 px-3 py-1.5 rounded-xl bg-forest/10 hover:bg-forest hover:text-white text-forest text-xs font-bold transition-all flex items-center gap-1.5 min-h-[36px] active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="shrink-0 px-3 py-1.5 rounded-xl bg-forest/10 hover:bg-forest hover:text-white text-forest text-xs font-bold transition-all flex items-center gap-1.5 min-h-[44px] active:scale-95 disabled:opacity-50 cursor-pointer"
               title={t('detectMyLocation')}
             >
               {isDetecting ? (
@@ -512,14 +512,14 @@ export const RegisterPage: React.FC = () => {
                 <div className="flex items-center gap-2 min-w-0">
                   <CheckCircle2 className="w-4 h-4 text-forest shrink-0" />
                   <div className="truncate">
-                    <span className="font-semibold text-dark-text">
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">
                       {t('locationDetectedChip', { location: detectedChip })}
                     </span>
                     <span
-                      className={`ml-2 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block ${
+                      className={`ml-2 text-[11px] font-bold px-2 py-0.5 rounded-full inline-block ${
                         locationStatus === 'gps_success'
                           ? 'bg-forest/15 text-forest'
-                          : 'bg-harvest/30 text-dark-text'
+                          : 'bg-harvest/30 text-gray-900 dark:text-gray-100'
                       }`}
                     >
                       {locationStatus === 'gps_success'
@@ -532,7 +532,7 @@ export const RegisterPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => stateSelectRef.current?.focus()}
-                  className="text-xs font-bold text-forest underline shrink-0 hover:text-forest-dark"
+                  className="text-xs font-bold text-forest underline shrink-0 hover:text-forest-dark min-h-[44px] inline-flex items-center px-2"
                 >
                   {t('locationEditBtn')}
                 </button>
@@ -549,7 +549,7 @@ export const RegisterPage: React.FC = () => {
           )}
 
           {/* Privacy Note */}
-          <div className="flex items-center gap-1.5 pt-1 text-[10px] text-dark-muted">
+          <div className="flex items-center gap-1.5 pt-1 text-[11px] text-gray-600 dark:text-gray-400">
             <Shield className="w-3.5 h-3.5 text-forest shrink-0" />
             <span>{t('locationPrivacyNote')}</span>
           </div>
@@ -566,11 +566,11 @@ export const RegisterPage: React.FC = () => {
             >
               <div className="flex items-center gap-2">
                 <Sparkles className="w-4 h-4 text-forest" />
-                <h4 className="text-xs font-bold text-dark-text">
+                <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100">
                   {t('languageSuggestionTitle')}
                 </h4>
               </div>
-              <p className="text-xs text-dark-text">
+              <p className="text-xs text-gray-900 dark:text-gray-100">
                 {t('languageSuggestionPrompt', {
                   state: languageSuggestion.stateName,
                   langName: languageSuggestion.langName,
@@ -580,14 +580,14 @@ export const RegisterPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={acceptLanguageSuggestion}
-                  className="px-3 py-1.5 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark shadow-xs min-h-[36px]"
+                  className="px-3 py-1.5 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark shadow-xs min-h-[44px]"
                 >
                   {t('languageSuggestionSwitch', { langName: languageSuggestion.langName })}
                 </button>
                 <button
                   type="button"
                   onClick={() => setLanguageSuggestion(null)}
-                  className="px-3 py-1.5 rounded-xl bg-gray-100 text-dark-muted text-xs font-bold hover:bg-gray-200 min-h-[36px]"
+                  className="px-3 py-1.5 rounded-xl bg-gray-100 text-gray-700 dark:text-gray-300 text-xs font-bold hover:bg-gray-200 min-h-[44px]"
                 >
                   {t('languageSuggestionKeep', {
                     currentLang: languages.find((l) => l.code === formData.language)?.nativeLabel || 'English',
@@ -600,12 +600,13 @@ export const RegisterPage: React.FC = () => {
 
         {/* Full Name */}
         <div>
-          <label className="block text-sm font-bold text-dark-text mb-1">
+          <label htmlFor="reg-full-name" className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">
             {t('fullName')} *
           </label>
           <div className="relative flex items-center">
             <User className="absolute left-3.5 w-4 h-4 text-forest" />
             <input
+              id="reg-full-name"
               type="text"
               required
               autoComplete="name"
@@ -620,7 +621,7 @@ export const RegisterPage: React.FC = () => {
         {/* Mobile Number & OTP Verification */}
         <div>
           <div className="flex items-center justify-between mb-1">
-            <label className="block text-sm font-bold text-dark-text">
+            <label htmlFor="reg-phone" className="block text-sm font-bold text-gray-900 dark:text-gray-100">
               {t('phoneNumber')} *
             </label>
             {verificationToken && verifiedPhone === formData.phone.trim().replace(/\D/g, '') && (
@@ -631,11 +632,12 @@ export const RegisterPage: React.FC = () => {
             )}
           </div>
           <div className="relative flex items-center">
-            <div className="absolute left-3 flex items-center gap-1 text-sm font-bold text-dark-muted border-r border-gray-200 pr-2">
+            <div className="absolute left-3 flex items-center gap-1 text-sm font-bold text-gray-600 dark:text-gray-400 border-r border-gray-200 pr-2">
               <Phone className="w-3.5 h-3.5 text-forest" />
               <span>+91</span>
             </div>
             <input
+              id="reg-phone"
               type="tel"
               inputMode="tel"
               autoComplete="tel-national"
@@ -689,7 +691,7 @@ export const RegisterPage: React.FC = () => {
                       {isVerifyingOtp ? t('loadingData') : t('verifyAndLogin')}
                     </button>
                     {resendTimer > 0 ? (
-                      <span className="text-xs text-dark-muted font-medium px-2">
+                      <span className="text-xs text-gray-600 dark:text-gray-400 font-medium px-2">
                         {resendTimer}s
                       </span>
                     ) : (
@@ -717,12 +719,13 @@ export const RegisterPage: React.FC = () => {
 
         {/* Preferred Language */}
         <div>
-          <label className="block text-sm font-bold text-dark-text mb-1">
+          <label htmlFor="reg-language" className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">
             {t('chooseLanguage')}
           </label>
           <div className="relative flex items-center">
             <Globe className="absolute left-3.5 w-4 h-4 text-forest pointer-events-none" />
             <select
+              id="reg-language"
               value={formData.language}
               onChange={(e) =>
                 setFormData({ ...formData, language: e.target.value as LanguageCode })
@@ -735,7 +738,7 @@ export const RegisterPage: React.FC = () => {
                 </option>
               ))}
             </select>
-            <ChevronDown className="absolute right-3.5 w-4 h-4 text-dark-muted pointer-events-none" />
+            <ChevronDown className="absolute right-3.5 w-4 h-4 text-gray-600 dark:text-gray-400 pointer-events-none" />
           </div>
         </div>
 
@@ -743,11 +746,12 @@ export const RegisterPage: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           {/* State Dropdown */}
           <div>
-            <label className="block text-sm font-bold text-dark-text mb-1">
+            <label htmlFor="reg-state" className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">
               {t('state')} *
             </label>
             <div className="relative flex items-center">
               <select
+                id="reg-state"
                 ref={stateSelectRef}
                 required
                 value={formData.state}
@@ -760,17 +764,18 @@ export const RegisterPage: React.FC = () => {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-3 w-4 h-4 text-dark-muted pointer-events-none" />
+              <ChevronDown className="absolute right-3 w-4 h-4 text-gray-600 dark:text-gray-400 pointer-events-none" />
             </div>
           </div>
 
           {/* District Dropdown (depends on selected State) */}
           <div>
-            <label className="block text-sm font-bold text-dark-text mb-1">
+            <label htmlFor="reg-district" className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">
               {t('district')} *
             </label>
             <div className="relative flex items-center">
               <select
+                id="reg-district"
                 required
                 value={formData.district}
                 onChange={(e) => {
@@ -790,14 +795,14 @@ export const RegisterPage: React.FC = () => {
                   </option>
                 ))}
               </select>
-              <ChevronDown className="absolute right-3 w-4 h-4 text-dark-muted pointer-events-none" />
+              <ChevronDown className="absolute right-3 w-4 h-4 text-gray-600 dark:text-gray-400 pointer-events-none" />
             </div>
           </div>
         </div>
 
         {/* District Warning if name didn't match cleanly */}
         {districtWarning && (
-          <p className="text-xs text-amber-700 font-medium px-1 flex items-center gap-1">
+          <p className="text-xs text-amber-800 font-medium px-1 flex items-center gap-1">
             <Info className="w-3.5 h-3.5 shrink-0" />
             <span>{districtWarning}</span>
           </p>
@@ -805,12 +810,13 @@ export const RegisterPage: React.FC = () => {
 
         {/* Village / Town (Optional) */}
         <div>
-          <label className="block text-sm font-bold text-dark-text mb-1">
-            {t('village')} <span className="text-dark-muted font-normal">(Optional)</span>
+          <label htmlFor="reg-village" className="block text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">
+            {t('village')} <span className="text-gray-600 dark:text-gray-400 font-normal">(Optional)</span>
           </label>
           <div className="relative flex items-center">
             <MapPin className="absolute left-3 w-4 h-4 text-forest" />
             <input
+              id="reg-village"
               type="text"
               value={formData.village}
               onChange={(e) => setFormData({ ...formData, village: e.target.value })}
@@ -834,7 +840,7 @@ export const RegisterPage: React.FC = () => {
 
       {/* Footer Navigation to Login */}
       <div className="text-center pb-4 text-sm">
-        <span className="text-dark-muted">{t('alreadyHaveAccount')} </span>
+        <span className="text-gray-600 dark:text-gray-400">{t('alreadyHaveAccount')} </span>
         <Link
           to="/login"
           className="text-forest font-bold underline ml-1 min-h-[48px] inline-flex items-center px-1"

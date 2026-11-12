@@ -119,13 +119,13 @@ export const NpkSelector: React.FC<NpkSelectorProps> = ({
     <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-xs font-bold text-dark-text flex items-center gap-1.5">
+          <h3 className="text-xs font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
             <span>{language === 'kn' ? 'N-P-K ಮಣ್ಣಿನ ಫಲವತ್ತತೆ ಮಟ್ಟ' : 'N-P-K Soil Fertility Levels'}</span>
-            <span className="text-[10px] text-dark-muted font-normal">
+            <span className="text-[11px] text-gray-600 dark:text-gray-400 font-normal">
               ({language === 'kn' ? 'ಐಚ್ಛಿಕ' : 'Optional'})
             </span>
           </h3>
-          <p className="text-[11px] text-dark-muted">
+          <p className="text-[11px] text-gray-600 dark:text-gray-400">
             {language === 'kn'
               ? 'ಮಣ್ಣು ಆರೋಗ್ಯ ಕಾರ್ಡ್ (Soil Health Card) ಪ್ರಕಾರ ಸರಳ ಆಯ್ಕೆ'
               : 'Choose simple rating from your Soil Health Card'}
@@ -135,7 +135,7 @@ export const NpkSelector: React.FC<NpkSelectorProps> = ({
         <button
           type="button"
           onClick={() => setShowExactValues(!showExactValues)}
-          className="text-xs text-forest hover:text-forest-dark font-bold underline flex items-center gap-1"
+          className="min-h-[44px] px-2 text-xs text-forest hover:text-forest-dark font-bold underline flex items-center gap-1"
         >
           <FileText className="w-3.5 h-3.5" />
           <span>{showExactValues ? 'Simple Mode' : 'Exact kg/ha'}</span>
@@ -147,8 +147,8 @@ export const NpkSelector: React.FC<NpkSelectorProps> = ({
           <div key={nutrient.key} className="p-3 rounded-xl bg-gray-50/70 border border-gray-100">
             <div className="flex items-start justify-between mb-2">
               <div>
-                <span className="text-xs font-bold text-dark-text">{nutrient.title}</span>
-                <p className="text-[10px] text-dark-muted">{nutrient.desc}</p>
+                <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{nutrient.title}</span>
+                <p className="text-[11px] text-gray-600 dark:text-gray-400">{nutrient.desc}</p>
               </div>
             </div>
 
@@ -164,7 +164,7 @@ export const NpkSelector: React.FC<NpkSelectorProps> = ({
                       className={`min-h-[44px] py-2 px-3 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 border ${
                         isSelected
                           ? 'bg-forest text-white border-forest shadow-sm'
-                          : 'bg-white text-dark-text border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                          : 'bg-white text-gray-900 dark:text-gray-100 border-gray-200 hover:border-gray-300 hover:bg-gray-50'
                       }`}
                     >
                       {isSelected && <Check className="w-3.5 h-3.5" />}
@@ -177,12 +177,13 @@ export const NpkSelector: React.FC<NpkSelectorProps> = ({
               <div className="flex items-center gap-2">
                 <input
                   type="number"
+                  aria-label={`${nutrient.title} in kg/ha`}
                   placeholder="e.g. 250"
                   value={nutrient.exactValue}
                   onChange={(e) => nutrient.onChangeExact && nutrient.onChangeExact(e.target.value)}
-                  className="flex-1 px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-forest"
+                  className="flex-1 min-h-[44px] px-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-forest"
                 />
-                <span className="text-xs font-semibold text-dark-muted">kg/ha</span>
+                <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">kg/ha</span>
               </div>
             )}
           </div>

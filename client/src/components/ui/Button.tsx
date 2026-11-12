@@ -40,7 +40,7 @@ const variantClasses: Record<string, string> = {
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: 'h-10 px-4 text-[13px] font-semibold rounded-2xl gap-1.5',
+  sm: 'min-h-[44px] px-4 text-[13px] font-semibold rounded-2xl gap-1.5',
   md: 'h-12 px-5 text-[15px] font-semibold rounded-2xl gap-2',
   lg: 'h-[52px] px-6 text-base font-bold rounded-2xl gap-2',
 };

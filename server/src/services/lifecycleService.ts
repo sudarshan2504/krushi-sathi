@@ -12,12 +12,17 @@ export async function createCropPlan(data: {
     where: { id: data.cropId },
   });
 
-  const cropKnowledge = CROPS_DATA.find(c => c.id === data.cropId) || CROPS_DATA.find(c => c.name.toLowerCase() === crop?.name.toLowerCase()) || CROPS_DATA[0];
+  const cropKnowledge =
+    CROPS_DATA.find(c => c.id === data.cropId) ||
+    (crop ? CROPS_DATA.find(c => c.name.toLowerCase() === crop!.name.toLowerCase()) : undefined);
+
+  if (!cropKnowledge) {
+    const err: any = new Error(`Crop not found with id: ${data.cropId}`);
+    err.status = 404;
+    throw err;
+  }
 
   if (!crop) {
-    if (!cropKnowledge) {
-      throw new Error(`Crop not found with id: ${data.cropId}`);
-    }
     // If not seeded yet, create crop record
     crop = await prisma.crop.create({
       data: {

@@ -98,7 +98,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
                   ? 'కాలానుగుణ పండ్లు & పంటలు'
                   : 'Seasonal Fruits & Orchard Crops'}
               </h3>
-              <span className="text-[10px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full bg-amber-500 text-white shadow-xs">
+              <span className="text-[11px] uppercase tracking-wider font-extrabold px-2 py-0.5 rounded-full bg-amber-700 text-white shadow-xs">
                 {currentSeason}
               </span>
             </div>
@@ -117,11 +117,12 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
         {/* Tab Switcher */}
         <div className="flex items-center bg-white/80 p-1 rounded-xl border border-amber-200/80 shadow-xs">
           <button
+            type="button"
             onClick={() => setActiveTab('fruits')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'fruits'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-earth-600 hover:text-earth-900'
+                ? 'bg-amber-700 text-white shadow-xs'
+                : 'text-earth-700 hover:text-earth-900'
             }`}
           >
             {language === 'kn'
@@ -133,11 +134,12 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
               : 'Fruit Orchards'}
           </button>
           <button
+            type="button"
             onClick={() => setActiveTab('current_season')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               activeTab === 'current_season'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'text-earth-600 hover:text-earth-900'
+                ? 'bg-amber-700 text-white shadow-xs'
+                : 'text-earth-700 hover:text-earth-900'
             }`}
           >
             {language === 'kn'
@@ -180,7 +182,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
                     </div>
                   </div>
                   {crop.marketDemand && (
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                    <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
                       {crop.marketDemand} Demand
                     </span>
                   )}
@@ -193,7 +195,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
                 {/* Key Metrics Grid */}
                 <div className="grid grid-cols-2 gap-2 text-[11px] bg-earth-50/80 p-2.5 rounded-xl border border-earth-100 mb-3">
                   <div>
-                    <span className="text-earth-400 block text-[10px]">
+                    <span className="text-earth-600 block text-[11px]">
                       {language === 'kn'
                         ? 'ಫಲ ಬಿಡುವ ಸಮಯ'
                         : language === 'ta'
@@ -207,7 +209,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
                     </span>
                   </div>
                   <div>
-                    <span className="text-earth-400 block text-[10px]">
+                    <span className="text-earth-600 block text-[11px]">
                       {language === 'kn'
                         ? 'ಬೆಳವಣಿಗೆ ಅವಧಿ'
                         : language === 'ta'
@@ -223,7 +225,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
                     </span>
                   </div>
                   <div>
-                    <span className="text-earth-400 block text-[10px]">
+                    <span className="text-earth-600 block text-[11px]">
                       {language === 'kn'
                         ? 'ಅಂದಾಜು ವೆಚ್ಚ'
                         : language === 'ta'
@@ -235,7 +237,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
                     <span className="font-semibold text-earth-800">{crop.estimatedCostPerAcre}</span>
                   </div>
                   <div>
-                    <span className="text-earth-400 block text-[10px]">
+                    <span className="text-earth-600 block text-[11px]">
                       {language === 'kn'
                         ? 'ಸಾಧ್ಯವಿರುವ ಆದಾಯ'
                         : language === 'ta'
@@ -250,7 +252,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
 
                 {/* Intercropping / Sowing tags */}
                 {crop.intercroppingOptions && crop.intercroppingOptions.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap text-[10px] text-earth-600 mb-2">
+                  <div className="flex items-center gap-1.5 flex-wrap text-[11px] text-earth-600 mb-2">
                     <span className="font-bold text-forest-700">Intercrop:</span>
                     {crop.intercroppingOptions.slice(0, 3).map((item: string, i: number) => (
                       <span key={i} className="bg-forest-50 text-forest-700 px-1.5 py-0.5 rounded-md border border-forest-100">
@@ -263,8 +265,9 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
 
               {onSelectCrop && (
                 <button
+                  type="button"
                   onClick={() => onSelectCrop(crop.id)}
-                  className="w-full mt-2 py-2 px-3 rounded-xl bg-earth-100 hover:bg-forest-600 hover:text-white text-earth-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5"
+                  className="w-full min-h-[44px] mt-2 py-2 px-3 rounded-xl bg-earth-100 hover:bg-forest-600 hover:text-white text-earth-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <span>
                     {language === 'kn'
@@ -288,7 +291,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
             <div className={`p-3.5 rounded-xl border ${currentSeason === 'Kharif' ? 'bg-emerald-50/70 border-emerald-300 ring-2 ring-emerald-500/20' : 'bg-earth-50/50 border-earth-200'}`}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-extrabold text-xs text-emerald-800 uppercase tracking-wide">Kharif (Monsoon)</span>
-                <span className="text-[10px] text-earth-500 font-semibold">Jun - Oct</span>
+                <span className="text-[11px] text-earth-500 font-semibold">Jun - Oct</span>
               </div>
               <p className="text-xs text-earth-700 mb-2">Paddy, Ragi, Maize, Tur Dal, Cotton, Groundnut, Soybean.</p>
               <div className="text-[11px] font-semibold text-emerald-700 flex items-center gap-1">
@@ -301,7 +304,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
             <div className={`p-3.5 rounded-xl border ${currentSeason === 'Rabi' ? 'bg-amber-50/70 border-amber-300 ring-2 ring-amber-500/20' : 'bg-earth-50/50 border-earth-200'}`}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-extrabold text-xs text-amber-800 uppercase tracking-wide">Rabi (Winter)</span>
-                <span className="text-[10px] text-earth-500 font-semibold">Oct - Mar</span>
+                <span className="text-[11px] text-earth-500 font-semibold">Oct - Mar</span>
               </div>
               <p className="text-xs text-earth-700 mb-2">Wheat, Gram, Mustard, Sunflower, Onion, Potato, Peas.</p>
               <div className="text-[11px] font-semibold text-amber-700 flex items-center gap-1">
@@ -314,7 +317,7 @@ export const SeasonalCropsSection: React.FC<SeasonalCropsSectionProps> = ({
             <div className={`p-3.5 rounded-xl border ${currentSeason === 'Zaid' ? 'bg-orange-50/70 border-orange-300 ring-2 ring-orange-500/20' : 'bg-earth-50/50 border-earth-200'}`}>
               <div className="flex items-center justify-between mb-1.5">
                 <span className="font-extrabold text-xs text-orange-800 uppercase tracking-wide">Zaid (Summer)</span>
-                <span className="text-[10px] text-earth-500 font-semibold">Mar - Jun</span>
+                <span className="text-[11px] text-earth-500 font-semibold">Mar - Jun</span>
               </div>
               <p className="text-xs text-earth-700 mb-2">Watermelon, Muskmelon, Cucumber, Vegetables, Fodder crops.</p>
               <div className="text-[11px] font-semibold text-orange-700 flex items-center gap-1">

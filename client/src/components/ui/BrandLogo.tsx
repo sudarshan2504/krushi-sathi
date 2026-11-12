@@ -19,8 +19,8 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
 }) => {
   // Dimension tokens
   const sizeMap = {
-    xs: { emblemSize: 24, fontSize: 'text-xs', subtitleSize: 'text-[9px]' },
-    sm: { emblemSize: 32, fontSize: 'text-sm font-bold', subtitleSize: 'text-[10px]' },
+    xs: { emblemSize: 24, fontSize: 'text-xs', subtitleSize: 'text-[11px]' },
+    sm: { emblemSize: 32, fontSize: 'text-sm font-bold', subtitleSize: 'text-[11px]' },
     md: { emblemSize: 44, fontSize: 'text-lg font-bold', subtitleSize: 'text-xs' },
     lg: { emblemSize: 58, fontSize: 'text-2xl font-extrabold', subtitleSize: 'text-xs' },
     xl: { emblemSize: 76, fontSize: 'text-3xl font-extrabold', subtitleSize: 'text-sm' },
@@ -124,7 +124,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({
             </svg>
           </div>
           {showSubtitle && (
-            <span className={`text-muted-dark dark:text-zinc-400 mt-1 font-medium ${currentSize.subtitleSize}`}>
+            <span className={`text-zinc-600 dark:text-zinc-400 mt-1 font-medium ${currentSize.subtitleSize}`}>
               {subtitleText}
             </span>
           )}

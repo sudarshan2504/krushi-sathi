@@ -73,7 +73,7 @@ export const ImageCreditsPage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/dev/crop-gallery')}
-            className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
+            className="min-h-[44px] inline-flex items-center gap-1 px-2 text-xs font-bold text-forest hover:underline cursor-pointer"
           >
             <span>Visual Review Dashboard</span>
             <ExternalLink className="w-3.5 h-3.5" />
@@ -121,13 +121,14 @@ export const ImageCreditsPage: React.FC = () => {
       {/* Filter and Search Bar */}
       <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
         <div className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-4 h-4 text-gray-500 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Search by crop, scientific name, or photographer..."
-            className="w-full pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-forest"
+            aria-label="Search image credits"
+            className="w-full min-h-[44px] pl-9 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-forest"
           />
         </div>
 
@@ -136,7 +137,8 @@ export const ImageCreditsPage: React.FC = () => {
           <select
             value={selectedLicense}
             onChange={(e) => setSelectedLicense(e.target.value)}
-            className="text-xs font-semibold py-2 px-3 bg-white border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
+            aria-label="Filter by license"
+            className="min-h-[44px] text-xs font-semibold py-2 px-3 bg-white border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
           >
             <option value="all">All Licenses ({licenses.length})</option>
             {licenses.map((lic) => (
@@ -158,11 +160,12 @@ export const ImageCreditsPage: React.FC = () => {
           <div className="p-12 text-center space-y-2">
             <p className="text-sm font-bold text-gray-900">No image records found matching your search</p>
             <button
+              type="button"
               onClick={() => {
                 setSearchQuery('');
                 setSelectedLicense('all');
               }}
-              className="text-xs text-forest font-bold underline"
+              className="min-h-[44px] inline-flex items-center px-3 text-xs text-forest font-bold underline cursor-pointer"
             >
               Reset filter
             </button>
@@ -209,7 +212,7 @@ export const ImageCreditsPage: React.FC = () => {
                     <span className="inline-block px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-800 text-xs font-bold border border-emerald-100">
                       {item.license}
                     </span>
-                    <span className="block text-[10px] text-gray-400 mt-0.5">{item.source}</span>
+                    <span className="block text-[11px] text-gray-600 mt-0.5">{item.source}</span>
                   </div>
 
                   {item.attributionUrl && (
@@ -217,7 +220,8 @@ export const ImageCreditsPage: React.FC = () => {
                       href={item.attributionUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="p-2 rounded-xl border border-gray-200 text-gray-600 hover:text-forest hover:bg-gray-100 transition"
+                      aria-label={`View original file page for ${item.cropName}`}
+                      className="min-w-[44px] min-h-[44px] flex items-center justify-center p-2 rounded-xl border border-gray-200 text-gray-600 hover:text-forest hover:bg-gray-100 transition"
                       title="View original file page on Wikimedia Commons"
                     >
                       <ExternalLink className="w-4 h-4" />

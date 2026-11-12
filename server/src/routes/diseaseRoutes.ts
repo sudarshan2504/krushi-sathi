@@ -413,10 +413,27 @@ router.post('/feedback', authMiddleware, async (req: AuthRequest, res: Response)
       storedImagePath,
     } = req.body;
 
-    if (!problemSlug || !rating) {
+    const VALID_RATINGS = ['correct', 'incorrect', 'not_sure'];
+    const VALID_CONFIDENCES = ['high', 'medium', 'low'];
+
+    if (!problemSlug || typeof problemSlug !== 'string' || !problemSlug.trim() || !rating || typeof rating !== 'string') {
       return res.status(400).json({
         success: false,
         message: 'problemSlug and rating are required.',
+      });
+    }
+
+    if (!VALID_RATINGS.includes(rating)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid rating. Allowed values: correct, incorrect, not_sure.',
+      });
+    }
+
+    if (confidence !== undefined && (typeof confidence !== 'string' || !VALID_CONFIDENCES.includes(confidence))) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid confidence. Allowed values: high, medium, low.',
       });
     }
 

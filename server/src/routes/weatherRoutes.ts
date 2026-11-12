@@ -123,11 +123,34 @@ router.get('/location-conditions', async (req: Request, res: Response) => {
 router.get('/', async (req: Request, res: Response) => {
   try {
     const district = req.query.district as string | undefined;
-    const lat = req.query.lat !== undefined ? parseFloat(req.query.lat as string) : undefined;
-    const lon = req.query.lon !== undefined ? parseFloat(req.query.lon as string) : undefined;
+    const rawLat = req.query.lat as string | undefined;
+    const rawLon = req.query.lon as string | undefined;
+    const hasLatOrLon = rawLat !== undefined || rawLon !== undefined;
+    const lat = rawLat !== undefined ? parseFloat(rawLat) : undefined;
+    const lon = rawLon !== undefined ? parseFloat(rawLon) : undefined;
     const allowDemo = req.query.demo === 'true';
 
-    if (!district && (lat === undefined || isNaN(lat) || lon === undefined || isNaN(lon))) {
+    if (hasLatOrLon) {
+      if (
+        rawLat === undefined ||
+        rawLon === undefined ||
+        lat === undefined ||
+        lon === undefined ||
+        isNaN(lat) ||
+        isNaN(lon) ||
+        lat < -90 ||
+        lat > 90 ||
+        lon < -180 ||
+        lon > 180
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: 'Invalid coordinates. Provide valid lat (-90..90) and lon (-180..180).',
+        });
+      }
+    }
+
+    if (!district && (lat === undefined || lon === undefined)) {
       return res.status(400).json({
         success: false,
         needsLocation: true,

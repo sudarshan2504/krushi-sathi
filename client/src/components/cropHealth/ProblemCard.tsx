@@ -106,7 +106,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
               className="w-full h-full object-cover"
             />
             {isPrimaryForCrop && (
-              <span className="absolute bottom-1 left-1 bg-forest/90 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow">
+              <span className="absolute bottom-1 left-1 bg-forest/90 text-white text-[11px] font-bold px-1.5 py-0.5 rounded shadow">
                 Major
               </span>
             )}
@@ -115,15 +115,15 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
           {/* Core Info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center justify-between gap-1.5 mb-1 flex-wrap">
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${typeInfo.color}`}>
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${typeInfo.color}`}>
                 {typeInfo.label}
               </span>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${getSeverityBadge(problem.severity)}`}>
+              <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${getSeverityBadge(problem.severity)}`}>
                 {problem.severity ? (t(`sev${problem.severity.charAt(0).toUpperCase() + problem.severity.slice(1)}` as any) || problem.severity) : 'Medium'}
               </span>
             </div>
 
-            <h3 className="text-sm sm:text-base font-extrabold text-dark-text truncate">
+            <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100 truncate">
               {localizedName}
             </h3>
 
@@ -135,7 +135,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
 
             {/* If viewed in regional language and english name differs */}
             {language !== 'en' && problem.name !== localizedName && (
-              <span className="text-[10px] text-gray-400 block truncate">
+              <span className="text-[11px] text-gray-600 block truncate">
                 {problem.name}
               </span>
             )}
@@ -148,7 +148,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
             <Eye className="w-3.5 h-3.5" />
             <span>{t('whatToLookFor') || 'What to look for'}:</span>
           </div>
-          <p className="text-xs text-dark-text/90 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-gray-800 dark:text-gray-100 line-clamp-2 leading-relaxed">
             {symptomsOneLiner}
           </p>
         </div>
@@ -169,7 +169,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({
             e.stopPropagation();
             onSelect(problem);
           }}
-          className="min-h-[40px] px-3.5 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition-colors inline-flex items-center gap-1.5 shadow-sm flex-shrink-0 cursor-pointer"
+          className="min-h-[44px] px-3.5 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition-colors inline-flex items-center gap-1.5 shadow-sm flex-shrink-0 cursor-pointer"
         >
           <span>{t('viewSolution') || 'View Solution'}</span>
           <ArrowRight className="w-3.5 h-3.5" />

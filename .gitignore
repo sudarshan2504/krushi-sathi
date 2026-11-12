@@ -23,6 +23,9 @@ build/
 *.tsbuildinfo
 test-results/
 playwright-report/
+tests/__screenshots__/
+coverage/
+.vitest/
 
 # Logs
 logs

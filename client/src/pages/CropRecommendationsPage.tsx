@@ -233,8 +233,9 @@ export const CropRecommendationsPage: React.FC = () => {
         <div className="flex items-center gap-2">
           {selectedForCompare.length >= 2 && (
             <button
+              type="button"
               onClick={() => setIsCompareOpen(true)}
-              className="py-2 px-3.5 rounded-full bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm"
+              className="min-h-[44px] py-2 px-3.5 rounded-full bg-brand-700 hover:bg-brand-800 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm cursor-pointer"
             >
               <Scale className="w-4 h-4 text-brand-200" />
               <span>Compare ({selectedForCompare.length})</span>
@@ -242,8 +243,9 @@ export const CropRecommendationsPage: React.FC = () => {
           )}
 
           <button
+            type="button"
             onClick={() => navigate('/soil')}
-            className="py-2 px-3.5 rounded-full bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm flex-shrink-0"
+            className="min-h-[44px] py-2 px-3.5 rounded-full bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition flex items-center gap-1.5 shadow-sm flex-shrink-0 cursor-pointer"
           >
             <PlusCircle className="w-4 h-4 text-brand-200" />
             <span>Retest Soil</span>
@@ -263,11 +265,12 @@ export const CropRecommendationsPage: React.FC = () => {
           return (
             <button
               key={tab.id}
+              type="button"
               onClick={() => setActiveTab(tab.id as any)}
-              className={`pb-3 text-sm font-semibold flex items-center gap-2 relative transition-colors shrink-0 ${
+              className={`min-h-[44px] pt-2 pb-3 text-sm font-semibold flex items-center gap-2 relative transition-colors shrink-0 cursor-pointer ${
                 isActive
                   ? 'text-brand-700 dark:text-brand-400 font-bold'
-                  : 'text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+                  : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -303,8 +306,9 @@ export const CropRecommendationsPage: React.FC = () => {
             />
             {selectedForCompare.length > 0 && (
               <button
+                type="button"
                 onClick={() => setSelectedForCompare([])}
-                className="text-[11px] font-semibold text-earth-500 hover:text-earth-800 whitespace-nowrap"
+                className="min-h-[44px] inline-flex items-center px-2 text-[11px] font-semibold text-earth-600 hover:text-earth-900 whitespace-nowrap cursor-pointer"
               >
                 Clear compare ({selectedForCompare.length})
               </button>
@@ -334,8 +338,9 @@ export const CropRecommendationsPage: React.FC = () => {
               </div>
               <div className="flex gap-2 justify-center pt-2">
                 <button
+                  type="button"
                   onClick={() => navigate('/soil')}
-                  className="py-2 px-4 rounded-xl border border-earth-200 text-xs font-bold text-earth-700 hover:bg-earth-50"
+                  className="min-h-[44px] py-2 px-4 rounded-xl border border-earth-200 text-xs font-bold text-earth-700 hover:bg-earth-50 cursor-pointer"
                 >
                   Start Assessment
                 </button>
@@ -355,18 +360,19 @@ export const CropRecommendationsPage: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-base font-extrabold text-earth-900">No Matching Crops Found</h3>
-                <p className="text-xs text-earth-500 mt-1 max-w-sm mx-auto">
+                <p className="text-xs text-earth-600 mt-1 max-w-sm mx-auto">
                   Try clearing the category or duration filter to see more crop matches.
                 </p>
               </div>
               <div className="flex justify-center gap-2">
                 <button
+                  type="button"
                   onClick={() => {
                     setSelectedCategory('');
                     setSelectedDuration('');
                     loadRecommendations('');
                   }}
-                  className="px-4 py-2 rounded-xl bg-forest-600 text-white text-xs font-bold hover:bg-forest-700 transition"
+                  className="min-h-[44px] px-4 py-2 rounded-xl bg-forest-600 text-white text-xs font-bold hover:bg-forest-700 transition cursor-pointer"
                 >
                   View All Crops
                 </button>
@@ -415,7 +421,7 @@ export const CropRecommendationsPage: React.FC = () => {
                                 {getLocalizedName(crop)}
                               </h2>
                               {isBestMatch && (
-                                <span className="py-0.5 px-2 rounded-full bg-brand-600 text-white text-[9px] font-black uppercase tracking-wide shrink-0">
+                                <span className="py-0.5 px-2 rounded-full bg-brand-600 text-white text-[11px] font-black uppercase tracking-wide shrink-0">
                                   Top Pick
                                 </span>
                               )}
@@ -435,7 +441,7 @@ export const CropRecommendationsPage: React.FC = () => {
                             color={isBestMatch ? 'brand' : 'success'}
                             showValue
                           />
-                          <span className="text-[9px] font-extrabold text-gray-400 dark:text-gray-500 mt-0.5 uppercase tracking-wider">
+                          <span className="text-[11px] font-extrabold text-gray-600 dark:text-gray-400 mt-0.5 uppercase tracking-wider">
                             {crop.matchTier || 'Match'}
                           </span>
                         </div>
@@ -520,7 +526,7 @@ export const CropRecommendationsPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => handleToggleCompare(crop.cropId)}
-                        className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border ${
+                        className={`min-h-[44px] flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all border cursor-pointer ${
                           isSelectedForCompare
                             ? 'bg-brand-700 text-white border-brand-700 shadow-xs'
                             : 'bg-white dark:bg-dark-surface text-gray-700 dark:text-gray-300 border-gray-200 dark:border-dark-border hover:bg-gray-50 dark:hover:bg-dark-elevated'
@@ -531,10 +537,11 @@ export const CropRecommendationsPage: React.FC = () => {
                       </button>
 
                       <button
+                        type="button"
                         onClick={() =>
                           navigate(`/crops/${crop.cropId}`, { state: { crop } })
                         }
-                        className="py-1.5 px-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-colors flex items-center gap-1 shadow-xs"
+                        className="min-h-[44px] py-1.5 px-3.5 rounded-xl bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold transition-colors flex items-center gap-1 shadow-xs cursor-pointer"
                       >
                         <span>{t('viewDetails') || 'View Details'}</span>
                         <ArrowRight className="w-3.5 h-3.5" />
@@ -576,19 +583,22 @@ export const CropRecommendationsPage: React.FC = () => {
 
           <div className="flex items-center gap-2">
             <button
+              type="button"
               disabled={selectedForCompare.length < 2}
               onClick={() => setIsCompareOpen(true)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
+              className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-black transition-all ${
                 selectedForCompare.length >= 2
-                  ? 'bg-mint-400 hover:bg-mint-300 text-forest-950 shadow-md'
-                  : 'bg-forest-800 text-forest-400 cursor-not-allowed'
+                  ? 'bg-mint-400 hover:bg-mint-300 text-forest-950 shadow-md cursor-pointer'
+                  : 'bg-forest-800 text-forest-300 cursor-not-allowed'
               }`}
             >
               Compare Side-by-Side
             </button>
             <button
+              type="button"
               onClick={() => setSelectedForCompare([])}
-              className="p-1 rounded-full hover:bg-forest-800 text-forest-300"
+              aria-label="Clear compare selection"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1 rounded-full hover:bg-forest-800 text-forest-200 cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>

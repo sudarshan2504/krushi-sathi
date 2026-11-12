@@ -145,7 +145,7 @@ export const SoilTypeSelector: React.FC<SoilTypeSelectorProps> = ({
             if (onOpenHelp) onOpenHelp();
             else setIsHelpOpen(true);
           }}
-          className="text-xs font-bold text-white bg-brand-700 hover:bg-brand-800 px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow-xs"
+          className="min-h-[44px] text-xs font-bold text-white bg-brand-700 hover:bg-brand-800 px-3 py-1.5 rounded-xl transition flex items-center gap-1 shadow-xs"
         >
           <HelpCircle className="w-3.5 h-3.5" />
           <span>{language === 'kn' ? 'ಗುರುತಿಸಲು ಸಹಾಯ' : 'Help Me Identify'}</span>
@@ -185,7 +185,7 @@ export const SoilTypeSelector: React.FC<SoilTypeSelectorProps> = ({
                       {localizedName}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 leading-snug">
+                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-snug">
                     {localizedDesc}
                   </p>
                   <p className="text-[11px] text-brand-700 dark:text-brand-400 font-semibold mt-1.5">

@@ -370,10 +370,10 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
         <div className="flex items-center gap-2">
           <Sprout className="w-5 h-5 text-forest flex-shrink-0" />
           <div>
-            <span className="text-[11px] font-bold text-dark-muted block uppercase tracking-wider">
+            <span className="text-[11px] font-bold text-gray-600 dark:text-gray-400 block uppercase tracking-wider">
               {language === 'kn' ? 'ಆಯ್ದ ಬೆಳೆ' : language === 'ta' ? 'தேர்ந்தெடுக்கப்பட்ட பயிர்' : language === 'te' ? 'ఎంచుకున్న పంట' : 'Active Crop'}:
             </span>
-            <span className="text-sm font-black text-dark-text">
+            <span className="text-sm font-black text-gray-900 dark:text-gray-100">
               {selectedCrop?.name || selectedCropSlug}
             </span>
           </div>
@@ -381,13 +381,14 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
 
         {/* Change Crop Dropdown */}
         <div className="flex items-center gap-2">
-          <label className="text-xs text-dark-muted font-bold whitespace-nowrap">
+          <label htmlFor="symptom-crop-select" className="text-xs text-gray-600 dark:text-gray-400 font-bold whitespace-nowrap">
             {language === 'kn' ? 'ಬೆಳೆ ಬದಲಾಯಿಸಿ:' : 'Change Crop:'}
           </label>
           <select
+            id="symptom-crop-select"
             value={selectedCropSlug}
             onChange={(e) => onSelectCropSlug(e.target.value)}
-            className="px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200 text-xs font-bold text-dark-text focus:border-forest outline-none cursor-pointer"
+            className="min-h-[44px] px-3 py-1.5 rounded-xl bg-gray-50 border border-gray-200 text-xs font-bold text-gray-900 dark:text-gray-100 focus:border-forest outline-none cursor-pointer"
           >
             {crops.map((c) => (
               <option key={c.id} value={c.name.toLowerCase().replace(/\s+/g, '-')}>
@@ -407,10 +408,10 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
               setActiveCheckMode('photo_mode');
               setCurrentStep(1);
             }}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+            className={`min-h-[44px] py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
               activeCheckMode === 'photo_mode'
                 ? 'bg-white text-forest shadow-sm'
-                : 'text-gray-600 hover:text-dark-text'
+                : 'text-gray-600 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
             <Camera className="w-4 h-4 text-forest" />
@@ -431,10 +432,10 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
               setActiveCheckMode('guided_mode');
               setCurrentStep(1);
             }}
-            className={`py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
+            className={`min-h-[44px] py-2.5 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition cursor-pointer ${
               activeCheckMode === 'guided_mode'
                 ? 'bg-white text-forest shadow-sm'
-                : 'text-gray-600 hover:text-dark-text'
+                : 'text-gray-600 hover:text-gray-900 dark:hover:text-gray-100'
             }`}
           >
             <Layers className="w-4 h-4 text-forest" />
@@ -459,29 +460,29 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
           </div>
 
           <div className="space-y-2 max-w-md mx-auto">
-            <h3 className="text-base sm:text-lg font-black text-dark-text">
+            <h3 className="text-base sm:text-lg font-black text-gray-900 dark:text-gray-100">
               {capturedPhotos.length > 0
                 ? (language === 'kn' ? 'ಸಸ್ಯದ ಫೋಟೋವನ್ನು ವಿಶ್ಲೇಷಿಸಲಾಗುತ್ತಿದೆ...' : 'Analyzing Plant Photos with Gemini Vision...')
                 : (language === 'kn' ? 'ಕ್ಷೇತ್ರ ಲಕ್ಷಣಗಳನ್ನು ಹೊಂದಿಸಲಾಗುತ್ತಿದೆ...' : 'Matching Crop Symptoms Against Catalog...')}
             </h3>
 
             {/* Stepper text */}
-            <div className="space-y-1 text-xs text-dark-muted">
-              <div className={`flex items-center justify-center gap-2 ${diagnosisProgressStep >= 1 ? 'text-forest font-bold' : 'text-gray-400'}`}>
+            <div className="space-y-1 text-xs text-gray-600 dark:text-gray-400">
+              <div className={`flex items-center justify-center gap-2 ${diagnosisProgressStep >= 1 ? 'text-forest font-bold' : 'text-gray-600'}`}>
                 <CheckCircle2 className="w-4 h-4" />
                 <span>1. {language === 'kn' ? 'ಫೋಟೋ ಸ್ಪಷ್ಟತೆ ಮತ್ತು ಮೆಟಾಡೇಟಾ ಪರಿಶೀಲನೆ' : 'In-browser quality verification & EXIF stripping'}</span>
               </div>
-              <div className={`flex items-center justify-center gap-2 ${diagnosisProgressStep >= 2 ? 'text-forest font-bold' : 'text-gray-400'}`}>
+              <div className={`flex items-center justify-center gap-2 ${diagnosisProgressStep >= 2 ? 'text-forest font-bold' : 'text-gray-600'}`}>
                 <CheckCircle2 className="w-4 h-4" />
                 <span>2. {language === 'kn' ? 'ಪ್ರಮಾಣೀಕೃತ ಬೆಳೆ ರೋಗ ಡೇಟಾಬೇಸ್ ಹುಡುಕಾಟ' : 'Querying verified crop pathology catalog'}</span>
               </div>
-              <div className={`flex items-center justify-center gap-2 ${diagnosisProgressStep >= 3 ? 'text-forest font-bold' : 'text-gray-400'}`}>
+              <div className={`flex items-center justify-center gap-2 ${diagnosisProgressStep >= 3 ? 'text-forest font-bold' : 'text-gray-600'}`}>
                 <CheckCircle2 className="w-4 h-4" />
                 <span>3. {language === 'kn' ? 'ದೃಶ್ಯ ಚಿಹ್ನೆಗಳ ನಿಖರ ಮೌಲ್ಯಮಾಪನ' : 'Evaluating visual lesions & signs with Gemini'}</span>
               </div>
             </div>
 
-            <p className="text-[11px] text-gray-400 pt-1">
+            <p className="text-[11px] text-gray-600 pt-1">
               {language === 'kn'
                 ? 'ದಯವಿಟ್ಟು ನಿರೀಕ್ಷಿಸಿ, ಇದಕ್ಕೆ ಸುಮಾರು ೧೦-೨೦ ಸೆಕೆಂಡುಗಳು ಬೇಕಾಗಬಹುದು.'
                 : 'Please wait, multimodal vision analysis takes about 10-20 seconds.'}
@@ -492,7 +493,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
             <button
               type="button"
               onClick={handleCancelDiagnosis}
-              className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-700 transition"
+              className="min-h-[44px] px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-700 transition cursor-pointer"
             >
               {language === 'kn' ? 'ರದ್ದುಮಾಡಿ' : 'Cancel Analysis'}
             </button>
@@ -519,7 +520,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
           className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card space-y-5"
         >
           <div>
-            <h2 className="text-sm sm:text-base font-extrabold text-dark-text mb-1 flex items-center gap-2">
+            <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-forest" />
               {language === 'kn'
                 ? 'ಸಸ್ಯದ ೩ ಕೋನದ ಫೋಟೋಗಳನ್ನು ಅಪ್‌ಲೋಡ್ ಮಾಡಿ'
@@ -529,7 +530,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                 ? 'మొక్క 3 కోణాల ఫోటోలను అప్‌లోడ్ చేయండి'
                 : 'Capture Up to 3 Plant Photos'}
             </h2>
-            <p className="text-xs text-dark-muted">
+            <p className="text-xs text-gray-600 dark:text-gray-400">
               {language === 'kn'
                 ? 'ಕ್ಯಾಮೆರಾ ಬಳಸಿ ಹಾನಿಗೊಳಗಾದ ಎಲೆ, ಸಂಪೂರ್ಣ ಸಸ್ಯ ಮತ್ತು ಎಲೆಯ ಹಿಂಭಾಗದ ಚಿತ್ರಗಳನ್ನು ತೆಗೆದುಕೊಳ್ಳಿ.'
                 : 'Provide photos from multiple angles for high confidence. Our in-browser checks inspect focus and lighting before upload.'}
@@ -547,13 +548,13 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
           {/* Optional Voice / Text observation */}
           <div className="space-y-1.5 pt-2 border-t border-gray-100">
             <div className="flex items-center justify-between">
-              <label className="text-xs font-bold text-dark-text">
+              <label htmlFor="symptom-photo-note" className="text-xs font-bold text-gray-900 dark:text-gray-100">
                 {language === 'kn' ? 'ಹೆಚ್ಚುವರಿ ವಿವರಗಳು (ಐಚ್ಛಿಕ):' : 'Additional Notes (Optional):'}
               </label>
               <button
                 type="button"
                 onClick={toggleSpeechRecognition}
-                className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                className={`min-h-[44px] px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
                   isListening
                     ? 'bg-red-500 text-white animate-pulse'
                     : 'bg-forest/10 text-forest hover:bg-forest/20'
@@ -565,6 +566,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
             </div>
 
             <textarea
+              id="symptom-photo-note"
               rows={2}
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -627,7 +629,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                   {currentStep === 4 && (t('optionalDetails') || 'Notes & Photos')}
                 </strong>
               </span>
-              <span className="text-dark-muted font-bold">{Math.round((currentStep / 4) * 100)}%</span>
+              <span className="text-gray-600 dark:text-gray-400 font-bold">{Math.round((currentStep / 4) * 100)}%</span>
             </div>
 
             <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -649,11 +651,11 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
               className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card space-y-5"
             >
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-dark-text mb-1 flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
                   <Sprout className="w-4 h-4 text-forest" />
                   {t('selectPlantPart') || 'Where are symptoms appearing?'}
                 </h2>
-                <p className="text-xs text-dark-muted">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Choose the primary part of the crop showing damage:
                 </p>
               </div>
@@ -670,7 +672,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                       className={`p-3.5 rounded-2xl border text-center transition flex flex-col items-center gap-1.5 cursor-pointer min-h-[72px] ${
                         isSelected
                           ? 'bg-emerald-50 border-forest text-forest font-bold ring-2 ring-forest/20 shadow-sm'
-                          : 'bg-white border-gray-200 text-dark-text hover:border-gray-300'
+                          : 'bg-white border-gray-200 text-gray-900 dark:text-gray-100 hover:border-gray-300'
                       }`}
                     >
                       <span className="w-8 h-8 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center">
@@ -704,11 +706,11 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
               className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card space-y-5"
             >
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-dark-text mb-1 flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
                   <Eye className="w-4 h-4 text-forest" />
                   {t('selectVisualPattern') || 'What do the damage marks look like?'}
                 </h2>
-                <p className="text-xs text-dark-muted">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Choose the closest visual appearance of the affected area:
                 </p>
               </div>
@@ -725,7 +727,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                       className={`p-3 rounded-2xl border text-center transition flex flex-col items-center gap-1 cursor-pointer min-h-[64px] ${
                         isSelected
                           ? 'bg-emerald-50 border-forest text-forest font-bold ring-2 ring-forest/20 shadow-sm'
-                          : 'bg-white border-gray-200 text-dark-text hover:border-gray-300'
+                          : 'bg-white border-gray-200 text-gray-900 dark:text-gray-100 hover:border-gray-300'
                       }`}
                     >
                       <span className="w-7 h-7 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center">
@@ -741,7 +743,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
 
               {/* Colour Chips */}
               <div>
-                <h3 className="text-xs font-bold text-dark-text mb-2">
+                <h3 className="text-xs font-bold text-gray-900 dark:text-gray-100 mb-2">
                   {t('dominantColour') || 'Dominant color of the spots / signs:'}
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -752,14 +754,14 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                         key={col.key}
                         type="button"
                         onClick={() => setColour(col.key)}
-                        className={`px-3 py-2 rounded-xl border transition flex items-center gap-2 cursor-pointer ${
+                        className={`min-h-[44px] px-3 py-2 rounded-xl border transition flex items-center gap-2 cursor-pointer ${
                           isSelected
                             ? 'bg-gray-100 border-forest font-bold ring-2 ring-forest/20'
                             : 'bg-white border-gray-200 hover:border-gray-300'
                         }`}
                       >
                         <span className={`w-4 h-4 rounded-full flex-shrink-0 ${col.colorClass}`} />
-                        <span className="text-xs text-dark-text font-medium truncate">
+                        <span className="text-xs text-gray-900 dark:text-gray-100 font-medium truncate">
                           {getLocalizedLabel(col)}
                         </span>
                       </button>
@@ -799,18 +801,18 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
               className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card space-y-5"
             >
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-dark-text mb-1 flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
                   <Layers className="w-4 h-4 text-forest" />
                   {t('spreadAndOnset') || 'How is it spreading in the field?'}
                 </h2>
-                <p className="text-xs text-dark-muted">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Helps identify whether the cause is soil-borne, airborne fungus, or insect infestation:
                 </p>
               </div>
 
               {/* Spread in field */}
               <div className="space-y-2">
-                <span className="text-xs font-bold text-dark-text block">
+                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 block">
                   Field Distribution:
                 </span>
                 {SPREADS.map((sp) => {
@@ -823,7 +825,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                       className={`w-full p-3.5 rounded-2xl border text-left transition flex items-center justify-between cursor-pointer ${
                         isSelected
                           ? 'bg-emerald-50 border-forest text-forest font-bold ring-2 ring-forest/20'
-                          : 'bg-white border-gray-200 text-dark-text hover:border-gray-300'
+                          : 'bg-white border-gray-200 text-gray-900 dark:text-gray-100 hover:border-gray-300'
                       }`}
                     >
                       <span className="text-xs sm:text-sm">{getLocalizedLabel(sp)}</span>
@@ -835,7 +837,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
 
               {/* Onset Timing */}
               <div className="space-y-2 pt-2 border-t border-gray-100">
-                <span className="text-xs font-bold text-dark-text block">
+                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 block">
                   When did you first notice the symptoms?
                 </span>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -846,10 +848,10 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                         key={on.key}
                         type="button"
                         onClick={() => setOnset(on.key)}
-                        className={`p-3 rounded-2xl border text-center transition cursor-pointer ${
+                        className={`min-h-[44px] p-3 rounded-2xl border text-center transition cursor-pointer ${
                           isSelected
                             ? 'bg-emerald-50 border-forest text-forest font-bold ring-2 ring-forest/20'
-                            : 'bg-white border-gray-200 text-dark-text hover:border-gray-300'
+                            : 'bg-white border-gray-200 text-gray-900 dark:text-gray-100 hover:border-gray-300'
                         }`}
                       >
                         <span className="text-xs block">{getLocalizedLabel(on)}</span>
@@ -890,20 +892,20 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
               className="bg-white rounded-3xl p-5 border border-gray-100 shadow-card space-y-5"
             >
               <div>
-                <h2 className="text-sm sm:text-base font-extrabold text-dark-text mb-1 flex items-center gap-2">
+                <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100 mb-1 flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-forest" />
                   {t('optionalDetails') || 'Additional Notes & Field Photos'}
                 </h2>
-                <p className="text-xs text-dark-muted">
+                <p className="text-xs text-gray-600 dark:text-gray-400">
                   Add photos for vision verification or speak your observations in your language:
                 </p>
               </div>
 
               {/* Multi-Photo Component */}
               <div className="space-y-2">
-                <label className="text-xs font-bold text-dark-text block">
+                <span className="text-xs font-bold text-gray-900 dark:text-gray-100 block">
                   Field Photos (Optional - Up to 3 angles):
-                </label>
+                </span>
                 <PhotoCaptureSection
                   photos={capturedPhotos}
                   onChange={setCapturedPhotos}
@@ -915,13 +917,13 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
               {/* Voice & Text Note */}
               <div className="space-y-1.5 pt-2 border-t border-gray-100">
                 <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-dark-text">
+                  <label htmlFor="symptom-guided-note" className="text-xs font-bold text-gray-900 dark:text-gray-100">
                     Your observation (Optional):
                   </label>
                   <button
                     type="button"
                     onClick={toggleSpeechRecognition}
-                    className={`px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
+                    className={`min-h-[44px] px-3 py-1 rounded-xl text-xs font-bold flex items-center gap-1.5 transition cursor-pointer ${
                       isListening
                         ? 'bg-red-500 text-white animate-pulse'
                         : 'bg-forest/10 text-forest hover:bg-forest/20'
@@ -933,6 +935,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                 </div>
 
                 <textarea
+                  id="symptom-guided-note"
                   rows={2}
                   value={note}
                   onChange={(e) => setNote(e.target.value)}
@@ -994,19 +997,19 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                   <button
                     type="button"
                     onClick={handleReset}
-                    className="px-3 py-1 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-700 flex items-center gap-1 transition cursor-pointer"
+                    className="min-h-[44px] px-3 py-1 rounded-xl bg-gray-100 hover:bg-gray-200 text-xs font-bold text-gray-700 flex items-center gap-1 transition cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                     <span>New Check</span>
                   </button>
                 </div>
 
-                <h2 className="text-base sm:text-lg font-black text-dark-text">
+                <h2 className="text-base sm:text-lg font-black text-gray-900 dark:text-gray-100">
                   {guidedDiagnosisResult.mode === 'uncertain'
                     ? 'Inconclusive Diagnosis — More Verification Needed'
                     : `Top Ranked Matches for ${selectedCrop?.name}`}
                 </h2>
-                <p className="text-xs text-dark-muted leading-relaxed">
+                <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed">
                   {guidedDiagnosisResult.message}
                 </p>
               </div>
@@ -1065,15 +1068,15 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
 
                             <div>
                               <div className="flex items-center gap-1.5 mb-0.5">
-                                <span className="text-[10px] font-bold bg-forest text-white px-2 py-0.5 rounded-full">
+                                <span className="text-[11px] font-bold bg-forest text-white px-2 py-0.5 rounded-full">
                                   Rank #{idx + 1}
                                 </span>
-                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${confColor}`}>
+                                <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full border ${confColor}`}>
                                   {cand.confidence?.toUpperCase()} CONFIDENCE
                                 </span>
                               </div>
 
-                              <h3 className="text-sm sm:text-base font-extrabold text-dark-text">
+                              <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100">
                                 {language === 'kn'
                                   ? cand.nameKannada || cand.name
                                   : language === 'ta'
@@ -1100,7 +1103,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                             </span>
                             <ul className="space-y-0.5">
                               {cand.whyMatched.map((w: string, wIdx: number) => (
-                                <li key={wIdx} className="text-dark-text/90 text-xs flex items-center gap-1.5">
+                                <li key={wIdx} className="text-gray-800 dark:text-gray-100 text-xs flex items-center gap-1.5">
                                   <Check className="w-3.5 h-3.5 text-forest flex-shrink-0" />
                                   <span>{w}</span>
                                 </li>
@@ -1111,7 +1114,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
 
                         {/* View Full Treatment CTA */}
                         <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                          <span className="text-[10px] text-gray-500 italic">
+                          <span className="text-[11px] text-gray-500 italic">
                             Preliminary suggestion, not a confirmed diagnosis.
                           </span>
 
@@ -1125,7 +1128,7 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                                 onOpenProblemDetail(cand);
                               }
                             }}
-                            className="px-4 py-2 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition flex items-center gap-1.5 shadow-sm cursor-pointer"
+                            className="min-h-[44px] px-4 py-2 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition flex items-center gap-1.5 shadow-sm cursor-pointer"
                           >
                             <span>View Treatment Ladder</span>
                             <ChevronRight className="w-3.5 h-3.5" />
@@ -1148,19 +1151,19 @@ export const SymptomCheckerWizard: React.FC<SymptomCheckerWizardProps> = ({
                 </div>
                 <a
                   href="tel:18001801551"
-                  className="px-3.5 py-1.5 rounded-xl bg-white text-forest text-xs font-extrabold hover:bg-gray-100 transition"
+                  className="min-h-[44px] inline-flex items-center px-3.5 py-1.5 rounded-xl bg-white text-forest text-xs font-extrabold hover:bg-gray-100 transition"
                 >
                   1800-180-1551
                 </a>
               </div>
             </motion.div>
           ) : (
-            <div className="p-8 text-center text-dark-muted">
+            <div className="p-8 text-center text-gray-600 dark:text-gray-400">
               <p>No diagnosis results to display.</p>
               <button
                 type="button"
                 onClick={handleReset}
-                className="mt-3 px-4 py-2 bg-forest text-white rounded-xl text-xs font-bold"
+                className="min-h-[44px] mt-3 px-4 py-2 bg-forest text-white rounded-xl text-xs font-bold cursor-pointer"
               >
                 Try Again
               </button>

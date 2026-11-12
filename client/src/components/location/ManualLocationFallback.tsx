@@ -114,7 +114,7 @@ export const ManualLocationFallback: React.FC<ManualLocationFallbackProps> = ({
     <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm space-y-3">
       <div className="flex items-center gap-2">
         <MapPin className="w-4 h-4 text-forest" />
-        <h4 className="text-xs font-bold text-dark-text">
+        <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100">
           {language === 'kn' ? 'ಸ್ಥಳ ಆಯ್ಕೆಮಾಡಿ (ರಾಜ್ಯ / ಜಿಲ್ಲೆ / ತಾಲೂಕು)' : 'Select Your Farm Location (Dropdowns)'}
         </h4>
       </div>
@@ -122,13 +122,14 @@ export const ManualLocationFallback: React.FC<ManualLocationFallbackProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {/* State */}
         <div>
-          <label className="text-[11px] font-semibold text-dark-muted block mb-1">
+          <label htmlFor="manual-loc-state" className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 block mb-1">
             {language === 'kn' ? 'ರಾಜ್ಯ' : 'State'}
           </label>
           <select
+            id="manual-loc-state"
             value={selectedState}
             onChange={(e) => handleStateChange(e.target.value)}
-            className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-xl focus:ring-2 focus:ring-forest bg-gray-50/50"
+            className="w-full min-h-[44px] px-3 py-2 text-xs font-medium border border-gray-200 rounded-xl focus:ring-2 focus:ring-forest bg-gray-50/50"
           >
             {locations.length > 0 ? (
               locations.map((s) => (
@@ -149,13 +150,14 @@ export const ManualLocationFallback: React.FC<ManualLocationFallbackProps> = ({
 
         {/* District */}
         <div>
-          <label className="text-[11px] font-semibold text-dark-muted block mb-1">
+          <label htmlFor="manual-loc-district" className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 block mb-1">
             {language === 'kn' ? 'ಜಿಲ್ಲೆ' : 'District'}
           </label>
           <select
+            id="manual-loc-district"
             value={selectedDistrict}
             onChange={(e) => handleDistrictChange(e.target.value)}
-            className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-xl focus:ring-2 focus:ring-forest bg-gray-50/50"
+            className="w-full min-h-[44px] px-3 py-2 text-xs font-medium border border-gray-200 rounded-xl focus:ring-2 focus:ring-forest bg-gray-50/50"
           >
             {districtsList.map((d: any) => (
               <option key={d.name} value={d.name}>
@@ -167,13 +169,14 @@ export const ManualLocationFallback: React.FC<ManualLocationFallbackProps> = ({
 
         {/* Taluk */}
         <div>
-          <label className="text-[11px] font-semibold text-dark-muted block mb-1">
+          <label htmlFor="manual-loc-taluk" className="text-[11px] font-semibold text-gray-600 dark:text-gray-400 block mb-1">
             {language === 'kn' ? 'ತಾಲೂಕು' : 'Taluk'}
           </label>
           <select
+            id="manual-loc-taluk"
             value={selectedTaluk}
             onChange={(e) => setSelectedTaluk(e.target.value)}
-            className="w-full px-3 py-2 text-xs font-medium border border-gray-200 rounded-xl focus:ring-2 focus:ring-forest bg-gray-50/50"
+            className="w-full min-h-[44px] px-3 py-2 text-xs font-medium border border-gray-200 rounded-xl focus:ring-2 focus:ring-forest bg-gray-50/50"
           >
             {taluksList.map((t: any) => (
               <option key={t.name} value={t.name}>

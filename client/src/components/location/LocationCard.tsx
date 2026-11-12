@@ -42,11 +42,11 @@ export const LocationCard: React.FC<LocationCardProps> = ({
                 {weatherData.state || 'Karnataka'}
               </span>
               {weatherData.taluk && (
-                <span className="text-xs font-bold text-dark-text">
+                <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
                   {weatherData.taluk},
                 </span>
               )}
-              <span className="text-xs font-bold text-dark-text">
+              <span className="text-xs font-bold text-gray-900 dark:text-gray-100">
                 {weatherData.district}
               </span>
             </div>
@@ -61,7 +61,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
           <button
             type="button"
             onClick={onEditLocation}
-            className="text-xs font-bold text-forest bg-mint/20 hover:bg-forest hover:text-white px-3 py-1.5 rounded-xl transition shadow-sm"
+            className="min-h-[44px] text-xs font-bold text-forest bg-mint/20 hover:bg-forest hover:text-white px-3 py-1.5 rounded-xl transition shadow-sm"
           >
             {language === 'kn' ? 'ಸ್ಥಳ ಬದಲಾಯಿಸಿ' : 'Change Location'}
           </button>
@@ -70,7 +70,7 @@ export const LocationCard: React.FC<LocationCardProps> = ({
 
       {/* Agro-Zone Description */}
       {weatherData.agroZoneDescription && (
-        <p className="text-xs text-dark-muted leading-relaxed mb-3.5 bg-cream/30 p-2.5 rounded-xl border border-earth/10">
+        <p className="text-xs text-gray-600 dark:text-gray-400 leading-relaxed mb-3.5 bg-cream/30 p-2.5 rounded-xl border border-earth/10">
           {weatherData.agroZoneDescription}
         </p>
       )}
@@ -80,18 +80,18 @@ export const LocationCard: React.FC<LocationCardProps> = ({
         {/* Season card */}
         <div className="p-3 rounded-2xl bg-gradient-to-br from-mint/20 to-leaf/10 border border-leaf/20 flex flex-col justify-between">
           <div className="flex items-center justify-between">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-forest">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-forest">
               {language === 'kn' ? 'ಪ್ರಸ್ತುತ ಹಂಗಾಮು' : 'Current Season'}
             </span>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-forest text-white">
+            <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-forest text-white">
               {season?.season || 'Kharif'}
             </span>
           </div>
           <div className="mt-1.5">
-            <h4 className="text-xs font-extrabold text-dark-text">
+            <h4 className="text-xs font-extrabold text-gray-900 dark:text-gray-100">
               {language === 'kn' ? season?.nameKannada : season?.name || 'Kharif (Monsoon Season)'}
             </h4>
-            <p className="text-[11px] text-harvest font-semibold mt-0.5">
+            <p className="text-[11px] text-amber-800 font-semibold mt-0.5">
               {language === 'kn' ? season?.currentPhaseKn : season?.currentPhase || 'Active Field Growth'}
             </p>
           </div>
@@ -99,14 +99,14 @@ export const LocationCard: React.FC<LocationCardProps> = ({
 
         {/* Typical Soils Card */}
         <div className="p-3 rounded-2xl bg-gray-50 border border-gray-100 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-dark-muted">
+          <span className="text-[11px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">
             {language === 'kn' ? 'ಪ್ರದೇಶದ ಮುಖ್ಯ ಮಣ್ಣು' : 'Typical Regional Soils'}
           </span>
           <div className="flex flex-wrap gap-1 mt-1.5">
             {soils.map((s) => (
               <span
                 key={s}
-                className="capitalize px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-xs font-bold text-dark-text shadow-2xs"
+                className="capitalize px-2.5 py-1 rounded-lg bg-white border border-gray-200 text-xs font-bold text-gray-900 dark:text-gray-100 shadow-2xs"
               >
                 {s} soil
               </span>
@@ -126,18 +126,18 @@ export const LocationCard: React.FC<LocationCardProps> = ({
               <span className="text-lg font-black text-forest">
                 {weatherData.temperature}°C
               </span>
-              <span className="text-xs font-semibold text-dark-text">
+              <span className="text-xs font-semibold text-gray-900 dark:text-gray-100">
                 {weatherData.condition}
               </span>
             </div>
-            <span className="text-[10px] text-dark-muted">
+            <span className="text-[11px] text-gray-600 dark:text-gray-400">
               Humidity: {weatherData.humidity}% • Rain chance: {weatherData.rainfallProbability}%
             </span>
           </div>
         </div>
 
         <div className="text-right">
-          <span className="text-[10px] font-bold text-forest bg-mint/30 px-2 py-0.5 rounded-md">
+          <span className="text-[11px] font-bold text-forest bg-mint/30 px-2 py-0.5 rounded-md">
             Live Open-Meteo
           </span>
         </div>

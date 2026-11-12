@@ -197,7 +197,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
       {/* 2. Side-by-Side Photo Comparison */}
       <div className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-5 shadow-sm space-y-4">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm sm:text-base font-extrabold text-dark-text flex items-center gap-2">
+          <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100 flex items-center gap-2">
             <Camera className="w-4 h-4 text-brand-600" />
             <span>
               {language === 'kn' && 'ಫೋಟೋ ಹೋಲಿಕೆ (ನಿಮ್ಮ ಫೋಟೋ vs ಪರಿಶೀಲಿಸಿದ ಲೈಬ್ರರಿ)'}
@@ -213,7 +213,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                   key={idx}
                   type="button"
                   onClick={() => setActivePhotoIndex(idx)}
-                  className={`w-6 h-6 rounded-full text-xs font-bold transition ${activePhotoIndex === idx ? 'bg-forest text-white' : 'bg-gray-100 text-gray-600'}`}
+                  className={`min-w-[44px] min-h-[44px] rounded-full text-xs font-bold transition flex items-center justify-center cursor-pointer ${activePhotoIndex === idx ? 'bg-forest text-white' : 'bg-gray-100 text-gray-700'}`}
                 >
                   {idx + 1}
                 </button>
@@ -227,7 +227,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-gray-500">
               <span>Your Field Photo (#{activePhotoIndex + 1})</span>
-              <span className="text-[10px] bg-gray-100 px-2 py-0.5 rounded-full capitalize">
+              <span className="text-[11px] bg-gray-100 px-2 py-0.5 rounded-full capitalize">
                 {userPhotos[activePhotoIndex]?.kind?.replace('_', ' ') || 'Leaf View'}
               </span>
             </div>
@@ -239,7 +239,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-xs text-gray-400">Photo preview</span>
+                <span className="text-xs text-gray-600">Photo preview</span>
               )}
             </div>
           </div>
@@ -248,7 +248,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
           <div className="space-y-2">
             <div className="flex items-center justify-between text-xs font-bold text-gray-500">
               <span>Verified ICAR Reference</span>
-              <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+              <span className="text-[11px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
                 {topCandidate?.name || 'Reference Problem'}
               </span>
             </div>
@@ -279,7 +279,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
               {result.observedSigns.map((sign: string, idx: number) => (
                 <span
                   key={idx}
-                  className="bg-white border border-forest/20 text-dark-text text-xs font-bold px-3 py-1 rounded-xl shadow-xs"
+                  className="bg-white border border-forest/20 text-gray-900 dark:text-gray-100 text-xs font-bold px-3 py-1 rounded-xl shadow-xs"
                 >
                   • {sign}
                 </span>
@@ -292,7 +292,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
       {/* 3. Candidate Rankings (Top 3) */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-extrabold text-dark-text">
+          <h3 className="text-sm font-extrabold text-gray-900 dark:text-gray-100">
             {candidates.length > 1 ? `Identified Candidates (${candidates.length})` : 'Diagnosis Match'}
           </h3>
           <span className="text-xs text-gray-500">Select card to view treatment</span>
@@ -301,7 +301,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
         {result.unknownOrOutsideCatalog || candidates.length === 0 ? (
           <div className="bg-white rounded-3xl border border-gray-200 p-6 text-center space-y-3 shadow-sm">
             <HelpCircle className="w-12 h-12 text-amber-500 mx-auto" />
-            <h4 className="text-base font-black text-dark-text">
+            <h4 className="text-base font-black text-gray-900 dark:text-gray-100">
               {language === 'kn' && 'ಖಚಿತವಾಗಿ ಗುರುತಿಸಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ'}
               {language === 'ta' && 'உறுதியாகக் கண்டறிய முடியவில்லை'}
               {language === 'te' && 'ఖచ్చితంగా గుర్తించలేకపోయాము'}
@@ -320,14 +320,14 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
               <button
                 type="button"
                 onClick={onRetake}
-                className="btn-primary text-xs flex items-center gap-1.5 py-2 px-4"
+                className="min-h-[44px] btn-primary text-xs flex items-center gap-1.5 py-2 px-4 cursor-pointer"
               >
                 <RotateCcw className="w-4 h-4" />
                 <span>Retake Photo</span>
               </button>
               <a
                 href="tel:18001801551"
-                className="btn-secondary text-xs flex items-center gap-1.5 py-2 px-4 text-forest"
+                className="min-h-[44px] btn-secondary text-xs flex items-center gap-1.5 py-2 px-4 text-forest"
               >
                 <PhoneCall className="w-4 h-4" />
                 <span>Call KVK / RSK (1800-180-1551)</span>
@@ -339,10 +339,11 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
             {candidates.map((cand: any, idx: number) => {
               const isSelected = selectedCandidateIndex === idx;
               return (
-                <div
+                <button
                   key={cand.id || cand.slug}
+                  type="button"
                   onClick={() => setSelectedCandidateIndex(idx)}
-                  className={`bg-white rounded-3xl p-4 border transition cursor-pointer shadow-xs ${
+                  className={`w-full text-left bg-white rounded-3xl p-4 border transition cursor-pointer shadow-xs ${
                     isSelected
                       ? 'border-forest ring-2 ring-forest/20 shadow-md bg-forest-light/10'
                       : 'border-gray-200 hover:border-gray-300'
@@ -351,14 +352,14 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-xs font-black text-gray-400">#{idx + 1}</span>
-                        <h4 className="text-sm sm:text-base font-black text-dark-text">
+                        <span className="text-xs font-black text-gray-600">#{idx + 1}</span>
+                        <h4 className="text-sm sm:text-base font-black text-gray-900 dark:text-gray-100">
                           {language === 'kn' && cand.nameKannada ? cand.nameKannada :
                            language === 'ta' && cand.nameTamil ? cand.nameTamil :
                            language === 'te' && cand.nameTelugu ? cand.nameTelugu : cand.name}
                         </h4>
                       </div>
-                      <p className="text-xs text-gray-500 italic">{cand.scientificName}</p>
+                      <p className="text-xs text-gray-600 italic">{cand.scientificName}</p>
                     </div>
                     {getConfidenceBadge(cand.confidence)}
                   </div>
@@ -375,14 +376,14 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                     )}
                     {cand.notMatchingSigns && cand.notMatchingSigns.length > 0 && (
                       <div className="space-y-1">
-                        <span className="font-bold text-gray-600 flex items-center gap-1">
-                          <Info className="w-3.5 h-3.5 text-gray-400" /> Key Signs Missing:
+                        <span className="font-bold text-gray-700 flex items-center gap-1">
+                          <Info className="w-3.5 h-3.5 text-gray-500" /> Key Signs Missing:
                         </span>
-                        <p className="text-gray-500 pl-4">{cand.notMatchingSigns.join(', ')}</p>
+                        <p className="text-gray-600 pl-4">{cand.notMatchingSigns.join(', ')}</p>
                       </div>
                     )}
                   </div>
-                </div>
+                </button>
               );
             })}
           </div>
@@ -394,10 +395,10 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
         <div className="bg-white rounded-3xl border border-gray-200 p-5 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
-              <span className="text-[10px] font-black uppercase text-forest tracking-wider">
+              <span className="text-[11px] font-black uppercase text-forest tracking-wider">
                 ICAR / Agricultural University Treatment Protocol
               </span>
-              <h3 className="text-base font-black text-dark-text">
+              <h3 className="text-base font-black text-gray-900 dark:text-gray-100">
                 {topCandidate.name} Management
               </h3>
             </div>
@@ -407,7 +408,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                 const fullItem = allProblems.find(p => p.slug === topCandidate.slug);
                 if (fullItem) onOpenProblemDetail(fullItem);
               }}
-              className="text-xs font-bold text-forest hover:underline flex items-center gap-1"
+              className="min-h-[44px] inline-flex items-center px-2 text-xs font-bold text-forest hover:underline gap-1 cursor-pointer"
             >
               <span>Full Details</span>
               <ExternalLink className="w-3.5 h-3.5" />
@@ -469,7 +470,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
       {/* 5. "Was this correct?" Feedback Widget */}
       <div className="bg-white rounded-3xl border border-gray-200 p-4 sm:p-5 shadow-sm space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-extrabold text-dark-text flex items-center gap-1.5">
+          <span className="text-xs font-extrabold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
             <CheckCircle2 className="w-4 h-4 text-forest" />
             <span>Was this photo diagnosis correct?</span>
           </span>
@@ -488,9 +489,9 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                 type="button"
                 disabled={isSubmittingFeedback}
                 onClick={() => handleFeedback('correct')}
-                className={`flex-1 py-2 rounded-2xl text-xs font-extrabold border transition flex items-center justify-center gap-1.5 ${
+                className={`flex-1 min-h-[44px] py-2 rounded-2xl text-xs font-extrabold border transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   feedbackRating === 'correct'
-                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    ? 'bg-emerald-700 text-white border-emerald-700'
                     : 'bg-gray-50 hover:bg-emerald-50 text-gray-700 border-gray-200'
                 }`}
               >
@@ -502,9 +503,9 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                 type="button"
                 disabled={isSubmittingFeedback}
                 onClick={() => handleFeedback('incorrect')}
-                className={`flex-1 py-2 rounded-2xl text-xs font-extrabold border transition flex items-center justify-center gap-1.5 ${
+                className={`flex-1 min-h-[44px] py-2 rounded-2xl text-xs font-extrabold border transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   feedbackRating === 'incorrect'
-                    ? 'bg-rose-600 text-white border-rose-600'
+                    ? 'bg-rose-700 text-white border-rose-700'
                     : 'bg-gray-50 hover:bg-rose-50 text-gray-700 border-gray-200'
                 }`}
               >
@@ -516,9 +517,9 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                 type="button"
                 disabled={isSubmittingFeedback}
                 onClick={() => handleFeedback('not_sure')}
-                className={`flex-1 py-2 rounded-2xl text-xs font-extrabold border transition flex items-center justify-center gap-1.5 ${
+                className={`flex-1 min-h-[44px] py-2 rounded-2xl text-xs font-extrabold border transition flex items-center justify-center gap-1.5 cursor-pointer ${
                   feedbackRating === 'not_sure'
-                    ? 'bg-amber-600 text-white border-amber-600'
+                    ? 'bg-amber-700 text-white border-amber-700'
                     : 'bg-gray-50 hover:bg-amber-50 text-gray-700 border-gray-200'
                 }`}
               >
@@ -536,13 +537,14 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                   exit={{ opacity: 0, height: 0 }}
                   className="bg-gray-50 rounded-2xl p-3 border border-gray-200 space-y-2 text-xs"
                 >
-                  <label className="font-bold text-gray-700 block">
+                  <label htmlFor="photo-correction-select" className="font-bold text-gray-700 block">
                     What is the correct pest or disease affecting your crop?
                   </label>
                   <select
+                    id="photo-correction-select"
                     value={selectedCorrectionSlug}
                     onChange={(e) => setSelectedCorrectionSlug(e.target.value)}
-                    className="w-full bg-white border border-gray-300 rounded-xl p-2 text-xs text-dark-text font-medium"
+                    className="w-full min-h-[44px] bg-white border border-gray-300 rounded-xl p-2 text-xs text-gray-900 dark:text-gray-100 font-medium"
                   >
                     <option value="">-- Choose correct threat from catalog --</option>
                     {allProblems.map(p => (
@@ -556,7 +558,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
                     type="button"
                     onClick={handleCorrectionSubmit}
                     disabled={!selectedCorrectionSlug || isSubmittingFeedback}
-                    className="w-full btn-primary text-xs py-2 mt-1"
+                    className="w-full min-h-[44px] btn-primary text-xs py-2 mt-1 cursor-pointer"
                   >
                     Submit Correction
                   </button>
@@ -576,7 +578,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
         <button
           type="button"
           onClick={onRetake}
-          className="btn-secondary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5"
+          className="min-h-[44px] btn-secondary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <RotateCcw className="w-4 h-4" />
           <span>Retake Photo</span>
@@ -585,7 +587,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
         <button
           type="button"
           onClick={handleAskAiChat}
-          className="btn-primary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5"
+          className="min-h-[44px] btn-primary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <MessageSquare className="w-4 h-4" />
           <span>Ask AI Chat</span>
@@ -594,7 +596,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
         <button
           type="button"
           onClick={handleSaveToHistory}
-          className="btn-secondary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5 text-forest"
+          className="min-h-[44px] btn-secondary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5 text-forest cursor-pointer"
         >
           <BookmarkCheck className="w-4 h-4" />
           <span>{historySaved ? 'Saved!' : 'Save History'}</span>
@@ -603,7 +605,7 @@ export const PhotoAnalysisResultView: React.FC<PhotoAnalysisResultViewProps> = (
         <button
           type="button"
           onClick={handleShareWithOfficer}
-          className="btn-secondary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5 text-gray-700"
+          className="min-h-[44px] btn-secondary text-xs py-2.5 px-3 flex items-center justify-center gap-1.5 text-gray-700 cursor-pointer"
         >
           <Share2 className="w-4 h-4" />
           <span>{shareCopied ? 'Copied!' : 'Share'}</span>

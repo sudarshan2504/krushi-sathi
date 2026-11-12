@@ -398,57 +398,67 @@ export async function saveCompressedWebp(buffer: Buffer, destPath: string): Prom
   }
 }
 
-// Helper to determine aliases so both naming styles are kept synchronized
+// Helper to determine aliases so both naming styles are kept synchronized symmetrically
+const ALIAS_GROUPS_SEED: Record<string, string[]> = {
+  'crop-ragi-finger-millet': ['finger-millet-ragi', 'crop-finger-millet-ragi'],
+  'crop-chickpea-gram': ['chickpea-bengal-gram', 'crop-chickpea-bengal-gram'],
+  'crop-jowar-sorghum': ['sorghum-jowar', 'crop-sorghum-jowar'],
+  'crop-bajra-pearl-millet': ['pearl-millet-bajra', 'crop-pearl-millet-bajra'],
+  'crop-wheat-rabi': ['wheat-south-india', 'crop-wheat-south-india', 'wheat'],
+  'crop-redgram-pigeonpea': ['red-gram-pigeonpea', 'crop-red-gram-pigeonpea', 'crop-pigeonpea'],
+  'crop-greengram-moong': ['green-gram-moong', 'crop-green-gram-moong'],
+  'crop-chilli-pepper': ['chilli-green-dry', 'crop-chilli-green-dry', 'crop-chilli', 'chilli'],
+  'crop-onion-bulb': ['onion', 'crop-onion'],
+  'crop-bhendi-okra': ['bhendi-okra', 'crop-bhendi-okra', 'crop-okra', 'okra'],
+  'crop-tomato-vegetable': ['tomato', 'crop-tomato'],
+  'crop-cotton-cash': ['cotton', 'crop-cotton'],
+  'crop-mango-alphonso': ['mango', 'crop-mango'],
+  'crop-watermelon-summer': ['watermelon', 'crop-watermelon'],
+  'crop-banana-grandnaine': ['banana', 'crop-banana'],
+  'crop-papaya-redlady': ['papaya', 'crop-papaya'],
+  'crop-marigold-african': ['marigold', 'crop-marigold'],
+  'crop-jasmine-mysore-mallige': ['jasmine-mysore-mallige'],
+  'crop-arecanut-betelnut': ['arecanut-betelnut', 'crop-arecanut-betelnut', 'crop-arecanut'],
+  'crop-coconut-tall': ['coconut', 'crop-coconut'],
+  'crop-coffee-arabica': ['coffee', 'crop-coffee'],
+  'crop-sandalwood-agroforestry': ['sandalwood-srigandha', 'crop-sandalwood-srigandha'],
+  'crop-turmeric-salem': ['turmeric', 'crop-turmeric'],
+  'crop-ginger-cochin': ['ginger', 'crop-ginger'],
+  'crop-black-pepper-panniyur': ['black-pepper', 'crop-black-pepper'],
+  'crop-sunflower-hybrid': ['sunflower', 'crop-sunflower'],
+  'crop-soybean-js335': ['soybean', 'crop-soybean'],
+  'crop-super-napier-co5': ['super-napier-co5'],
+  'crop-fodder-cowpea': ['cowpea-alasande', 'crop-cowpea-alasande'],
+};
+
+const REVERSE_ALIAS_MAP = new Map<string, Set<string>>();
+for (const [primary, members] of Object.entries(ALIAS_GROUPS_SEED)) {
+  const group = new Set([primary, ...members]);
+  for (const id of group) {
+    if (!REVERSE_ALIAS_MAP.has(id)) REVERSE_ALIAS_MAP.set(id, new Set());
+    for (const peer of group) {
+      if (peer !== id) REVERSE_ALIAS_MAP.get(id)!.add(peer);
+    }
+  }
+}
+
 export function getCropAliases(cropId: string): string[] {
-  const aliases: string[] = [];
+  const aliases = new Set<string>();
   if (cropId.startsWith('crop-')) {
-    aliases.push(cropId.replace('crop-', ''));
+    aliases.add(cropId.replace(/^crop-/, ''));
   } else {
-    aliases.push(`crop-${cropId}`);
+    aliases.add(`crop-${cropId}`);
   }
 
-  // Common crop ID mappings between CROPS_DATA, catalog, and DB seedCropHealth IDs
-  const idMap: Record<string, string[]> = {
-    'crop-ragi-finger-millet': ['finger-millet-ragi', 'crop-finger-millet-ragi'],
-    'crop-chickpea-gram': ['chickpea-bengal-gram', 'crop-chickpea-bengal-gram'],
-    'crop-jowar-sorghum': ['sorghum-jowar', 'crop-sorghum-jowar'],
-    'crop-bajra-pearl-millet': ['pearl-millet-bajra', 'crop-pearl-millet-bajra'],
-    'crop-wheat-rabi': ['wheat-south-india', 'crop-wheat-south-india', 'wheat'],
-    'crop-redgram-pigeonpea': ['red-gram-pigeonpea', 'crop-red-gram-pigeonpea', 'crop-pigeonpea'],
-    'red-gram-pigeonpea': ['crop-redgram-pigeonpea', 'crop-pigeonpea'],
-    'crop-greengram-moong': ['green-gram-moong', 'crop-green-gram-moong'],
-    'crop-chilli-pepper': ['chilli-green-dry', 'crop-chilli-green-dry', 'crop-chilli', 'chilli'],
-    'chilli-green-dry': ['crop-chilli-pepper', 'crop-chilli'],
-    'crop-onion-bulb': ['onion', 'crop-onion'],
-    'crop-bhendi-okra': ['bhendi-okra', 'crop-bhendi-okra', 'crop-okra', 'okra'],
-    'bhendi-okra': ['crop-bhendi-okra', 'crop-okra'],
-    'crop-tomato-vegetable': ['tomato', 'crop-tomato'],
-    'crop-cotton-cash': ['cotton', 'crop-cotton'],
-    'crop-mango-alphonso': ['mango', 'crop-mango'],
-    'crop-watermelon-summer': ['watermelon', 'crop-watermelon'],
-    'crop-banana-grandnaine': ['banana', 'crop-banana'],
-    'crop-papaya-redlady': ['papaya', 'crop-papaya'],
-    'crop-marigold-african': ['marigold', 'crop-marigold'],
-    'crop-jasmine-mysore-mallige': ['jasmine-mysore-mallige'],
-    'crop-arecanut-betelnut': ['arecanut-betelnut', 'crop-arecanut-betelnut', 'crop-arecanut'],
-    'arecanut-betelnut': ['crop-arecanut-betelnut', 'crop-arecanut'],
-    'crop-coconut-tall': ['coconut', 'crop-coconut'],
-    'crop-coffee-arabica': ['coffee', 'crop-coffee'],
-    'crop-sandalwood-agroforestry': ['sandalwood-srigandha', 'crop-sandalwood-srigandha'],
-    'crop-turmeric-salem': ['turmeric', 'crop-turmeric'],
-    'crop-ginger-cochin': ['ginger', 'crop-ginger'],
-    'crop-black-pepper-panniyur': ['black-pepper', 'crop-black-pepper'],
-    'crop-sunflower-hybrid': ['sunflower', 'crop-sunflower'],
-    'crop-soybean-js335': ['soybean', 'crop-soybean'],
-    'crop-super-napier-co5': ['super-napier-co5'],
-    'crop-fodder-cowpea': ['cowpea-alasande', 'crop-cowpea-alasande'],
-  };
-
-  if (idMap[cropId]) {
-    aliases.push(...idMap[cropId]);
+  const groupPeers = REVERSE_ALIAS_MAP.get(cropId);
+  if (groupPeers) {
+    for (const peer of groupPeers) {
+      aliases.add(peer);
+    }
   }
 
-  return Array.from(new Set(aliases));
+  aliases.delete(cropId);
+  return Array.from(aliases);
 }
 
 export function syncCatalogJsonWithMetadata(records?: CropImageMetadata[]) {

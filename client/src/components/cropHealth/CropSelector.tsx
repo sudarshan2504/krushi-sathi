@@ -73,7 +73,7 @@ export const CropSelector: React.FC<CropSelectorProps> = ({
               className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap snap-start transition-all cursor-pointer min-h-[44px] flex items-center gap-1.5 ${
                 isSelected
                   ? 'bg-forest text-white shadow-sm ring-2 ring-forest/30 scale-102'
-                  : 'bg-white text-dark-text border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                  : 'bg-white text-gray-900 dark:text-gray-100 border border-gray-200 hover:border-gray-300 hover:bg-gray-50'
               }`}
             >
               {isSelected && <Check className="w-3.5 h-3.5 stroke-[3]" />}
@@ -90,11 +90,12 @@ export const CropSelector: React.FC<CropSelectorProps> = ({
           const localizedName = getCropLocalizedName(crop);
 
           return (
-            <motion.div
+            <motion.button
               key={crop.id}
+              type="button"
               whileTap={{ scale: 0.97 }}
               onClick={() => onSelectCrop(crop)}
-              className={`relative rounded-2xl p-2.5 transition-all cursor-pointer border flex flex-col items-center text-center ${
+              className={`w-full relative rounded-2xl p-2.5 transition-all cursor-pointer border flex flex-col items-center text-center ${
                 isSelected
                   ? 'bg-emerald-50/80 border-forest shadow-md ring-2 ring-forest/20'
                   : 'bg-white border-gray-200 hover:border-gray-300 hover:shadow-sm'
@@ -121,22 +122,22 @@ export const CropSelector: React.FC<CropSelectorProps> = ({
               </div>
 
               {/* Localized Name */}
-              <div className="text-xs sm:text-sm font-bold text-dark-text line-clamp-1 w-full">
+              <div className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 line-clamp-1 w-full">
                 {localizedName}
               </div>
 
               {/* English secondary name if not in English */}
               {language !== 'en' && (
-                <div className="text-[10px] text-gray-500 line-clamp-1 w-full">
+                <div className="text-[11px] text-gray-500 line-clamp-1 w-full">
                   {crop.name.split('(')[0]}
                 </div>
               )}
 
               {/* Problem Count Badge */}
-              <div className="mt-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold bg-gray-100 text-gray-600">
+              <div className="mt-1.5 inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-gray-100 text-gray-600">
                 {crop.problemCount} {t('pestAndDiseases') ? 'problems' : 'issues'}
               </div>
-            </motion.div>
+            </motion.button>
           );
         })}
       </div>

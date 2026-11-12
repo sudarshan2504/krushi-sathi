@@ -110,7 +110,7 @@ export class RootErrorBoundary extends Component<Props, State> {
               </button>
 
               {this.state.showDetails && (
-                <div className="mt-2 p-3 rounded-xl bg-gray-50 border border-gray-200 text-[10px] font-mono text-gray-700 max-h-40 overflow-auto whitespace-pre-wrap leading-tight">
+                <div className="mt-2 p-3 rounded-xl bg-gray-50 border border-gray-200 text-[11px] font-mono text-gray-700 max-h-40 overflow-auto whitespace-pre-wrap leading-tight">
                   <div className="font-bold text-red-600 mb-1">
                     {this.state.error?.name}: {this.state.error?.message}
                   </div>

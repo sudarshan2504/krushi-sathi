@@ -320,18 +320,18 @@ export const DiseasePreventionPage: React.FC = () => {
         <button
           type="button"
           onClick={() => navigate('/home')}
-          className="min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl bg-white border border-gray-200 text-dark-text hover:bg-gray-50 active:scale-95 transition cursor-pointer shadow-sm"
+          className="min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl bg-white border border-gray-200 text-gray-900 dark:text-gray-100 hover:bg-gray-50 active:scale-95 transition cursor-pointer shadow-sm"
           aria-label={t('navBack')}
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
 
         <div className="text-center">
-          <h1 className="text-base sm:text-lg font-black text-dark-text flex items-center justify-center gap-1.5">
+          <h1 className="text-base sm:text-lg font-black text-gray-900 dark:text-gray-100 flex items-center justify-center gap-1.5">
             <ShieldAlert className="w-5 h-5 text-forest" />
             <span>{t('pestAndDiseases') || 'Crop Health'}</span>
           </h1>
-          <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">
+          <span className="text-[11px] text-gray-500 font-bold uppercase tracking-wider block">
             Verified ICAR / UAS / TNAU Guidance
           </span>
         </div>
@@ -342,7 +342,7 @@ export const DiseasePreventionPage: React.FC = () => {
           className={`min-w-[48px] min-h-[48px] flex items-center justify-center p-2 rounded-2xl border transition cursor-pointer shadow-sm relative ${
             hasActiveFilters
               ? 'bg-forest text-white border-forest'
-              : 'bg-white border-gray-200 text-dark-text hover:bg-gray-50'
+              : 'bg-white border-gray-200 text-gray-900 dark:text-gray-100 hover:bg-gray-50'
           }`}
           aria-label="Filter"
         >
@@ -359,7 +359,7 @@ export const DiseasePreventionPage: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('common')}
           className={`shrink-0 sm:flex-1 min-h-[44px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 whitespace-nowrap snap-start touch-target ${
-            activeTab === 'common' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
+            activeTab === 'common' ? 'bg-forest text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
           }`}
         >
           <ShieldAlert className="w-4 h-4 shrink-0" />
@@ -370,7 +370,7 @@ export const DiseasePreventionPage: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('calendar')}
           className={`shrink-0 sm:flex-1 min-h-[44px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 whitespace-nowrap snap-start touch-target ${
-            activeTab === 'calendar' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
+            activeTab === 'calendar' ? 'bg-forest text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
           }`}
         >
           <Calendar className="w-4 h-4 shrink-0" />
@@ -381,7 +381,7 @@ export const DiseasePreventionPage: React.FC = () => {
           type="button"
           onClick={() => setActiveTab('checker')}
           className={`shrink-0 sm:flex-1 min-h-[44px] py-2 px-3 rounded-xl transition-all cursor-pointer flex items-center justify-center text-center gap-1.5 whitespace-nowrap snap-start touch-target ${
-            activeTab === 'checker' ? 'bg-forest text-white shadow-sm' : 'text-dark-muted hover:text-dark-text'
+            activeTab === 'checker' ? 'bg-forest text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'
           }`}
         >
           <Sparkles className="w-4 h-4 shrink-0 text-amber-300" />
@@ -421,14 +421,14 @@ export const DiseasePreventionPage: React.FC = () => {
             className="bg-white rounded-3xl p-4 sm:p-5 border border-gray-200 shadow-card space-y-3.5 overflow-hidden"
           >
             <div className="flex items-center justify-between border-b border-gray-100 pb-2">
-              <span className="text-xs font-extrabold text-dark-text uppercase tracking-wider flex items-center gap-1.5">
+              <span className="text-xs font-extrabold text-gray-900 dark:text-gray-100 uppercase tracking-wider flex items-center gap-1.5">
                 <Filter className="w-4 h-4 text-forest" />
                 Advanced Filters
               </span>
               <button
                 type="button"
                 onClick={handleClearFilters}
-                className="text-xs font-bold text-red-600 hover:underline"
+                className="min-h-[44px] inline-flex items-center px-2 text-xs font-bold text-red-600 hover:underline cursor-pointer"
               >
                 Reset Filters
               </button>
@@ -437,13 +437,14 @@ export const DiseasePreventionPage: React.FC = () => {
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               {/* Type Filter */}
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                <label htmlFor="dp-filter-type" className="text-[11px] font-bold text-gray-600 uppercase block mb-1">
                   Problem Type
                 </label>
                 <select
+                  id="dp-filter-type"
                   value={selectedType}
                   onChange={(e) => setSelectedType(e.target.value)}
-                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[40px]"
+                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[44px]"
                 >
                   {PROBLEM_TYPES.map((pt) => (
                     <option key={pt.key} value={pt.key}>
@@ -455,13 +456,14 @@ export const DiseasePreventionPage: React.FC = () => {
 
               {/* Severity Filter */}
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                <label htmlFor="dp-filter-severity" className="text-[11px] font-bold text-gray-600 uppercase block mb-1">
                   Severity
                 </label>
                 <select
+                  id="dp-filter-severity"
                   value={selectedSeverity}
                   onChange={(e) => setSelectedSeverity(e.target.value)}
-                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[40px]"
+                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[44px]"
                 >
                   {SEVERITIES.map((sv) => (
                     <option key={sv.key} value={sv.key}>
@@ -473,13 +475,14 @@ export const DiseasePreventionPage: React.FC = () => {
 
               {/* Growth Stage Filter */}
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                <label htmlFor="dp-filter-stage" className="text-[11px] font-bold text-gray-600 uppercase block mb-1">
                   Growth Stage
                 </label>
                 <select
+                  id="dp-filter-stage"
                   value={selectedStage}
                   onChange={(e) => setSelectedStage(e.target.value)}
-                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[40px]"
+                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[44px]"
                 >
                   {STAGES.map((st) => (
                     <option key={st.key} value={st.key}>
@@ -491,13 +494,14 @@ export const DiseasePreventionPage: React.FC = () => {
 
               {/* Season Filter */}
               <div>
-                <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+                <label htmlFor="dp-filter-season" className="text-[11px] font-bold text-gray-600 uppercase block mb-1">
                   Season
                 </label>
                 <select
+                  id="dp-filter-season"
                   value={selectedSeason}
                   onChange={(e) => setSelectedSeason(e.target.value)}
-                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[40px]"
+                  className="w-full px-2.5 py-2 rounded-xl bg-gray-50 border border-gray-200 text-xs font-semibold focus:border-forest outline-none min-h-[44px]"
                 >
                   {SEASONS.map((sn) => (
                     <option key={sn.key} value={sn.key}>
@@ -516,19 +520,21 @@ export const DiseasePreventionPage: React.FC = () => {
         <div className="space-y-4">
           {/* Multilingual Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3.5 top-3.5 w-4 h-4 text-forest" />
+            <Search className="absolute left-3.5 top-4 w-4 h-4 text-forest" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by pest name, symptom (e.g. leaf spots, borer), or signs..."
-              className="w-full pl-10 pr-10 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 text-xs sm:text-sm font-semibold focus:border-forest outline-none shadow-sm"
+              aria-label="Search crop health problems"
+              className="w-full pl-10 pr-12 py-3 min-h-[48px] rounded-2xl bg-white border border-gray-200 text-xs sm:text-sm font-semibold focus:border-forest outline-none shadow-sm"
             />
             {searchQuery && (
               <button
                 type="button"
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3.5 top-3.5 text-gray-400 hover:text-gray-600"
+                aria-label="Clear search"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center absolute right-1 top-0.5 text-gray-600 hover:text-gray-900 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -538,10 +544,10 @@ export const DiseasePreventionPage: React.FC = () => {
           {/* Group 1: Primary Documented Problems for Selected Crop */}
           <div className="space-y-5">
             <div className="flex items-center justify-between border-b border-gray-200 pb-2">
-              <h2 className="text-sm sm:text-base font-black text-dark-text">
+              <h2 className="text-sm sm:text-base font-black text-gray-900 dark:text-gray-100">
                 Documented Problems in <span className="text-forest">{selectedCrop?.name}</span> ({primaryCropProblems.length})
               </h2>
-              <span className="text-[10px] font-bold bg-forest/10 text-forest px-2.5 py-1 rounded-full">
+              <span className="text-[11px] font-bold bg-forest/10 text-forest px-2.5 py-1 rounded-full">
                 Primary Threats
               </span>
             </div>
@@ -549,15 +555,15 @@ export const DiseasePreventionPage: React.FC = () => {
             {primaryCropProblems.length === 0 ? (
               <div className="p-8 bg-white rounded-3xl border border-gray-200 text-center space-y-2">
                 <ShieldAlert className="w-10 h-10 text-gray-300 mx-auto" />
-                <h3 className="text-sm font-bold text-dark-text">No primary problems match your filters</h3>
-                <p className="text-xs text-dark-muted max-w-sm mx-auto">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-gray-100">No primary problems match your filters</h3>
+                <p className="text-xs text-gray-600 dark:text-gray-400 max-w-sm mx-auto">
                   Try adjusting the type or severity filter above, or check the secondary problems section below.
                 </p>
                 {hasActiveFilters && (
                   <button
                     type="button"
                     onClick={handleClearFilters}
-                    className="mt-2 px-4 py-2 bg-gray-100 rounded-xl text-xs font-bold text-dark-text hover:bg-gray-200 transition"
+                    className="min-h-[44px] mt-2 px-4 py-2 bg-gray-100 rounded-xl text-xs font-bold text-gray-900 dark:text-gray-100 hover:bg-gray-200 transition cursor-pointer"
                   >
                     Clear Filters
                   </button>
@@ -568,10 +574,10 @@ export const DiseasePreventionPage: React.FC = () => {
                 <div key={typeKey} className="space-y-3">
                   <div className="flex items-center gap-2">
                     <span className="w-2.5 h-2.5 rounded-full bg-forest" />
-                    <h3 className="text-xs sm:text-sm font-extrabold text-dark-text">
+                    <h3 className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-gray-100">
                       {getTypeHeading(typeKey)}
                     </h3>
-                    <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                    <span className="text-[11px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
                       {items.length}
                     </span>
                   </div>
@@ -597,13 +603,13 @@ export const DiseasePreventionPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowSecondaryProblems(!showSecondaryProblems)}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 transition cursor-pointer"
+                className="w-full min-h-[48px] p-4 flex items-center justify-between text-left hover:bg-gray-50 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-xs sm:text-sm font-extrabold text-dark-text">
+                  <span className="text-xs sm:text-sm font-extrabold text-gray-900 dark:text-gray-100">
                     Other Problems That Can Also Affect {selectedCrop?.name} ({secondaryCropProblems.length})
                   </span>
-                  <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
                     Secondary Hosts
                   </span>
                 </div>
@@ -640,13 +646,13 @@ export const DiseasePreventionPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setShowOtherCropProblems(!showOtherCropProblems)}
-                className="w-full p-4 flex items-center justify-between text-left hover:bg-gray-50 transition cursor-pointer"
+                className="w-full min-h-[48px] p-4 flex items-center justify-between text-left hover:bg-gray-50 transition cursor-pointer"
               >
                 <div className="flex items-center gap-2">
                   <span className="text-xs sm:text-sm font-extrabold text-gray-700">
                     Problems in Other Crops ({otherCropProblems.length})
                   </span>
-                  <span className="text-[10px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-bold bg-gray-100 text-gray-600 px-2 py-0.5 rounded-full">
                     General Library
                   </span>
                 </div>

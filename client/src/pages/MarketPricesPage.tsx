@@ -169,7 +169,8 @@ export const MarketPricesPage: React.FC = () => {
             <button
               type="button"
               onClick={handleRefresh}
-              className="text-white hover:text-emerald-300 transition active:scale-95"
+              aria-label="Refresh mandi prices"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full text-white hover:text-emerald-300 hover:bg-white/10 transition active:scale-95 cursor-pointer"
             >
               <RefreshCw className={`w-4 h-4 ${isRefreshing ? 'animate-spin' : ''}`} />
             </button>
@@ -185,21 +186,23 @@ export const MarketPricesPage: React.FC = () => {
 
         {/* Search & Filter Bar */}
         <div className="flex items-center gap-2">
-          <div className="flex-1 flex items-center rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 px-3 py-2 shadow-xs">
-            <Search className="w-4 h-4 text-zinc-400 mr-2 shrink-0" />
+          <div className="flex-1 flex items-center rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 px-3 shadow-xs">
+            <Search className="w-4 h-4 text-zinc-500 mr-2 shrink-0" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search crop or variety..."
-              className="w-full bg-transparent text-xs font-semibold text-zinc-800 dark:text-zinc-100 placeholder-zinc-400 focus:outline-none"
+              aria-label="Search crop or variety"
+              className="w-full min-h-[44px] bg-transparent text-xs font-semibold text-zinc-800 dark:text-zinc-100 placeholder-zinc-500 focus:outline-none"
             />
           </div>
 
           <select
             value={selectedMarket}
             onChange={(e) => setSelectedMarket(e.target.value)}
-            className="px-3 py-2 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 shadow-xs focus:outline-none"
+            aria-label="Filter by mandi"
+            className="min-h-[44px] px-3 py-2 rounded-2xl bg-white dark:bg-zinc-800 border border-zinc-200/80 dark:border-zinc-700 text-xs font-bold text-zinc-700 dark:text-zinc-200 shadow-xs focus:outline-none"
           >
             <option value="All">All Mandis</option>
             <option value="Mandya">Mandya</option>
@@ -232,12 +235,12 @@ export const MarketPricesPage: React.FC = () => {
                 <div className="text-right">
                   <div className="text-base sm:text-lg font-black text-[#0D2B18] dark:text-zinc-100">
                     ₹{item.modalPrice.toLocaleString()}
-                    <span className="text-[10px] text-zinc-400 font-normal"> /qtl</span>
+                    <span className="text-[11px] text-zinc-600 dark:text-zinc-300 font-normal"> /qtl</span>
                   </div>
                   {item.change !== 0 ? (
                     <div
-                      className={`inline-flex items-center gap-0.5 text-[10px] font-bold ${
-                        item.changeType === 'up' ? 'text-emerald-600' : 'text-red-500'
+                      className={`inline-flex items-center gap-0.5 text-[11px] font-bold ${
+                        item.changeType === 'up' ? 'text-emerald-700 dark:text-emerald-400' : 'text-red-600 dark:text-red-400'
                       }`}
                     >
                       {item.changeType === 'up' ? (
@@ -250,7 +253,7 @@ export const MarketPricesPage: React.FC = () => {
                       </span>
                     </div>
                   ) : (
-                    <span className="text-[10px] font-bold text-zinc-400">Stable</span>
+                    <span className="text-[11px] font-bold text-zinc-600 dark:text-zinc-300">Stable</span>
                   )}
                 </div>
               </div>

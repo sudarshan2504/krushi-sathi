@@ -38,8 +38,8 @@ export class ErrorBoundary extends Component<Props, State> {
               <AlertTriangle className="w-7 h-7" />
             </div>
             <div>
-              <h2 className="text-lg font-black text-dark-text">Something went wrong</h2>
-              <p className="text-xs text-dark-muted mt-1 leading-relaxed">
+              <h2 className="text-lg font-black text-gray-900 dark:text-gray-100">Something went wrong</h2>
+              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 leading-relaxed">
                 An unexpected interface error occurred. Your crop plans and farmer profile data remain safe in the database.
               </p>
             </div>

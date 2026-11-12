@@ -235,9 +235,10 @@ export const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
       {/* Search Bar & GPS Button */}
       <form onSubmit={handleSearch} className="flex gap-2">
         <div className="relative flex-1">
-          <Search className="w-4 h-4 absolute left-3 top-3 text-dark-muted" />
+          <Search className="w-4 h-4 absolute left-3 top-3.5 text-gray-600 dark:text-gray-400" />
           <input
             type="text"
+            aria-label="Search farm location"
             placeholder={
               language === 'kn'
                 ? 'ಗ್ರಾಮ, ತಾಲೂಕು ಅಥವಾ ಜಿಲ್ಲೆ ಹುಡುಕಿ (ಉದಾ: ಮಂಡ್ಯ, ತೀರ್ಥಹಳ್ಳಿ)...'
@@ -245,7 +246,7 @@ export const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-forest bg-gray-50/50"
+            className="w-full min-h-[44px] pl-9 pr-3 py-2 text-xs border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-forest bg-gray-50/50"
           />
         </div>
 
@@ -253,7 +254,7 @@ export const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
           type="button"
           onClick={handleUseGps}
           disabled={isLocating}
-          className="min-h-[40px] px-3 bg-mint/20 hover:bg-forest hover:text-white text-forest text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0"
+          className="min-h-[44px] px-3 bg-mint/20 hover:bg-forest hover:text-white text-forest text-xs font-bold rounded-xl transition flex items-center gap-1.5 shrink-0"
         >
           <Navigation className={`w-3.5 h-3.5 ${isLocating ? 'animate-spin' : ''}`} />
           <span>{isLocating ? 'Locating...' : 'GPS'}</span>
@@ -277,11 +278,11 @@ export const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
             <div className="w-12 h-12 rounded-full bg-forest text-white shadow-xl flex items-center justify-center animate-bounce">
               <MapPin className="w-6 h-6" />
             </div>
-            <div className="mt-2 bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-md border border-gray-200 text-xs font-bold text-dark-text flex items-center gap-1.5">
+            <div className="mt-2 bg-white/95 backdrop-blur-sm px-4 py-1.5 rounded-full shadow-md border border-gray-200 text-xs font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
               <span>{currentDetails?.taluk || 'Mandya'},</span>
               <span className="text-forest">{currentDetails?.district || 'Mandya'}</span>
             </div>
-            <span className="text-[10px] text-dark-muted mt-1 font-mono">
+            <span className="text-[11px] text-gray-600 dark:text-gray-400 mt-1 font-mono">
               {lat.toFixed(4)}° N, {lon.toFixed(4)}° E
             </span>
           </div>
@@ -291,7 +292,7 @@ export const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
               <button
                 type="button"
                 onClick={onSwitchToManual}
-                className="text-[11px] font-bold text-forest bg-white px-3 py-1 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50"
+                className="min-h-[44px] text-[11px] font-bold text-forest bg-white px-3 py-1 rounded-lg border border-gray-200 shadow-sm hover:bg-gray-50"
               >
                 Use Dropdowns instead
               </button>
@@ -309,9 +310,9 @@ export const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
                 <Sprout className="w-4 h-4 text-white" />
               </div>
               <div>
-                <h4 className="text-xs font-extrabold text-dark-text flex items-center gap-1.5">
+                <h4 className="text-xs font-extrabold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
                   <span>{currentDetails.taluk ? `${currentDetails.taluk}, ` : ''}{currentDetails.district}</span>
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-forest text-white font-medium">
+                  <span className="text-[11px] px-2 py-0.5 rounded-full bg-forest text-white font-medium">
                     {currentDetails.state}
                   </span>
                 </h4>
@@ -326,18 +327,18 @@ export const GoogleMapPicker: React.FC<GoogleMapPickerProps> = ({
             )}
           </div>
 
-          <p className="text-[11px] text-dark-muted leading-relaxed">
+          <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
             {currentDetails.agroZoneDescription}
           </p>
 
           {currentDetails.typicalSoils && currentDetails.typicalSoils.length > 0 && (
             <div className="flex items-center gap-1.5 pt-1 text-[11px]">
-              <span className="font-semibold text-dark-text">Common Soils:</span>
+              <span className="font-semibold text-gray-900 dark:text-gray-100">Common Soils:</span>
               <div className="flex flex-wrap gap-1">
                 {currentDetails.typicalSoils.map((s) => (
                   <span
                     key={s}
-                    className="capitalize px-2 py-0.5 rounded-md bg-white border border-gray-200 text-dark-text text-[10px] font-medium"
+                    className="capitalize px-2 py-0.5 rounded-md bg-white border border-gray-200 text-gray-900 dark:text-gray-100 text-[11px] font-medium"
                   >
                     {s} soil
                   </span>

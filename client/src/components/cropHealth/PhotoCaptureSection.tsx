@@ -228,7 +228,7 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
               ? 'స్పష్టమైన ఫోటోలు మరింత ఖచ్చితమైన నిర్ధారణను అందిస్తాయి'
               : 'Up to 3 Photos from Different Angles for Best Accuracy'}
           </strong>
-          <span className="text-[11px] text-dark-muted block mt-0.5">
+          <span className="text-[11px] text-gray-600 dark:text-gray-400 block mt-0.5">
             {language === 'kn'
               ? 'ಹತ್ತಿರದ ಎಲೆ, ಸಂಪೂರ್ಣ ಸಸ್ಯ ಮತ್ತು ಎಲೆಯ ಹಿಂಭಾಗದ ಚಿತ್ರಗಳನ್ನು ಸೇರಿಸಿ. ಫೋಟೋಗಳು ಸ್ವಯಂಚಾಲಿತವಾಗಿ ಸಂಕುಚಿತಗೊಳ್ಳುತ್ತವೆ.'
               : language === 'ta'
@@ -257,16 +257,16 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
               {/* Badge & Slot Title */}
               <div>
                 <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-[10px] font-bold text-forest bg-forest/10 px-2 py-0.5 rounded-full">
+                  <span className="text-[11px] font-bold text-forest bg-forest/10 px-2 py-0.5 rounded-full">
                     {getLocalized(slot, 'badge')}
                   </span>
                   <span className="text-base">{slot.icon}</span>
                 </div>
 
-                <h4 className="text-xs font-bold text-dark-text mb-1">
+                <h4 className="text-xs font-bold text-gray-900 dark:text-gray-100 mb-1">
                   {getLocalized(slot, 'title')}
                 </h4>
-                <p className="text-[11px] text-dark-muted leading-snug mb-3">
+                <p className="text-[11px] text-gray-600 dark:text-gray-400 leading-snug mb-3">
                   {getLocalized(slot, 'desc')}
                 </p>
               </div>
@@ -283,13 +283,16 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
                     <button
                       type="button"
                       onClick={() => handleRemovePhoto(slot.kind)}
-                      className="absolute top-2 right-2 p-1.5 rounded-full bg-red-600 text-white shadow-md hover:bg-red-700 transition"
+                      className="absolute top-0.5 right-0.5 min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer"
                       title="Remove photo"
+                      aria-label="Remove photo"
                     >
-                      <X className="w-3.5 h-3.5" />
+                      <span className="p-1.5 rounded-full bg-red-600 text-white shadow-md hover:bg-red-700 transition">
+                        <X className="w-3.5 h-3.5" />
+                      </span>
                     </button>
                     {captured.qualityWarning && (
-                      <div className="absolute bottom-1 left-1 right-1 bg-amber-950/80 backdrop-blur-sm px-2 py-1 rounded text-[10px] text-amber-200 flex items-center gap-1">
+                      <div className="absolute bottom-1 left-1 right-1 bg-amber-950/80 backdrop-blur-sm px-2 py-1 rounded text-[11px] text-amber-200 flex items-center gap-1">
                         <AlertTriangle className="w-3 h-3 text-amber-400 flex-shrink-0" />
                         <span className="truncate">{captured.qualityWarning}</span>
                       </div>
@@ -304,7 +307,7 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
                     <button
                       type="button"
                       onClick={() => handleTriggerInput(slot.kind, true)}
-                      className="text-dark-muted hover:text-forest text-[11px] font-semibold underline flex items-center gap-1"
+                      className="min-h-[44px] inline-flex items-center px-2 text-gray-600 dark:text-gray-400 hover:text-forest text-[11px] font-semibold underline gap-1 cursor-pointer"
                     >
                       <RotateCcw className="w-3 h-3" />
                       {language === 'kn' ? 'ಮರುತೆಗೆಯಿರಿ' : 'Retake'}
@@ -318,7 +321,7 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
                       type="button"
                       onClick={() => handleTriggerInput(slot.kind, true)}
                       disabled={isProcessing}
-                      className="flex-1 py-2 px-2.5 rounded-xl bg-forest text-white text-[11px] font-bold hover:bg-forest-dark transition flex items-center justify-center gap-1.5 min-h-[40px] shadow-sm disabled:opacity-50"
+                      className="flex-1 py-2 px-2.5 rounded-xl bg-forest text-white text-[11px] font-bold hover:bg-forest-dark transition flex items-center justify-center gap-1.5 min-h-[44px] shadow-sm disabled:opacity-50 cursor-pointer"
                     >
                       <Camera className="w-3.5 h-3.5" />
                       <span>{language === 'kn' ? 'ಕ್ಯಾಮೆರಾ' : language === 'ta' ? 'கேமரா' : language === 'te' ? 'కెమెరా' : 'Camera'}</span>
@@ -328,13 +331,13 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
                       type="button"
                       onClick={() => handleTriggerInput(slot.kind, false)}
                       disabled={isProcessing}
-                      className="flex-1 py-2 px-2.5 rounded-xl bg-white border border-gray-200 text-dark-text text-[11px] font-bold hover:bg-gray-50 transition flex items-center justify-center gap-1.5 min-h-[40px] shadow-xs disabled:opacity-50"
+                      className="flex-1 py-2 px-2.5 rounded-xl bg-white border border-gray-200 text-gray-900 dark:text-gray-100 text-[11px] font-bold hover:bg-gray-50 transition flex items-center justify-center gap-1.5 min-h-[44px] shadow-xs disabled:opacity-50 cursor-pointer"
                     >
                       <Upload className="w-3.5 h-3.5 text-gray-500" />
                       <span>{language === 'kn' ? 'ಅಪ್‌ಲೋಡ್' : language === 'ta' ? 'பதிவேற்று' : language === 'te' ? 'అప్‌లోడ్' : 'Upload'}</span>
                     </button>
                   </div>
-                  <span className="text-[10px] text-gray-400 text-center block">
+                  <span className="text-[11px] text-gray-600 text-center block">
                     JPG, PNG, WebP &lt; 5MB
                   </span>
                 </div>
@@ -353,7 +356,7 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
             onChange={(e) => onConsentChange(e.target.checked)}
             className="mt-0.5 rounded border-gray-300 text-forest focus:ring-forest cursor-pointer"
           />
-          <div className="text-[11px] text-dark-text/90 leading-snug">
+          <div className="text-[11px] text-gray-800 dark:text-gray-100 leading-snug">
             <span className="font-bold block">
               {language === 'kn'
                 ? 'ಕೃಷಿ ಸಾಥಿ ಸುಧಾರಣೆಗೆ ಈ ಫೋಟೋವನ್ನು ಉಳಿಸಲು ಅನುಮತಿಸಿ (ಐಚ್ಛಿಕ)'
@@ -363,7 +366,7 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
                 ? 'కృషి సాథిని మెరుగుపరచడానికి ఈ ఫోటోను సేవ్ చేయడానికి అనుమతించండి (ఐచ్ఛికం)'
                 : 'Allow saving this photo to improve Krushi Sathi agricultural models (Optional)'}
             </span>
-            <span className="text-dark-muted block mt-0.5">
+            <span className="text-gray-600 dark:text-gray-400 block mt-0.5">
               {language === 'kn'
                 ? 'ಗುರುತು ರಹಿತ ರೋಗಶಾಸ್ತ್ರ ಸಂಶೋಧನೆಗಾಗಿ ಮಾತ್ರ ಬಳಸಲಾಗುತ್ತದೆ. ಯಾವುದೇ ಜಿಪಿಎಸ್ ಅಥವಾ ವೈಯಕ್ತಿಕ ವಿವರಗಳನ್ನು ಸಂಗ್ರಹಿಸಲಾಗುವುದಿಲ್ಲ.'
                 : 'Used strictly for anonymous plant pathology accuracy benchmarking. No GPS, device info, or personal data is ever stored.'}
@@ -381,7 +384,7 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
             </div>
 
             <div className="text-center space-y-1.5">
-              <h3 className="text-sm sm:text-base font-extrabold text-dark-text">
+              <h3 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100">
                 {language === 'kn'
                   ? 'ಫೋಟೋ ಗುಣಮಟ್ಟದ ಎಚ್ಚರಿಕೆ'
                   : language === 'ta'
@@ -393,7 +396,7 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
               <p className="text-xs text-amber-900 bg-amber-50 p-3 rounded-2xl border border-amber-200 leading-relaxed">
                 {getWarningMessage(qualityWarningModal.result)}
               </p>
-              <p className="text-[11px] text-dark-muted">
+              <p className="text-[11px] text-gray-600 dark:text-gray-400">
                 {language === 'kn'
                   ? 'ಮಸುಕಾದ ಅಥವಾ ಗಾಢವಾದ ಫೋಟೋಗಳು ತಪ್ಪು ರೋಗನಿರ್ಣಯಕ್ಕೆ ಕಾರಣವಾಗಬಹುದು. ಉತ್ತಮ ಫಲಿತಾಂಶಕ್ಕಾಗಿ ಮರುತೆಗೆಯಿರಿ.'
                   : 'Blurry, dark, or overexposed photos reduce AI confidence. We recommend retaking in bright natural daylight.'}
@@ -417,7 +420,7 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
                   setQualityWarningModal(null);
                   handleTriggerInput(targetSlot, true);
                 }}
-                className="flex-1 py-2.5 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition flex items-center justify-center gap-1.5"
+                className="flex-1 min-h-[44px] py-2.5 rounded-xl bg-forest text-white text-xs font-bold hover:bg-forest-dark transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 <span>
@@ -440,7 +443,7 @@ export const PhotoCaptureSection: React.FC<PhotoCaptureSectionProps> = ({
                     getWarningMessage(qualityWarningModal.result)
                   );
                 }}
-                className="py-2.5 px-3 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold hover:bg-gray-200 transition"
+                className="min-h-[44px] py-2.5 px-3 rounded-xl bg-gray-100 text-gray-700 text-xs font-bold hover:bg-gray-200 transition cursor-pointer"
               >
                 {language === 'kn' ? 'ಹಾಗೆಯೇ ಬಳಸಿ' : 'Use Anyway'}
               </button>

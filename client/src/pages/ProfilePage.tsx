@@ -1,4 +1,5 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate } from 'react-router-dom';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
@@ -32,6 +33,7 @@ import { IconTile } from '../components/ui/IconTile';
 import { Modal } from '../components/ui/Modal';
 import { Button } from '../components/ui/Button';
 import { SceneBackground } from '../components/ui/SceneBackground';
+import { LAND_UNIT_OPTIONS, getLandConversionSummary } from '../utils/landUnits';
 
 export const ProfilePage: React.FC = () => {
   const { user, logout, updateUser } = useAuth();
@@ -46,7 +48,11 @@ export const ProfilePage: React.FC = () => {
   // States
   const [isEditing, setIsEditing] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('ks_notifications_enabled');
+    return saved === null ? true : saved === 'true';
+  });
 
   // Edit form state
   const [name, setName] = useState(user?.name || 'Ramesh Kumar');
@@ -56,6 +62,18 @@ export const ProfilePage: React.FC = () => {
   const [village, setVillage] = useState(user?.village || 'Koppa');
   const [farmSize, setFarmSize] = useState<number | string>(user?.farmSize || 2.5);
   const [farmUnit, setFarmUnit] = useState(user?.farmUnit || 'Acres');
+
+  useEffect(() => {
+    if (isEditing && user) {
+      setName(user.name || 'Ramesh Kumar');
+      setState(user.state || 'Karnataka');
+      setDistrict(user.district || 'Mandya');
+      setTaluk(user.taluk || 'Maddur');
+      setVillage(user.village || 'Koppa');
+      setFarmSize(user.farmSize ?? 2.5);
+      setFarmUnit(user.farmUnit || 'Acres');
+    }
+  }, [isEditing, user]);
 
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -202,15 +220,18 @@ export const ProfilePage: React.FC = () => {
               onClick={() => fileInputRef.current?.click()}
               aria-label="Upload profile photo"
               disabled={isUploading}
-              className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-[#84CC16] hover:bg-[#A3E635] text-white flex items-center justify-center shadow-xs border-2 border-white dark:border-zinc-800 cursor-pointer active:scale-95 transition"
+              className="absolute -bottom-2 -right-2 w-11 h-11 rounded-full flex items-center justify-center cursor-pointer active:scale-95 transition"
             >
-              <Camera className="w-3.5 h-3.5 text-[#0A2E16]" />
+              <span className="w-8 h-8 rounded-full bg-[#84CC16] hover:bg-[#A3E635] text-white flex items-center justify-center shadow-xs border-2 border-white dark:border-zinc-800">
+                <Camera className="w-3.5 h-3.5 text-[#0A2E16]" />
+              </span>
             </button>
             <input
               type="file"
               ref={fileInputRef}
               onChange={handleFileChange}
               accept="image/jpeg,image/png,image/webp"
+              aria-label="Upload profile photo file"
               className="hidden"
             />
           </div>
@@ -223,14 +244,14 @@ export const ProfilePage: React.FC = () => {
             </h2>
 
             {/* Phone Number */}
-            <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-1">
-              <Phone className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+            <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300 font-medium mt-1">
+              <Phone className="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400 shrink-0" />
               <span>{farmerPhone}</span>
             </div>
 
             {/* Registered Region */}
-            <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 font-medium mt-1">
-              <MapPin className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="flex items-center justify-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-300 font-medium mt-1">
+              <MapPin className="w-3.5 h-3.5 text-emerald-700 dark:text-emerald-400 shrink-0" />
               <span className="truncate max-w-[280px]">{locationLabel}</span>
             </div>
 
@@ -238,7 +259,7 @@ export const ProfilePage: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsEditing(true)}
-              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full border border-forest/30 hover:border-forest text-forest dark:text-emerald-400 text-xs font-bold tracking-wide mt-3 active:scale-95 transition cursor-pointer select-none bg-emerald-50/50 dark:bg-zinc-700/40"
+              className="min-h-[44px] inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-forest/30 hover:border-forest text-forest dark:text-emerald-400 text-xs font-bold tracking-wide mt-3 active:scale-95 transition cursor-pointer select-none bg-emerald-50/50 dark:bg-zinc-700/40"
             >
               <Edit2 className="w-3.5 h-3.5" />
               <span>{t('editProfileBtn')}</span>
@@ -261,29 +282,30 @@ export const ProfilePage: React.FC = () => {
             {/* Left Column: Total Land Size */}
             <div className="p-3 rounded-2xl bg-emerald-50/60 dark:bg-emerald-950/25 border border-emerald-100/80 dark:border-emerald-800/40 flex flex-col justify-between">
               <div>
-                <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 block mb-1">
+                <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 block mb-1">
                   {t('totalLandSize')}
                 </span>
                 <span className="text-xl font-extrabold text-[#0D2B18] dark:text-zinc-100 block leading-tight">
-                  {landSize} Acres
+                  {landSize} {user?.farmUnit || 'Acres'}
                 </span>
               </div>
-              <div className="mt-2 text-[10px] font-bold text-forest dark:text-emerald-300">
-                ≈ {Math.round(Number(landSize) * 40)} Guntas ({Math.round(Number(landSize) * 43560).toLocaleString()} sq ft)
+              <div className="mt-2 text-[11px] font-bold text-forest dark:text-emerald-300">
+                {getLandConversionSummary(landSize, user?.farmUnit || 'Acres', currentLanguageOption.code) ||
+                  `≈ ${Math.round(Number(landSize) * 40)} Guntas (${Math.round(Number(landSize) * 43560).toLocaleString()} sq ft)`}
               </div>
             </div>
 
             {/* Right Column: Registered Location */}
             <div className="p-3 rounded-2xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-100 dark:border-zinc-700/60 flex flex-col justify-between">
               <div>
-                <span className="text-[11px] font-semibold text-zinc-500 dark:text-zinc-400 block mb-1">
+                <span className="text-[11px] font-semibold text-zinc-600 dark:text-zinc-300 block mb-1">
                   {t('registeredLocation')}
                 </span>
                 <span className="text-base font-extrabold text-[#0D2B18] dark:text-zinc-100 block leading-tight">
                   {user?.district || 'Mandya'},<br />{user?.state || 'Karnataka'}
                 </span>
               </div>
-              <div className="mt-2 text-[10px] text-zinc-500 dark:text-zinc-400 font-medium">
+              <div className="mt-2 text-[11px] text-zinc-600 dark:text-zinc-300 font-medium">
                 Region: {(user?.village || 'Koppa').split(',')[0].trim()}, {user?.taluk || 'Maddur'} Hobli
               </div>
             </div>
@@ -317,7 +339,7 @@ export const ProfilePage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/language')}
-            className="w-full flex items-center justify-between p-2 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-700/30 transition cursor-pointer text-left"
+            className="w-full min-h-[48px] flex items-center justify-between p-2 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-700/30 transition cursor-pointer text-left"
           >
             <div className="flex items-center gap-3">
               <IconTile variant="mint" size="sm">
@@ -327,12 +349,12 @@ export const ProfilePage: React.FC = () => {
                 <span className="text-xs font-bold text-[#0D2B18] dark:text-zinc-100 block">
                   {t('chooseLanguage')}
                 </span>
-                <span className="text-[11px] text-zinc-400">
+                <span className="text-[11px] text-zinc-600 dark:text-zinc-300">
                   {currentLanguageOption.nativeLabel} ({currentLanguageOption.label})
                 </span>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-zinc-400" />
+            <ChevronRight className="w-4 h-4 text-zinc-500" />
           </button>
 
           {/* Row 2: Notifications */}
@@ -345,7 +367,7 @@ export const ProfilePage: React.FC = () => {
                 <span className="text-xs font-bold text-[#0D2B18] dark:text-zinc-100 block">
                   {t('notificationsTitle')}
                 </span>
-                <span className="text-[11px] text-zinc-400">
+                <span className="text-[11px] text-zinc-600 dark:text-zinc-300">
                   {t('weatherCropAlertsMore')}
                 </span>
               </div>
@@ -353,17 +375,33 @@ export const ProfilePage: React.FC = () => {
             {/* Active Green Switch Toggle */}
             <button
               type="button"
-              onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+              role="switch"
+              aria-checked={notificationsEnabled}
+              onClick={() => {
+                setNotificationsEnabled((prev) => {
+                  const next = !prev;
+                  try {
+                    localStorage.setItem('ks_notifications_enabled', String(next));
+                  } catch {
+                    // ignore storage quota errors
+                  }
+                  return next;
+                });
+              }}
               aria-label="Toggle notifications"
-              className={`w-11 h-6 rounded-full transition-colors p-0.5 cursor-pointer ${
-                notificationsEnabled ? 'bg-[#228B22]' : 'bg-zinc-300 dark:bg-zinc-600'
-              }`}
+              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-end cursor-pointer"
             >
-              <div
-                className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${
-                  notificationsEnabled ? 'translate-x-5' : 'translate-x-0'
+              <span
+                className={`w-11 h-6 rounded-full transition-colors p-0.5 block ${
+                  notificationsEnabled ? 'bg-[#228B22]' : 'bg-zinc-300 dark:bg-zinc-600'
                 }`}
-              />
+              >
+                <span
+                  className={`block w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${
+                    notificationsEnabled ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </span>
             </button>
           </div>
 
@@ -371,7 +409,7 @@ export const ProfilePage: React.FC = () => {
           <button
             type="button"
             onClick={() => showToast('Account secured with OTP authentication', 'info')}
-            className="w-full flex items-center justify-between p-2 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-700/30 transition cursor-pointer text-left"
+            className="w-full min-h-[48px] flex items-center justify-between p-2 rounded-2xl hover:bg-zinc-50 dark:hover:bg-zinc-700/30 transition cursor-pointer text-left"
           >
             <div className="flex items-center gap-3">
               <IconTile variant="mint" size="sm">
@@ -381,12 +419,12 @@ export const ProfilePage: React.FC = () => {
                 <span className="text-xs font-bold text-[#0D2B18] dark:text-zinc-100 block">
                   {t('accountSecurity')}
                 </span>
-                <span className="text-[11px] text-zinc-400">
+                <span className="text-[11px] text-zinc-600 dark:text-zinc-300">
                   {t('manageAccountSecurity')}
                 </span>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-zinc-400" />
+            <ChevronRight className="w-4 h-4 text-zinc-500" />
           </button>
 
           {/* Row 4: Dark Mode Toggle */}
@@ -399,24 +437,30 @@ export const ProfilePage: React.FC = () => {
                 <span className="text-xs font-bold text-[#0D2B18] dark:text-zinc-100 block">
                   Dark Mode
                 </span>
-                <span className="text-[11px] text-zinc-400">
+                <span className="text-[11px] text-zinc-600 dark:text-zinc-300">
                   {theme === 'dark' ? 'Soft Charcoal active' : 'Warm Light active'}
                 </span>
               </div>
             </div>
             <button
               type="button"
+              role="switch"
+              aria-checked={theme === 'dark'}
               onClick={toggleTheme}
               aria-label="Toggle dark mode"
-              className={`w-11 h-6 rounded-full transition-colors p-0.5 cursor-pointer ${
-                theme === 'dark' ? 'bg-[#228B22]' : 'bg-zinc-300 dark:bg-zinc-600'
-              }`}
+              className="min-w-[44px] min-h-[44px] inline-flex items-center justify-end cursor-pointer"
             >
-              <div
-                className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${
-                  theme === 'dark' ? 'translate-x-5' : 'translate-x-0'
+              <span
+                className={`w-11 h-6 rounded-full transition-colors p-0.5 block ${
+                  theme === 'dark' ? 'bg-[#228B22]' : 'bg-zinc-300 dark:bg-zinc-600'
                 }`}
-              />
+              >
+                <span
+                  className={`block w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${
+                    theme === 'dark' ? 'translate-x-5' : 'translate-x-0'
+                  }`}
+                />
+              </span>
             </button>
           </div>
 
@@ -424,7 +468,7 @@ export const ProfilePage: React.FC = () => {
           <button
             type="button"
             onClick={() => setShowLogoutConfirm(true)}
-            className="w-full flex items-center justify-between p-2 rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 transition cursor-pointer text-left"
+            className="w-full min-h-[48px] flex items-center justify-between p-2 rounded-2xl hover:bg-red-50 dark:hover:bg-red-950/20 text-red-600 dark:text-red-400 transition cursor-pointer text-left"
           >
             <div className="flex items-center gap-3">
               <IconTile variant="peach" size="sm">
@@ -432,126 +476,143 @@ export const ProfilePage: React.FC = () => {
               </IconTile>
               <div>
                 <span className="text-xs font-bold block">{t('logout')}</span>
-                <span className="text-[11px] text-zinc-400">Sign out of this session</span>
+                <span className="text-[11px] text-zinc-600 dark:text-zinc-300">Sign out of this session</span>
               </div>
             </div>
-            <ChevronRight className="w-4 h-4 text-zinc-400" />
+            <ChevronRight className="w-4 h-4 text-zinc-500" />
           </button>
         </div>
 
-        {/* Edit Profile Modal */}
-        {isEditing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-            <div className="bg-white dark:bg-zinc-850 rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-zinc-100 dark:border-zinc-700 animate-in fade-in zoom-in-95 duration-150">
-              <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-700">
-                <h3 className="font-extrabold text-base text-[#0D2B18] dark:text-cream">
-                  Edit Profile
-                </h3>
-                <button
-                  type="button"
-                  onClick={() => setIsEditing(false)}
-                  className="w-7 h-7 rounded-full bg-zinc-100 flex items-center justify-center text-zinc-500"
+        {/* Edit Profile Modal (portaled above SceneBackground & BottomNav) */}
+        {isEditing &&
+          (typeof document !== 'undefined' ? (
+            createPortal(
+              <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+                <div
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label="Edit Profile"
+                  className="bg-white dark:bg-zinc-800 rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-zinc-100 dark:border-zinc-700 animate-in fade-in zoom-in-95 duration-150"
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-
-              <form onSubmit={handleSaveProfile} className="space-y-3 pt-3">
-                <div>
-                  <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
-                    Farmer Name
-                  </label>
-                  <input
-                    type="text"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    required
-                    className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
-                      District
-                    </label>
-                    <input
-                      type="text"
-                      value={district}
-                      onChange={(e) => setDistrict(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
-                      Taluk / Hobli
-                    </label>
-                    <input
-                      type="text"
-                      value={taluk}
-                      onChange={(e) => setTaluk(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-2">
-                  <div>
-                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
-                      Land Size
-                    </label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      value={farmSize}
-                      onChange={(e) => setFarmSize(e.target.value)}
-                      required
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
-                      Unit
-                    </label>
-                    <select
-                      value={farmUnit}
-                      onChange={(e) => setFarmUnit(e.target.value)}
-                      className="w-full px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
+                  <div className="flex items-center justify-between pb-3 border-b border-zinc-100 dark:border-zinc-700">
+                    <h3 className="font-extrabold text-base text-[#0D2B18] dark:text-cream">
+                      Edit Profile
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={() => setIsEditing(false)}
+                      aria-label="Close"
+                      className="w-11 h-11 rounded-full bg-zinc-100 dark:bg-zinc-700 flex items-center justify-center text-zinc-600 dark:text-zinc-300 cursor-pointer"
                     >
-                      <option value="Acres">Acres</option>
-                      <option value="Guntas">Guntas</option>
-                      <option value="Hectares">Hectares</option>
-                    </select>
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
-                </div>
 
-                {errorMessage && (
-                  <p className="text-xs text-red-600 bg-red-50 p-2 rounded-lg">
-                    {errorMessage}
-                  </p>
-                )}
+                  <form onSubmit={handleSaveProfile} className="space-y-3 pt-3">
+                    <div>
+                      <label htmlFor="profile-edit-name" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
+                        Farmer Name
+                      </label>
+                      <input
+                        id="profile-edit-name"
+                        type="text"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                        required
+                        className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
+                      />
+                    </div>
 
-                <div className="pt-2 flex items-center justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditing(false)}
-                    className="px-4 py-2 rounded-full border border-zinc-200 text-xs font-semibold"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="px-5 py-2 rounded-full bg-forest text-white text-xs font-bold shadow-sm"
-                  >
-                    {isSaving ? 'Saving...' : 'Save Changes'}
-                  </button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label htmlFor="profile-edit-district" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
+                          District
+                        </label>
+                        <input
+                          id="profile-edit-district"
+                          type="text"
+                          value={district}
+                          onChange={(e) => setDistrict(e.target.value)}
+                          required
+                          className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="profile-edit-taluk" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
+                          Taluk / Hobli
+                        </label>
+                        <input
+                          id="profile-edit-taluk"
+                          type="text"
+                          value={taluk}
+                          onChange={(e) => setTaluk(e.target.value)}
+                          className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label htmlFor="profile-edit-farmsize" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
+                          Land Size
+                        </label>
+                        <input
+                          id="profile-edit-farmsize"
+                          type="number"
+                          step="0.1"
+                          value={farmSize}
+                          onChange={(e) => setFarmSize(e.target.value)}
+                          required
+                          className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
+                        />
+                      </div>
+                      <div>
+                        <label htmlFor="profile-edit-farmunit" className="text-xs font-bold text-zinc-700 dark:text-zinc-300 block mb-1">
+                          Unit
+                        </label>
+                        <select
+                          id="profile-edit-farmunit"
+                          value={farmUnit}
+                          onChange={(e) => setFarmUnit(e.target.value)}
+                          className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-forest"
+                        >
+                          {LAND_UNIT_OPTIONS.map((opt) => (
+                            <option key={opt.id} value={opt.id}>
+                              {opt.labelEn}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {errorMessage && (
+                      <p className="text-xs text-red-600 bg-red-50 p-2 rounded-lg">
+                        {errorMessage}
+                      </p>
+                    )}
+
+                    <div className="pt-2 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setIsEditing(false)}
+                        className="min-h-[44px] px-4 py-2 rounded-full border border-zinc-200 dark:border-zinc-700 text-xs font-semibold cursor-pointer"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={isSaving}
+                        className="min-h-[44px] px-5 py-2 rounded-full bg-forest text-white text-xs font-bold shadow-sm cursor-pointer"
+                      >
+                        {isSaving ? 'Saving...' : 'Save Changes'}
+                      </button>
+                    </div>
+                  </form>
                 </div>
-              </form>
-            </div>
-          </div>
-        )}
+              </div>,
+              document.body
+            )
+          ) : null)}
 
         {/* Logout Confirmation Modal */}
         <Modal

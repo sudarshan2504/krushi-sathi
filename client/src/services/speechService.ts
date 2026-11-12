@@ -354,6 +354,7 @@ class SpeechService {
       recognition.start();
       return true;
     } catch (err: any) {
+      this.activeRecognition = null;
       callbacks.onError?.({
         code: 'start_failed',
         message: err.message || 'Failed to start microphone.',
@@ -368,12 +369,17 @@ class SpeechService {
    */
   public stopRecognition(): void {
     if (this.activeRecognition) {
+      const rec = this.activeRecognition;
+      this.activeRecognition = null;
+      rec.onstart = null;
+      rec.onresult = null;
+      rec.onerror = null;
+      rec.onend = null;
       try {
-        this.activeRecognition.abort();
+        rec.abort();
       } catch {
         // Best-effort abort
       }
-      this.activeRecognition = null;
     }
   }
 

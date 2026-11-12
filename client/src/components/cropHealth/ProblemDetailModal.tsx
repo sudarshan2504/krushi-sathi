@@ -158,7 +158,7 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
           <button
             type="button"
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition cursor-pointer"
+            className="w-11 h-11 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center text-gray-700 transition cursor-pointer"
             aria-label="Close"
           >
             <X className="w-5 h-5" />
@@ -169,16 +169,16 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
         <div className="overflow-y-auto p-5 sm:p-6 space-y-6">
           {/* Main Title & Scientific Identification */}
           <div>
-            <h1 className="text-xl sm:text-2xl font-black text-dark-text leading-tight mb-1">
+            <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-gray-100 leading-tight mb-1">
               {getLocalizedName()}
-            </h1>
+            </h2>
             {problem.scientificName && (
               <p className="text-sm text-forest italic font-medium">
                 {problem.scientificName}
               </p>
             )}
             {language !== 'en' && problem.name !== getLocalizedName() && (
-              <p className="text-xs text-gray-400 mt-0.5">
+              <p className="text-xs text-gray-600 mt-0.5">
                 English reference: {problem.name}
               </p>
             )}
@@ -202,14 +202,16 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
                   <button
                     type="button"
                     onClick={() => setSelectedImageIdx((prev) => (prev > 0 ? prev - 1 : images.length - 1))}
-                    className="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 transition"
+                    aria-label="Previous image"
+                    className="absolute left-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90 transition"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   <button
                     type="button"
                     onClick={() => setSelectedImageIdx((prev) => (prev < images.length - 1 ? prev + 1 : 0))}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 transition"
+                    aria-label="Next image"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-black/70 text-white flex items-center justify-center hover:bg-black/90 transition"
                   >
                     <ChevronRight className="w-5 h-5" />
                   </button>
@@ -217,7 +219,7 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
               )}
 
               {/* Kind Badge */}
-              <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-white/20">
+              <div className="absolute top-3 left-3 bg-black/70 backdrop-blur-sm text-white text-[11px] font-bold px-2.5 py-1 rounded-full uppercase tracking-wider border border-white/20">
                 {currentImage.kind?.replace('_', ' ') || 'Symptom Closeup'}
               </div>
             </div>
@@ -229,7 +231,7 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
                 {currentImage.caption}
               </p>
               {currentImage.author && (
-                <p className="text-[10px] text-white/50 mt-1">
+                <p className="text-[11px] text-white/80 mt-1">
                   Source: {currentImage.source || 'Wikimedia Commons'} | Photo: {currentImage.author} | Licence: {currentImage.licence || 'CC BY-SA'}
                 </p>
               )}
@@ -242,8 +244,9 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
                   <button
                     key={idx}
                     type="button"
+                    aria-label={`View image ${idx + 1}`}
                     onClick={() => setSelectedImageIdx(idx)}
-                    className={`w-16 h-12 rounded-xl overflow-hidden border-2 flex-shrink-0 transition cursor-pointer ${
+                    className={`w-16 h-12 min-h-[44px] rounded-xl overflow-hidden border-2 flex-shrink-0 transition cursor-pointer ${
                       selectedImageIdx === idx ? 'border-emerald-400 scale-105' : 'border-transparent opacity-60 hover:opacity-100'
                     }`}
                   >
@@ -261,37 +264,37 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
           {/* Quick Facts Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
             <div className="p-3 rounded-2xl bg-cream-light/60 border border-gray-100">
-              <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+              <span className="text-[11px] font-bold text-gray-500 uppercase block mb-1">
                 {t('growthStage') || 'Affected Stages'}
               </span>
-              <span className="text-xs font-bold text-dark-text block">
+              <span className="text-xs font-bold text-gray-900 dark:text-gray-100 block">
                 {problem.affectedStages?.join(', ') || 'All stages'}
               </span>
             </div>
 
             <div className="p-3 rounded-2xl bg-cream-light/60 border border-gray-100">
-              <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+              <span className="text-[11px] font-bold text-gray-500 uppercase block mb-1">
                 {t('season') || 'Favourable Season'}
               </span>
-              <span className="text-xs font-bold text-dark-text block">
+              <span className="text-xs font-bold text-gray-900 dark:text-gray-100 block">
                 {problem.favourableSeasons?.join(', ') || 'Monsoon / Humid'}
               </span>
             </div>
 
             <div className="p-3 rounded-2xl bg-cream-light/60 border border-gray-100">
-              <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+              <span className="text-[11px] font-bold text-gray-500 uppercase block mb-1">
                 {t('weatherConditions') || 'Temp & Humidity'}
               </span>
-              <span className="text-xs font-bold text-dark-text block truncate">
+              <span className="text-xs font-bold text-gray-900 dark:text-gray-100 block truncate">
                 {problem.favourableTemp || '20-32°C'} | {problem.favourableHumidity || '>80% RH'}
               </span>
             </div>
 
             <div className="p-3 rounded-2xl bg-cream-light/60 border border-gray-100">
-              <span className="text-[10px] font-bold text-gray-500 uppercase block mb-1">
+              <span className="text-[11px] font-bold text-gray-500 uppercase block mb-1">
                 Spread Pattern
               </span>
-              <span className="text-xs font-bold text-dark-text block truncate">
+              <span className="text-xs font-bold text-gray-900 dark:text-gray-100 block truncate">
                 {problem.spreadPattern || 'Wind / Splashing rain'}
               </span>
             </div>
@@ -299,11 +302,11 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
 
           {/* Symptoms Details */}
           <div className="bg-white rounded-3xl p-5 border border-gray-100 shadow-sm space-y-2">
-            <h3 className="text-sm font-black text-dark-text flex items-center gap-2">
+            <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 flex items-center gap-2">
               <AlertCircle className="w-4 h-4 text-forest" />
               {t('symptoms') || 'Symptoms & Identification'}
             </h3>
-            <p className="text-xs sm:text-sm text-dark-text/90 leading-relaxed whitespace-pre-line">
+            <p className="text-xs sm:text-sm text-gray-800 dark:text-gray-100 leading-relaxed whitespace-pre-line">
               {getLocalizedSymptoms()}
             </p>
             {problem.cause && (
@@ -317,11 +320,11 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
           {/* 4-TIER TREATMENT LADDER (Cultural -> Biological -> Organic -> Chemical Generic Active Ingredients) */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-black text-dark-text flex items-center gap-2">
+              <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <Layers className="w-4 h-4 text-forest" />
                 {t('treatmentLadder') || 'Treatment Ladder (Graduated Control)'}
               </h3>
-              <span className="text-[10px] font-bold text-gray-500">ICAR / UAS Recommended</span>
+              <span className="text-[11px] font-bold text-gray-500">ICAR / UAS Recommended</span>
             </div>
 
             <div className="space-y-2.5">
@@ -333,7 +336,7 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
                     {t('culturalControl') || 'Cultural & Physical Control (Start Here)'}
                   </h4>
                 </div>
-                <p className="text-xs text-dark-text/90 pl-8 leading-relaxed">
+                <p className="text-xs text-gray-800 dark:text-gray-100 pl-8 leading-relaxed">
                   {getLocalizedCultural() || 'Clean field boundaries, rogue out infected seedlings, and maintain recommended plant spacing for airflow.'}
                 </p>
               </div>
@@ -346,7 +349,7 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
                     {t('biologicalControl') || 'Biological Control'}
                   </h4>
                 </div>
-                <p className="text-xs text-dark-text/90 pl-8 leading-relaxed">
+                <p className="text-xs text-gray-800 dark:text-gray-100 pl-8 leading-relaxed">
                   {getLocalizedBiological() || 'Apply antagonistic fungi (Trichoderma) or beneficial biocontrol parasitoids / predators.'}
                 </p>
               </div>
@@ -359,7 +362,7 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
                     {t('organicControl') || 'Organic & Botanical Formulations'}
                   </h4>
                 </div>
-                <p className="text-xs text-dark-text/90 pl-8 leading-relaxed">
+                <p className="text-xs text-gray-800 dark:text-gray-100 pl-8 leading-relaxed">
                   {getLocalizedOrganic() || 'Spray cold-pressed Neem seed kernel extract (NSKE 5%) or certified botanicals at early pest onset.'}
                 </p>
               </div>
@@ -372,7 +375,7 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
                     {t('chemicalControl') || 'Chemical Control (Last Resort)'}
                   </h4>
                 </div>
-                <p className="text-xs text-dark-text/90 pl-8 leading-relaxed font-medium">
+                <p className="text-xs text-gray-800 dark:text-gray-100 pl-8 leading-relaxed font-medium">
                   {getLocalizedChemical() || 'Use approved active ingredients as advised by the regional KVK.'}
                 </p>
 
@@ -399,7 +402,7 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
               </h3>
               <ul className="space-y-1.5 pl-1">
                 {getLocalizedPreventionSteps().map((step, idx) => (
-                  <li key={idx} className="text-xs text-dark-text/90 flex items-start gap-2">
+                  <li key={idx} className="text-xs text-gray-800 dark:text-gray-100 flex items-start gap-2">
                     <CheckCircle2 className="w-3.5 h-3.5 text-forest flex-shrink-0 mt-0.5" />
                     <span>{step}</span>
                   </li>
@@ -411,14 +414,14 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
           {/* Look-alikes comparison */}
           {problem.lookAlikes && problem.lookAlikes.length > 0 && (
             <div className="bg-gray-50 rounded-3xl p-5 border border-gray-200 space-y-3">
-              <h3 className="text-sm font-black text-dark-text flex items-center gap-2">
+              <h3 className="text-sm font-black text-gray-900 dark:text-gray-100 flex items-center gap-2">
                 <HelpCircle className="w-4 h-4 text-amber-600" />
                 Look-Alike Problems & Distinguishing Checks
               </h3>
               <div className="space-y-2">
                 {problem.lookAlikes.map((item, idx) => (
                   <div key={idx} className="p-3 rounded-2xl bg-white border border-gray-200 text-xs">
-                    <span className="font-bold text-dark-text block mb-1">
+                    <span className="font-bold text-gray-900 dark:text-gray-100 block mb-1">
                       Confused with: {item.name}
                     </span>
                     <span className="text-gray-600">
@@ -451,7 +454,7 @@ export const ProblemDetailModal: React.FC<ProblemDetailModalProps> = ({ problem,
                 <PhoneCall className="w-4 h-4 text-emerald-300" />
                 {t('expertAdvisory') || 'When to Contact Agricultural Officer'}
               </h3>
-              <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full font-bold">
+              <span className="text-[11px] bg-white/20 px-2 py-0.5 rounded-full font-bold">
                 Toll Free 1800-180-1551
               </span>
             </div>

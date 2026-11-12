@@ -193,8 +193,10 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition"
+              aria-label="Close"
+              className="w-11 h-11 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center transition"
             >
               <X className="w-5 h-5 text-white" />
             </button>
@@ -203,7 +205,7 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
           {/* Squeeze Test Quick Guide */}
           <div className="bg-cream/60 p-4 border-b border-earth/20 flex items-start gap-3">
             <HandMetal className="w-5 h-5 text-forest shrink-0 mt-0.5" />
-            <div className="text-xs text-dark-text leading-relaxed">
+            <div className="text-xs text-gray-900 dark:text-gray-100 leading-relaxed">
               <span className="font-bold text-forest">
                 {language === 'kn' ? '30 ಸೆಕೆಂಡಿನ ಕೈ ಪರೀಕ್ಷೆ: ' : 'Quick 30-Second Palm Test: '}
               </span>
@@ -216,49 +218,51 @@ export const SoilHelpModal: React.FC<SoilHelpModalProps> = ({
           {/* Cards List */}
           <div className="p-4 space-y-3 overflow-y-auto flex-1">
             {soilTestOptions.map((opt) => (
-              <motion.div
+              <motion.button
                 key={opt.id}
+                type="button"
                 whileHover={{ scale: 1.01 }}
                 whileTap={{ scale: 0.99 }}
                 onClick={() => handleSelect(opt.id, opt.texture)}
-                className="p-4 rounded-2xl border-2 border-gray-100 hover:border-forest/50 hover:bg-forest/5 cursor-pointer transition shadow-sm bg-white"
+                className="w-full text-left p-4 rounded-2xl border-2 border-gray-100 hover:border-forest/50 hover:bg-forest/5 cursor-pointer transition shadow-sm bg-white"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex items-center gap-2.5">
                     <span className={`w-3.5 h-3.5 rounded-full ${(opt as any).color || 'bg-stone-800'} shrink-0`} />
                     <div>
                       <div className="flex items-center gap-2">
-                        <h3 className="font-bold text-dark-text text-sm">
+                        <h3 className="font-bold text-gray-900 dark:text-gray-100 text-sm">
                           {opt.title}
                         </h3>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-leaf/15 text-forest">
+                        <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-leaf/15 text-forest">
                           {opt.badge}
                         </span>
                       </div>
-                      <span className="text-[11px] text-harvest font-medium">
+                      <span className="text-[11px] text-amber-800 font-medium">
                         Best crops: {opt.suitable}
                       </span>
                     </div>
                   </div>
-                  <button className="text-xs font-bold text-forest bg-mint/20 hover:bg-forest hover:text-white px-3 py-1.5 rounded-xl transition shrink-0">
+                  <span className="text-xs font-bold text-forest bg-mint/20 px-3 py-1.5 rounded-xl shrink-0">
                     Select
-                  </button>
+                  </span>
                 </div>
 
-                <ul className="mt-2.5 space-y-1 pl-7 list-disc text-xs text-dark-muted">
+                <ul className="mt-2.5 space-y-1 pl-7 list-disc text-xs text-gray-600 dark:text-gray-400">
                   {(language === 'kn' ? opt.cuesKn : opt.cues).map((cue, idx) => (
                     <li key={idx}>{cue}</li>
                   ))}
                 </ul>
-              </motion.div>
+              </motion.button>
             ))}
           </div>
 
           {/* Footer */}
           <div className="p-3 bg-gray-50 border-t border-gray-100 flex justify-end">
             <button
+              type="button"
               onClick={onClose}
-              className="px-5 py-2 text-xs font-bold text-dark-muted hover:text-dark-text rounded-xl"
+              className="min-h-[44px] px-5 py-2 text-xs font-bold text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 rounded-xl"
             >
               Close
             </button>

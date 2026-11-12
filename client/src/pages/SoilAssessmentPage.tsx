@@ -466,7 +466,7 @@ export const SoilAssessmentPage: React.FC = () => {
 
         <button
           onClick={() => navigate('/home')}
-          className="text-xs text-earth-500 hover:text-earth-900 font-bold px-2 py-1 rounded-lg"
+          className="text-xs text-earth-600 hover:text-earth-900 font-bold px-3 min-h-[44px] inline-flex items-center rounded-lg"
         >
           Cancel
         </button>
@@ -497,7 +497,12 @@ export const SoilAssessmentPage: React.FC = () => {
         >
           <AlertCircle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
           <span className="flex-1">{stepError}</span>
-          <button onClick={() => setStepError(null)} className="text-amber-500 hover:text-amber-800">
+          <button
+            type="button"
+            onClick={() => setStepError(null)}
+            aria-label="Dismiss error"
+            className="text-amber-700 hover:text-amber-900 min-w-[44px] min-h-[44px] -my-2 -mr-2 inline-flex items-center justify-center"
+          >
             <XCircle className="w-4 h-4" />
           </button>
         </motion.div>
@@ -535,9 +540,9 @@ export const SoilAssessmentPage: React.FC = () => {
 
               {/* Secondary Texture & Colour Cues */}
               <div className="pt-2 border-t border-earth-100 space-y-3">
-                <label className="block text-xs font-bold text-earth-800">
+                <span className="block text-xs font-bold text-earth-800">
                   Soil Texture Feel (Optional)
-                </label>
+                </span>
                 <div className="grid grid-cols-2 gap-2">
                   {soilTextures.map((st) => {
                     const isSelected = formData.soilTexture === st.id;
@@ -551,22 +556,22 @@ export const SoilAssessmentPage: React.FC = () => {
                             soilTexture: isSelected ? '' : st.id,
                           })
                         }
-                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                        className={`min-h-[44px] p-2.5 rounded-xl border text-left transition-all ${
                           isSelected
                             ? 'bg-forest-50 border-forest-500 text-forest-800 ring-1 ring-forest-400'
                             : 'bg-white border-earth-200 text-earth-700 hover:bg-earth-50'
                         }`}
                       >
                         <span className="text-xs font-bold block">{st.name}</span>
-                        <span className="text-[10px] text-earth-400 block mt-0.5">{st.desc}</span>
+                        <span className="text-[11px] text-earth-500 block mt-0.5">{st.desc}</span>
                       </button>
                     );
                   })}
                 </div>
 
-                <label className="block text-xs font-bold text-earth-800 pt-1">
+                <span className="block text-xs font-bold text-earth-800 pt-1">
                   Soil Colour Shade (Optional)
-                </label>
+                </span>
                 <div className="flex flex-wrap gap-2">
                   {soilColours.map((sc) => {
                     const isSelected = formData.soilColour === sc.id;
@@ -580,7 +585,7 @@ export const SoilAssessmentPage: React.FC = () => {
                             soilColour: isSelected ? '' : sc.id,
                           })
                         }
-                        className={`flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
+                        className={`min-h-[44px] flex items-center gap-2 px-3 py-1.5 rounded-full border text-xs font-semibold transition-all ${
                           isSelected
                             ? 'bg-forest-600 text-white border-forest-600 shadow-sm'
                             : 'bg-white text-earth-700 border-earth-200 hover:bg-earth-50'
@@ -616,9 +621,9 @@ export const SoilAssessmentPage: React.FC = () => {
 
               {/* Drainage */}
               <div>
-                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                <span className="block text-xs font-bold text-earth-800 mb-1.5">
                   Field Drainage Condition *
-                </label>
+                </span>
                 <div className="space-y-2">
                   {drainageOptions.map((d) => {
                     const isSelected = formData.drainage === d.id;
@@ -630,7 +635,7 @@ export const SoilAssessmentPage: React.FC = () => {
                           setFormData({ ...formData, drainage: d.id });
                           setStepError(null);
                         }}
-                        className={`w-full p-3 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${
+                        className={`min-h-[48px] w-full p-3 rounded-2xl border-2 text-left flex items-center justify-between transition-all ${
                           isSelected
                             ? 'border-forest-600 bg-mint-50/80 font-bold text-forest-900 shadow-sm'
                             : 'border-earth-200 bg-white text-earth-800 hover:border-earth-300'
@@ -638,7 +643,7 @@ export const SoilAssessmentPage: React.FC = () => {
                       >
                         <div>
                           <span className="text-xs font-extrabold block">{d.label}</span>
-                          <span className="text-[10px] text-earth-500 block">{d.desc}</span>
+                          <span className="text-[11px] text-earth-500 block">{d.desc}</span>
                         </div>
                         {isSelected && <Check className="w-4 h-4 text-forest-600 flex-shrink-0" />}
                       </button>
@@ -649,9 +654,9 @@ export const SoilAssessmentPage: React.FC = () => {
 
               {/* Moisture Level */}
               <div>
-                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                <span className="block text-xs font-bold text-earth-800 mb-1.5">
                   Current Soil Moisture
-                </label>
+                </span>
                 <div className="grid grid-cols-2 gap-2">
                   {moistureLevels.map((ml) => {
                     const isSelected = formData.moistureLevel === ml.id;
@@ -662,14 +667,14 @@ export const SoilAssessmentPage: React.FC = () => {
                         onClick={() =>
                           setFormData({ ...formData, moistureLevel: isSelected ? '' : ml.id })
                         }
-                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                        className={`min-h-[44px] p-2.5 rounded-xl border text-left transition-all ${
                           isSelected
                             ? 'bg-forest-50 border-forest-500 text-forest-800 font-bold ring-1 ring-forest-400'
                             : 'bg-white border-earth-200 text-earth-700 hover:bg-earth-50'
                         }`}
                       >
                         <span className="text-xs block">{ml.name}</span>
-                        <span className="text-[10px] text-earth-400 block">{ml.desc}</span>
+                        <span className="text-[11px] text-earth-500 block">{ml.desc}</span>
                       </button>
                     );
                   })}
@@ -678,9 +683,9 @@ export const SoilAssessmentPage: React.FC = () => {
 
               {/* Organic Matter Level */}
               <div>
-                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                <span className="block text-xs font-bold text-earth-800 mb-1.5">
                   Organic Matter / Humus Level
-                </label>
+                </span>
                 <div className="grid grid-cols-3 gap-2">
                   {organicMatterLevels.map((om) => {
                     const isSelected = formData.organicMatter === om.id;
@@ -691,14 +696,14 @@ export const SoilAssessmentPage: React.FC = () => {
                         onClick={() =>
                           setFormData({ ...formData, organicMatter: isSelected ? '' : om.id })
                         }
-                        className={`p-2.5 rounded-xl border text-center transition-all ${
+                        className={`min-h-[44px] p-2.5 rounded-xl border text-center transition-all ${
                           isSelected
                             ? 'bg-forest-600 text-white border-forest-600 font-bold shadow-xs'
                             : 'bg-white border-earth-200 text-earth-700 hover:bg-earth-50'
                         }`}
                       >
                         <span className="text-xs block">{om.name}</span>
-                        <span className={`text-[9px] block mt-0.5 ${isSelected ? 'text-mint-200' : 'text-earth-400'}`}>
+                        <span className={`text-[11px] block mt-0.5 ${isSelected ? 'text-mint-100' : 'text-earth-500'}`}>
                           {om.desc}
                         </span>
                       </button>
@@ -730,7 +735,7 @@ export const SoilAssessmentPage: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => setUseMapPicker(!useMapPicker)}
-                  className="text-xs font-bold text-forest-700 hover:underline flex items-center gap-1"
+                  className="text-xs font-bold text-forest-700 hover:underline flex items-center gap-1 min-h-[44px] px-2 shrink-0"
                 >
                   <Compass className="w-3.5 h-3.5" />
                   <span>{useMapPicker ? 'Use Dropdowns' : 'Use Map'}</span>
@@ -778,13 +783,14 @@ export const SoilAssessmentPage: React.FC = () => {
 
               {/* Land Size: Acres + Guntas */}
               <div className="p-4 rounded-2xl bg-earth-50 border border-earth-200">
-                <label className="block text-xs font-extrabold text-earth-900 mb-1.5">
+                <span className="block text-xs font-extrabold text-earth-900 mb-1.5">
                   Farm Land Size & Unit *
-                </label>
+                </span>
                 <div className="flex gap-2">
                   <div className="flex-1">
-                    <span className="text-[10px] text-earth-500 block mb-0.5">Primary Measurement</span>
+                    <label htmlFor="soil-farm-size" className="text-[11px] text-earth-500 block mb-0.5">Primary Measurement</label>
                     <input
+                      id="soil-farm-size"
                       type="number"
                       inputMode="decimal"
                       step="0.1"
@@ -800,8 +806,9 @@ export const SoilAssessmentPage: React.FC = () => {
                   </div>
 
                   <div className="w-36">
-                    <span className="text-[10px] text-earth-500 block mb-0.5">Unit</span>
+                    <label htmlFor="soil-farm-unit" className="text-[11px] text-earth-500 block mb-0.5">Unit</label>
                     <select
+                      id="soil-farm-unit"
                       value={formData.farmUnit}
                       onChange={(e) => setFormData({ ...formData, farmUnit: e.target.value })}
                       className="w-full px-3 py-2.5 rounded-xl border border-earth-300 text-sm font-bold bg-white outline-none focus:border-forest-600 min-h-[44px]"
@@ -816,8 +823,9 @@ export const SoilAssessmentPage: React.FC = () => {
 
                   {formData.farmUnit === 'Acres' && (
                     <div className="w-28">
-                      <span className="text-[10px] text-earth-500 block mb-0.5">+ Guntas</span>
+                      <label htmlFor="soil-farm-guntas" className="text-[11px] text-earth-500 block mb-0.5">+ Guntas</label>
                       <input
+                        id="soil-farm-guntas"
                         type="number"
                         inputMode="numeric"
                         min="0"
@@ -837,7 +845,7 @@ export const SoilAssessmentPage: React.FC = () => {
                     <span>{conversionSummary}</span>
                   </p>
                 )}
-                <span className="text-[10px] text-earth-500 block mt-1">
+                <span className="text-[11px] text-earth-500 block mt-1">
                   1 Acre = 40 Guntas = 43,560 sq.ft = 0.404 Hectares.
                 </span>
               </div>
@@ -864,9 +872,9 @@ export const SoilAssessmentPage: React.FC = () => {
 
               {/* Water Source */}
               <div>
-                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                <span className="block text-xs font-bold text-earth-800 mb-1.5">
                   Primary Water Source *
-                </label>
+                </span>
                 <div className="space-y-2">
                   {waterSources.map((ws) => {
                     const Icon = ws.icon;
@@ -879,7 +887,7 @@ export const SoilAssessmentPage: React.FC = () => {
                           setFormData({ ...formData, waterSource: ws.id });
                           setStepError(null);
                         }}
-                        className={`w-full p-3 rounded-2xl border-2 flex items-center gap-3 text-left transition-all ${
+                        className={`min-h-[48px] w-full p-3 rounded-2xl border-2 flex items-center gap-3 text-left transition-all ${
                           isSelected
                             ? 'border-forest-600 bg-mint-50/80 shadow-xs ring-1 ring-forest-400'
                             : 'border-earth-200 bg-white hover:border-earth-300'
@@ -896,7 +904,7 @@ export const SoilAssessmentPage: React.FC = () => {
                           <span className="text-xs font-extrabold text-earth-900 block leading-tight">
                             {ws.name}
                           </span>
-                          <span className="text-[10px] text-earth-500 block mt-0.5">{ws.desc}</span>
+                          <span className="text-[11px] text-earth-500 block mt-0.5">{ws.desc}</span>
                         </div>
                         {isSelected && <Check className="w-4 h-4 text-forest-600 flex-shrink-0" />}
                       </button>
@@ -907,9 +915,9 @@ export const SoilAssessmentPage: React.FC = () => {
 
               {/* Irrigation Type */}
               <div className="pt-2">
-                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                <span className="block text-xs font-bold text-earth-800 mb-1.5">
                   Irrigation Delivery Method
-                </label>
+                </span>
                 <div className="grid grid-cols-2 gap-2">
                   {irrigationTypes.map((it) => {
                     const isSelected = formData.irrigationType === it.id;
@@ -923,14 +931,14 @@ export const SoilAssessmentPage: React.FC = () => {
                             irrigationType: isSelected ? '' : it.id,
                           })
                         }
-                        className={`p-2.5 rounded-xl border text-left transition-all ${
+                        className={`min-h-[44px] p-2.5 rounded-xl border text-left transition-all ${
                           isSelected
                             ? 'bg-forest-50 border-forest-500 text-forest-900 font-bold ring-1 ring-forest-400'
                             : 'bg-white border-earth-200 text-earth-700 hover:bg-earth-50'
                         }`}
                       >
                         <span className="text-xs block">{it.name}</span>
-                        <span className="text-[10px] text-earth-400 block">{it.desc}</span>
+                        <span className="text-[11px] text-earth-500 block">{it.desc}</span>
                       </button>
                     );
                   })}
@@ -978,7 +986,7 @@ export const SoilAssessmentPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setCurrentStep(3)}
-                        className="mt-2.5 px-3.5 py-1.5 bg-amber-600 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-amber-700 cursor-pointer inline-flex items-center gap-1.5"
+                        className="mt-2.5 px-3.5 py-1.5 min-h-[44px] bg-amber-700 text-white rounded-xl text-xs font-bold shadow-xs hover:bg-amber-800 cursor-pointer inline-flex items-center gap-1.5"
                       >
                         <MapPin className="w-3.5 h-3.5" />
                         <span>Set Farm Location (Step 3) →</span>
@@ -993,10 +1001,10 @@ export const SoilAssessmentPage: React.FC = () => {
                           <Calendar className="w-5 h-5" />
                         </div>
                         <div>
-                          <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-forest-100 text-forest-800 border border-forest-200/60 inline-block mb-1">
+                          <span className="text-[11px] uppercase font-black px-2 py-0.5 rounded-full bg-forest-100 text-forest-800 border border-forest-200/60 inline-block mb-1">
                             {isDetectingSeason ? 'Detecting Regional Calendar...' : 'Auto-Detected Sowing Season'}
                           </span>
-                          <p className="text-xs sm:text-sm font-bold text-dark-text leading-snug">
+                          <p className="text-xs sm:text-sm font-bold text-gray-900 dark:text-gray-100 leading-snug">
                             {language === 'kn'
                               ? detectedSeason?.confirmationLine?.kn
                               : language === 'ta'
@@ -1006,14 +1014,14 @@ export const SoilAssessmentPage: React.FC = () => {
                               : detectedSeason?.confirmationLine?.en ||
                                 `Detected: ${formData.season || 'Rabi'} sowing season in ${formData.district || 'your area'}.`}
                           </p>
-                          <div className="flex flex-wrap items-center gap-2 mt-2 text-[11px] text-dark-muted font-medium">
+                          <div className="flex flex-wrap items-center gap-2 mt-2 text-[11px] text-gray-600 dark:text-gray-400 font-medium">
                             <span className="font-bold text-forest flex items-center gap-1">
                               <span>Window:</span>
-                              <span className="text-dark-text">{detectedSeason?.sowingWindow || 'Active Sowing Window'}</span>
+                              <span className="text-gray-900 dark:text-gray-100">{detectedSeason?.sowingWindow || 'Active Sowing Window'}</span>
                             </span>
                             {detectedSeason?.sowingWindowStatus && (
                               <span
-                                className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                                className={`px-2 py-0.5 rounded-full font-bold text-[11px] ${
                                   detectedSeason.sowingWindowStatus === 'open'
                                     ? 'bg-emerald-100 text-emerald-800'
                                     : detectedSeason.sowingWindowStatus === 'closing_soon'
@@ -1035,7 +1043,7 @@ export const SoilAssessmentPage: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => setIsManualSeasonOverride(!isManualSeasonOverride)}
-                        className="text-xs font-bold text-forest-700 hover:text-forest-900 underline shrink-0 cursor-pointer px-1 py-0.5"
+                        className="text-xs font-bold text-forest-700 hover:text-forest-900 underline shrink-0 cursor-pointer px-2 min-h-[44px] inline-flex items-center"
                       >
                         {isManualSeasonOverride ? 'Hide' : 'Change'}
                       </button>
@@ -1044,7 +1052,7 @@ export const SoilAssessmentPage: React.FC = () => {
                     {/* Manual Season Override Expansion */}
                     {isManualSeasonOverride && (
                       <div className="mt-3.5 pt-3 border-t border-forest-200/60 space-y-2">
-                        <span className="text-xs font-bold text-dark-text block">
+                        <span className="text-xs font-bold text-gray-900 dark:text-gray-100 block">
                           Manual Season Override:
                         </span>
                         <div className="grid grid-cols-3 gap-2">
@@ -1071,7 +1079,7 @@ export const SoilAssessmentPage: React.FC = () => {
                               >
                                 <SeasonIcon className="w-5 h-5 mx-auto mb-1 text-forest-600" />
                                 <span className="text-xs block font-bold">{s.label}</span>
-                                <span className="text-[10px] text-earth-500 block">{s.sub}</span>
+                                <span className="text-[11px] text-earth-500 block">{s.sub}</span>
                               </button>
                             );
                           })}
@@ -1084,9 +1092,9 @@ export const SoilAssessmentPage: React.FC = () => {
 
               {/* Preceding Crop */}
               <div className="pt-2">
-                <label className="block text-xs font-bold text-earth-800 mb-1.5">
+                <span className="block text-xs font-bold text-earth-800 mb-1.5">
                   Preceding Crop (For Crop Rotation)
-                </label>
+                </span>
                 <div className="grid grid-cols-3 gap-2">
                   {[
                     'None / Fallow',
@@ -1104,7 +1112,7 @@ export const SoilAssessmentPage: React.FC = () => {
                         onClick={() =>
                           setFormData({ ...formData, previousCrop: isSelected ? '' : c })
                         }
-                        className={`py-2 px-2 rounded-xl border text-xs text-center transition-all ${
+                        className={`min-h-[44px] py-2 px-2 rounded-xl border text-xs text-center transition-all ${
                           isSelected
                             ? 'border-forest-600 bg-mint-50 text-forest-900 font-bold'
                             : 'border-earth-200 bg-white text-earth-700 hover:bg-earth-50'
@@ -1203,13 +1211,13 @@ export const SoilAssessmentPage: React.FC = () => {
               <div className="bg-gradient-to-br from-earth-50 to-cream-50 rounded-2xl p-4 border border-earth-200 space-y-3 text-xs">
                 <div className="grid grid-cols-2 gap-2 pb-2 border-b border-earth-200/80">
                   <div>
-                    <span className="text-[10px] text-earth-400 block">Soil Type:</span>
+                    <span className="text-[11px] text-earth-400 block">Soil Type:</span>
                     <span className="font-extrabold text-earth-900 capitalize">
                       {formData.soilType || 'Not specified'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-earth-400 block">Drainage:</span>
+                    <span className="text-[11px] text-earth-400 block">Drainage:</span>
                     <span className="font-extrabold text-earth-900 capitalize">
                       {formData.drainage || 'Good'}
                     </span>
@@ -1218,13 +1226,13 @@ export const SoilAssessmentPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-2 pb-2 border-b border-earth-200/80">
                   <div>
-                    <span className="text-[10px] text-earth-400 block">Location:</span>
+                    <span className="text-[11px] text-earth-400 block">Location:</span>
                     <span className="font-extrabold text-earth-900">
                       {formData.district || 'Karnataka'}, {formData.taluk || formData.state}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-earth-400 block">Land Size:</span>
+                    <span className="text-[11px] text-earth-400 block">Land Size:</span>
                     <span className="font-extrabold text-earth-900">
                       {formData.farmSize} {formData.farmUnit}
                       {formData.guntas ? ` + ${formData.guntas} Guntas` : ''}
@@ -1234,13 +1242,13 @@ export const SoilAssessmentPage: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-2 pb-2 border-b border-earth-200/80">
                   <div>
-                    <span className="text-[10px] text-earth-400 block">Water Source:</span>
+                    <span className="text-[11px] text-earth-400 block">Water Source:</span>
                     <span className="font-extrabold text-earth-900 capitalize">
                       {formData.waterSource || 'Borewell'}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[10px] text-earth-400 block">Season & Category:</span>
+                    <span className="text-[11px] text-earth-400 block">Season & Category:</span>
                     <span className="font-extrabold text-earth-900">
                       {formData.season} ({formData.category ? formData.category : 'All Categories'})
                     </span>
@@ -1248,7 +1256,7 @@ export const SoilAssessmentPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <span className="text-[10px] text-earth-400 block">Soil Chemistry:</span>
+                  <span className="text-[11px] text-earth-400 block">Soil Chemistry:</span>
                   <span className="font-semibold text-earth-800">
                     pH: {formData.isPhUnknown ? 'Standard' : formData.ph} | N: {formData.npkLevelN} | P: {formData.npkLevelP} | K: {formData.npkLevelK}
                   </span>

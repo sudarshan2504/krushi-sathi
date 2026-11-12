@@ -91,7 +91,7 @@ export const LongTermCropsSection: React.FC<LongTermCropsSectionProps> = ({
                   ? 'దీర్ఘకాలిక & తోట పంటలు'
                   : 'Plantation & Long-Term Crops'}
               </h3>
-              <span className="text-[10px] uppercase font-black px-2 py-0.5 rounded-full bg-mint-500/20 text-mint-300 border border-mint-400/30">
+              <span className="text-[11px] uppercase font-black px-2 py-0.5 rounded-full bg-mint-500/20 text-mint-300 border border-mint-400/30">
                 Wealth Builder
               </span>
             </div>
@@ -142,7 +142,7 @@ export const LongTermCropsSection: React.FC<LongTermCropsSectionProps> = ({
                   </div>
                 </div>
                 {crop.gestationYears && (
-                  <span className="text-[10px] font-black px-2 py-1 rounded-lg bg-amber-400/20 text-amber-300 border border-amber-400/30 whitespace-nowrap shrink-0">
+                  <span className="text-[11px] font-black px-2 py-1 rounded-lg bg-amber-400/20 text-amber-300 border border-amber-400/30 whitespace-nowrap shrink-0">
                     {crop.gestationYears} Yrs Gestation
                   </span>
                 )}
@@ -182,7 +182,7 @@ export const LongTermCropsSection: React.FC<LongTermCropsSectionProps> = ({
               {/* Intercropping Options */}
               {crop.intercroppingOptions && crop.intercroppingOptions.length > 0 && (
                 <div className="mb-2">
-                  <span className="text-[10px] font-bold text-mint-300 block mb-1">
+                  <span className="text-[11px] font-bold text-mint-300 block mb-1">
                     {language === 'kn'
                       ? 'ಸೂಕ್ತ ಅಂತರಬೆಳೆಗಳು (Intercropping):'
                       : language === 'ta'
@@ -195,7 +195,7 @@ export const LongTermCropsSection: React.FC<LongTermCropsSectionProps> = ({
                     {crop.intercroppingOptions.map((opt: string, idx: number) => (
                       <span
                         key={idx}
-                        className="text-[10px] px-2 py-0.5 rounded-md bg-forest-700/80 text-mint-100 border border-forest-600"
+                        className="text-[11px] px-2 py-0.5 rounded-md bg-forest-700/80 text-mint-100 border border-forest-600"
                       >
                         {opt}
                       </span>
@@ -207,8 +207,9 @@ export const LongTermCropsSection: React.FC<LongTermCropsSectionProps> = ({
 
             {onSelectCrop && (
               <button
+                type="button"
                 onClick={() => onSelectCrop(crop.id)}
-                className="w-full mt-3 py-2 px-3 rounded-xl bg-mint-500 hover:bg-mint-400 text-forest-950 text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-sm"
+                className="w-full min-h-[44px] mt-3 py-2 px-3 rounded-xl bg-mint-500 hover:bg-mint-400 text-forest-950 text-xs font-black transition-all flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
               >
                 <span>
                   {language === 'kn'

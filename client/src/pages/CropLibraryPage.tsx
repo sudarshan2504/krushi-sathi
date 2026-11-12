@@ -281,15 +281,16 @@ export const CropLibraryPage: React.FC = () => {
               <button
                 type="button"
                 onClick={() => navigate('/dev/crop-gallery')}
-                className="flex items-center gap-1.5 bg-amber-300 text-forest-900 px-3 py-1.5 rounded-xl hover:bg-amber-200 font-bold transition shadow-sm"
+                className="min-h-[44px] flex items-center gap-1.5 bg-amber-300 text-forest-900 px-3 py-1.5 rounded-xl hover:bg-amber-200 font-bold transition shadow-sm cursor-pointer"
               >
                 <span>Image Review Dashboard</span>
                 <ExternalLink className="w-3.5 h-3.5" />
               </button>
             )}
             <button
+              type="button"
               onClick={() => navigate('/credits')}
-              className="flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-xl hover:bg-white/20 transition text-white"
+              className="min-h-[44px] flex items-center gap-1.5 bg-white/15 px-3 py-1.5 rounded-xl hover:bg-white/20 transition text-white cursor-pointer"
             >
               <span>Licensing & Attribution Credits</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -301,7 +302,7 @@ export const CropLibraryPage: React.FC = () => {
       {/* A-Z Alphabet Bar */}
       <div className="bg-white rounded-2xl p-2.5 sm:p-3 border border-gray-100 shadow-sm">
         <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-thin scrollbar-thumb-gray-200">
-          <span className="text-xs font-bold text-gray-400 uppercase tracking-wider px-2 shrink-0">
+          <span className="text-xs font-bold text-gray-600 uppercase tracking-wider px-2 shrink-0">
             A-Z:
           </span>
           {ALPHABET.map((letter) => {
@@ -328,18 +329,20 @@ export const CropLibraryPage: React.FC = () => {
         <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
           {/* Multilingual Search Bar */}
           <div className="relative flex-1">
-            <Search className="w-5 h-5 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <Search className="w-5 h-5 text-gray-500 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => handleFilterChange(setSearchQuery, e.target.value)}
               placeholder="Search in English, ಕನ್ನಡ, தமிழ், తెలుగు or Botanical name (e.g., Ragi, தக்காளி, Citrus)..."
-              className="w-full pl-11 pr-10 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-forest focus:border-forest shadow-sm"
+              aria-label="Search crops by name or botanical name"
+              className="w-full min-h-[44px] pl-11 pr-12 py-3 bg-white border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-forest focus:border-forest shadow-sm"
             />
             {searchQuery && (
               <button
+                type="button"
                 onClick={() => handleFilterChange(setSearchQuery, '')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1"
+                className="min-w-[44px] min-h-[44px] flex items-center justify-center absolute right-1 top-1/2 -translate-y-1/2 text-gray-600 hover:text-gray-900 p-1 cursor-pointer"
                 aria-label="Clear search"
               >
                 <X className="w-4 h-4" />
@@ -349,21 +352,23 @@ export const CropLibraryPage: React.FC = () => {
 
           {/* Location Recommendation Toggle */}
           <button
+            type="button"
             onClick={() => handleFilterChange(setRecommendedOnly, !recommendedOnly)}
-            className={`px-4 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition border ${
+            className={`min-h-[44px] px-4 py-3 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition border cursor-pointer ${
               recommendedOnly
-                ? 'bg-emerald-600 text-white border-emerald-600 shadow-sm'
+                ? 'bg-emerald-700 text-white border-emerald-700 shadow-sm'
                 : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
             }`}
           >
-            <Sparkles className={`w-4 h-4 ${recommendedOnly ? 'text-yellow-200' : 'text-emerald-600'}`} />
+            <Sparkles className={`w-4 h-4 ${recommendedOnly ? 'text-yellow-200' : 'text-emerald-700'}`} />
             <span>Recommended for My Soil</span>
           </button>
 
           {/* Filter Modal Trigger (Mobile & Compact) */}
           <button
+            type="button"
             onClick={() => setShowFiltersModal(true)}
-            className="sm:hidden px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold text-gray-700 flex items-center justify-center gap-2"
+            className="sm:hidden min-h-[44px] px-4 py-3 bg-white border border-gray-200 rounded-2xl text-xs font-bold text-gray-700 flex items-center justify-center gap-2 cursor-pointer"
           >
             <Filter className="w-4 h-4 text-forest" />
             <span>Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}</span>
@@ -374,13 +379,14 @@ export const CropLibraryPage: React.FC = () => {
         <div className="hidden sm:grid grid-cols-2 lg:grid-cols-5 gap-2.5 bg-white p-3.5 rounded-2xl border border-gray-100 shadow-sm">
           {/* Category */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+            <label htmlFor="crop-lib-category" className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
               Category
             </label>
             <select
+              id="crop-lib-category"
               value={selectedCategory}
               onChange={(e) => handleFilterChange(setSelectedCategory, e.target.value)}
-              className="w-full text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
+              className="w-full min-h-[44px] text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
             >
               {CATEGORIES.map((cat) => (
                 <option key={cat.id} value={cat.id}>
@@ -392,13 +398,14 @@ export const CropLibraryPage: React.FC = () => {
 
           {/* Season */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+            <label htmlFor="crop-lib-season" className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
               Season
             </label>
             <select
+              id="crop-lib-season"
               value={selectedSeason}
               onChange={(e) => handleFilterChange(setSelectedSeason, e.target.value)}
-              className="w-full text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
+              className="w-full min-h-[44px] text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
             >
               {SEASONS.map((sn) => (
                 <option key={sn.id} value={sn.id}>
@@ -410,13 +417,14 @@ export const CropLibraryPage: React.FC = () => {
 
           {/* Duration */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+            <label htmlFor="crop-lib-duration" className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
               Duration
             </label>
             <select
+              id="crop-lib-duration"
               value={selectedDuration}
               onChange={(e) => handleFilterChange(setSelectedDuration, e.target.value)}
-              className="w-full text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
+              className="w-full min-h-[44px] text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
             >
               {DURATIONS.map((d) => (
                 <option key={d.id} value={d.id}>
@@ -428,13 +436,14 @@ export const CropLibraryPage: React.FC = () => {
 
           {/* Soil Type */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+            <label htmlFor="crop-lib-soil" className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
               Soil Type
             </label>
             <select
+              id="crop-lib-soil"
               value={selectedSoil}
               onChange={(e) => handleFilterChange(setSelectedSoil, e.target.value)}
-              className="w-full text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
+              className="w-full min-h-[44px] text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
             >
               {SOIL_TYPES.map((st) => (
                 <option key={st.id} value={st.id}>
@@ -446,13 +455,14 @@ export const CropLibraryPage: React.FC = () => {
 
           {/* Water Need */}
           <div>
-            <label className="block text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-1">
+            <label htmlFor="crop-lib-water" className="block text-[11px] font-bold text-gray-600 uppercase tracking-wider mb-1">
               Water Need
             </label>
             <select
+              id="crop-lib-water"
               value={selectedWater}
               onChange={(e) => handleFilterChange(setSelectedWater, e.target.value)}
-              className="w-full text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
+              className="w-full min-h-[44px] text-xs font-semibold py-2 px-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-1 focus:ring-forest"
             >
               {WATER_NEEDS.map((wn) => (
                 <option key={wn.id} value={wn.id}>
@@ -470,35 +480,52 @@ export const CropLibraryPage: React.FC = () => {
               Showing {crops.length} of {pagination.total} crops
             </span>
             {selectedLetter !== 'All' && (
-              <span className="bg-forest/10 text-forest font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                Letter: {selectedLetter}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => handleFilterChange(setSelectedLetter, 'All')} />
-              </span>
+              <button
+                type="button"
+                onClick={() => handleFilterChange(setSelectedLetter, 'All')}
+                className="min-h-[44px] bg-forest/10 text-forest font-bold px-3 py-1 rounded-full inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>Letter: {selectedLetter}</span>
+                <X className="w-3.5 h-3.5" />
+              </button>
             )}
             {selectedCategory !== 'all' && (
-              <span className="bg-forest/10 text-forest font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                {getCategoryLabel(selectedCategory)}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => handleFilterChange(setSelectedCategory, 'all')} />
-              </span>
+              <button
+                type="button"
+                onClick={() => handleFilterChange(setSelectedCategory, 'all')}
+                className="min-h-[44px] bg-forest/10 text-forest font-bold px-3 py-1 rounded-full inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>{getCategoryLabel(selectedCategory)}</span>
+                <X className="w-3.5 h-3.5" />
+              </button>
             )}
             {selectedSeason !== 'all' && (
-              <span className="bg-forest/10 text-forest font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                {selectedSeason}
-                <X className="w-3 h-3 cursor-pointer" onClick={() => handleFilterChange(setSelectedSeason, 'all')} />
-              </span>
+              <button
+                type="button"
+                onClick={() => handleFilterChange(setSelectedSeason, 'all')}
+                className="min-h-[44px] bg-forest/10 text-forest font-bold px-3 py-1 rounded-full inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>{selectedSeason}</span>
+                <X className="w-3.5 h-3.5" />
+              </button>
             )}
             {recommendedOnly && (
-              <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full inline-flex items-center gap-1">
-                Recommended Only
-                <X className="w-3 h-3 cursor-pointer" onClick={() => handleFilterChange(setRecommendedOnly, false)} />
-              </span>
+              <button
+                type="button"
+                onClick={() => handleFilterChange(setRecommendedOnly, false)}
+                className="min-h-[44px] bg-emerald-100 text-emerald-800 font-bold px-3 py-1 rounded-full inline-flex items-center gap-1 cursor-pointer"
+              >
+                <span>Recommended Only</span>
+                <X className="w-3.5 h-3.5" />
+              </button>
             )}
           </div>
 
           {activeFiltersCount > 0 && (
             <button
+              type="button"
               onClick={handleResetFilters}
-              className="text-xs font-bold text-red-600 hover:text-red-700 underline"
+              className="min-h-[44px] inline-flex items-center px-2 text-xs font-bold text-red-600 hover:text-red-700 underline cursor-pointer"
             >
               Reset all filters
             </button>
@@ -527,8 +554,9 @@ export const CropLibraryPage: React.FC = () => {
           <h3 className="text-base font-extrabold text-gray-900">Failed to load crops</h3>
           <p className="text-xs text-gray-600">{error}</p>
           <button
+            type="button"
             onClick={() => handleFilterChange(setPage, 1)}
-            className="px-4 py-2 bg-forest text-white rounded-xl text-xs font-bold hover:bg-forest-dark"
+            className="min-h-[44px] px-4 py-2 bg-forest text-white rounded-xl text-xs font-bold hover:bg-forest-dark cursor-pointer"
           >
             Retry
           </button>
@@ -545,8 +573,9 @@ export const CropLibraryPage: React.FC = () => {
             </p>
           </div>
           <button
+            type="button"
             onClick={handleResetFilters}
-            className="px-5 py-2.5 bg-forest text-white rounded-2xl text-xs font-bold hover:bg-forest-dark shadow-sm"
+            className="min-h-[44px] px-5 py-2.5 bg-forest text-white rounded-2xl text-xs font-bold hover:bg-forest-dark shadow-sm cursor-pointer"
           >
             Clear Filters & View All
           </button>
@@ -565,9 +594,17 @@ export const CropLibraryPage: React.FC = () => {
             return (
               <motion.div
                 key={crop.id}
+                role="button"
+                tabIndex={0}
                 whileHover={{ y: -4 }}
                 transition={{ duration: 0.15 }}
                 onClick={() => navigate(`/crops/${crop.id}`, { state: { crop } })}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate(`/crops/${crop.id}`, { state: { crop } });
+                  }
+                }}
                 className="bg-white rounded-3xl border border-gray-100 shadow-card hover:shadow-lg overflow-hidden flex flex-col cursor-pointer group transition-all"
               >
                 {/* Crop Photo Container */}
@@ -583,26 +620,26 @@ export const CropLibraryPage: React.FC = () => {
 
                   {/* Recommendation Badge */}
                   {crop.isRecommendedForFarmer && (
-                    <div className="absolute top-3 left-3 bg-emerald-700/90 backdrop-blur-md text-white text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
+                    <div className="absolute top-3 left-3 bg-emerald-700/90 backdrop-blur-md text-white text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1">
                       <Sparkles className="w-3 h-3 text-yellow-300" />
                       <span>Recommended for You</span>
                     </div>
                   )}
 
                   {/* Category Pill */}
-                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-forest-dark text-[10px] font-extrabold px-2.5 py-1 rounded-full shadow-sm">
+                  <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md text-forest-dark text-[11px] font-extrabold px-2.5 py-1 rounded-full shadow-sm">
                     {getCategoryLabel(crop.category)}
                   </div>
 
                   {/* Confidence Badge (Bottom Right) */}
                   <div className="absolute bottom-2.5 right-2.5">
                     {crop.confidence === 'high' ? (
-                      <span className="bg-emerald-950/70 backdrop-blur-md text-emerald-300 text-[9px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <span className="bg-emerald-950/70 backdrop-blur-md text-emerald-300 text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
                         <CheckCircle2 className="w-2.5 h-2.5" />
                         <span>ICAR Verified</span>
                       </span>
                     ) : (
-                      <span className="bg-amber-950/70 backdrop-blur-md text-amber-300 text-[9px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
+                      <span className="bg-amber-950/70 backdrop-blur-md text-amber-300 text-[11px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1">
                         <Info className="w-2.5 h-2.5" />
                         <span>Regional Specialist</span>
                       </span>
@@ -665,9 +702,10 @@ export const CropLibraryPage: React.FC = () => {
       {pagination.totalPages > 1 && (
         <div className="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center justify-between">
           <button
+            type="button"
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={!pagination.hasPrev}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="min-h-[44px] flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
             <span>Previous</span>
@@ -680,9 +718,10 @@ export const CropLibraryPage: React.FC = () => {
           </div>
 
           <button
+            type="button"
             onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
             disabled={!pagination.hasNext}
-            className="flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50"
+            className="min-h-[44px] flex items-center gap-1 px-3 py-2 rounded-xl text-xs font-bold border border-gray-200 text-gray-700 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-50 cursor-pointer"
           >
             <span>Next</span>
             <ChevronRight className="w-4 h-4" />
@@ -703,8 +742,10 @@ export const CropLibraryPage: React.FC = () => {
               <div className="flex items-center justify-between pb-2 border-b border-gray-100">
                 <h3 className="text-base font-extrabold text-gray-900">Filter Crop Catalog</h3>
                 <button
+                  type="button"
                   onClick={() => setShowFiltersModal(false)}
-                  className="p-1 rounded-full hover:bg-gray-100 text-gray-500"
+                  aria-label="Close filters"
+                  className="min-w-[44px] min-h-[44px] flex items-center justify-center p-1 rounded-full hover:bg-gray-100 text-gray-600 cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -712,11 +753,12 @@ export const CropLibraryPage: React.FC = () => {
 
               {/* Category */}
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Category</label>
+                <label htmlFor="crop-lib-modal-category" className="block text-xs font-bold text-gray-600 mb-1">Category</label>
                 <select
+                  id="crop-lib-modal-category"
                   value={selectedCategory}
                   onChange={(e) => handleFilterChange(setSelectedCategory, e.target.value)}
-                  className="w-full text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
+                  className="w-full min-h-[44px] text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
                 >
                   {CATEGORIES.map((cat) => (
                     <option key={cat.id} value={cat.id}>
@@ -728,11 +770,12 @@ export const CropLibraryPage: React.FC = () => {
 
               {/* Season */}
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Season</label>
+                <label htmlFor="crop-lib-modal-season" className="block text-xs font-bold text-gray-600 mb-1">Season</label>
                 <select
+                  id="crop-lib-modal-season"
                   value={selectedSeason}
                   onChange={(e) => handleFilterChange(setSelectedSeason, e.target.value)}
-                  className="w-full text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
+                  className="w-full min-h-[44px] text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
                 >
                   {SEASONS.map((sn) => (
                     <option key={sn.id} value={sn.id}>
@@ -744,11 +787,12 @@ export const CropLibraryPage: React.FC = () => {
 
               {/* Duration */}
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Duration</label>
+                <label htmlFor="crop-lib-modal-duration" className="block text-xs font-bold text-gray-600 mb-1">Duration</label>
                 <select
+                  id="crop-lib-modal-duration"
                   value={selectedDuration}
                   onChange={(e) => handleFilterChange(setSelectedDuration, e.target.value)}
-                  className="w-full text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
+                  className="w-full min-h-[44px] text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
                 >
                   {DURATIONS.map((d) => (
                     <option key={d.id} value={d.id}>
@@ -760,11 +804,12 @@ export const CropLibraryPage: React.FC = () => {
 
               {/* Soil */}
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Soil Type</label>
+                <label htmlFor="crop-lib-modal-soil" className="block text-xs font-bold text-gray-600 mb-1">Soil Type</label>
                 <select
+                  id="crop-lib-modal-soil"
                   value={selectedSoil}
                   onChange={(e) => handleFilterChange(setSelectedSoil, e.target.value)}
-                  className="w-full text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
+                  className="w-full min-h-[44px] text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
                 >
                   {SOIL_TYPES.map((st) => (
                     <option key={st.id} value={st.id}>
@@ -776,11 +821,12 @@ export const CropLibraryPage: React.FC = () => {
 
               {/* Water */}
               <div>
-                <label className="block text-xs font-bold text-gray-600 mb-1">Water Need</label>
+                <label htmlFor="crop-lib-modal-water" className="block text-xs font-bold text-gray-600 mb-1">Water Need</label>
                 <select
+                  id="crop-lib-modal-water"
                   value={selectedWater}
                   onChange={(e) => handleFilterChange(setSelectedWater, e.target.value)}
-                  className="w-full text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
+                  className="w-full min-h-[44px] text-xs font-semibold py-2.5 px-3 bg-gray-50 border border-gray-200 rounded-xl"
                 >
                   {WATER_NEEDS.map((wn) => (
                     <option key={wn.id} value={wn.id}>
@@ -792,14 +838,16 @@ export const CropLibraryPage: React.FC = () => {
 
               <div className="flex gap-2 pt-2">
                 <button
+                  type="button"
                   onClick={handleResetFilters}
-                  className="flex-1 py-3 border border-gray-200 rounded-2xl text-xs font-bold text-gray-700 hover:bg-gray-50"
+                  className="flex-1 min-h-[44px] py-3 border border-gray-200 rounded-2xl text-xs font-bold text-gray-700 hover:bg-gray-50 cursor-pointer"
                 >
                   Reset
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowFiltersModal(false)}
-                  className="flex-1 py-3 bg-forest text-white rounded-2xl text-xs font-bold hover:bg-forest-dark"
+                  className="flex-1 min-h-[44px] py-3 bg-forest text-white rounded-2xl text-xs font-bold hover:bg-forest-dark cursor-pointer"
                 >
                   Apply Filters
                 </button>

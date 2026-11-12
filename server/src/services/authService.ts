@@ -24,6 +24,12 @@ const verifiedRegistrationStore = new Map<string, VerifiedRegistration>();
 // Track consumed registration verification JTIs (10-minute TTL)
 const consumedRegistrationJtis = new Map<string, number>();
 
+export function clearAuthStoresForTest(): void {
+  otpStore.clear();
+  verifiedRegistrationStore.clear();
+  consumedRegistrationJtis.clear();
+}
+
 export function isDemoOtpActive(): boolean {
   if (process.env.NODE_ENV === 'production') return false;
   if (process.env.DEMO_OTP_ENABLED !== undefined) {

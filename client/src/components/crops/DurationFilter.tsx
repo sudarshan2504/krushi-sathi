@@ -94,11 +94,12 @@ export const DurationFilter: React.FC<DurationFilterProps> = ({
         return (
           <button
             key={opt.id}
+            type="button"
             onClick={() => onSelectDuration(opt.id === 'all' ? '' : opt.id)}
-            className={`flex-shrink-0 relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-1 cursor-pointer ${
+            className={`min-h-[44px] flex-shrink-0 relative flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-1 cursor-pointer ${
               isSelected
                 ? 'bg-forest text-white border-forest shadow-sm'
-                : 'bg-white text-dark-text border-gray-200 hover:border-forest/40'
+                : 'bg-white text-gray-900 dark:text-gray-100 border-gray-200 hover:border-forest/40'
             }`}
           >
             <span className="relative z-10 flex items-center gap-1.5">

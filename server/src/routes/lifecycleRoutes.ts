@@ -50,17 +50,29 @@ router.get('/plans', authMiddleware, async (req: AuthRequest, res: Response) => 
 router.post('/plans', authMiddleware, async (req: AuthRequest, res: Response) => {
   try {
     const user = req.user!;
-    const { cropId, fieldName, areaAcre } = req.body;
+    const { cropId, fieldName, areaAcre } = req.body || {};
 
-    if (!cropId) {
-      return res.status(400).json({ success: false, message: 'Crop ID is required' });
+    if (!cropId || typeof cropId !== 'string' || !cropId.trim()) {
+      return res.status(400).json({ success: false, message: 'Valid cropId string is required' });
+    }
+
+    if (fieldName !== undefined && (typeof fieldName !== 'string' || !fieldName.trim())) {
+      return res.status(400).json({ success: false, message: 'fieldName must be a non-empty string' });
+    }
+
+    let parsedArea = user.farmSize || 1.0;
+    if (areaAcre !== undefined && areaAcre !== null && areaAcre !== '') {
+      parsedArea = Number(areaAcre);
+      if (!Number.isFinite(parsedArea) || parsedArea <= 0 || parsedArea > 100000) {
+        return res.status(400).json({ success: false, message: 'areaAcre must be a positive number' });
+      }
     }
 
     const plan = await createCropPlan({
       userId: user.id,
-      cropId,
-      fieldName: fieldName || 'Main Field',
-      areaAcre: areaAcre ? parseFloat(areaAcre) : user.farmSize || 1.0,
+      cropId: cropId.trim(),
+      fieldName: fieldName ? fieldName.trim() : 'Main Field',
+      areaAcre: parsedArea,
     });
 
     res.json({
@@ -69,7 +81,7 @@ router.post('/plans', authMiddleware, async (req: AuthRequest, res: Response) =>
       message: 'Crop lifecycle plan created! You can now track stage tasks from sowing to harvest.',
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message || 'Failed to create crop plan' });
+    res.status(err.status || 500).json({ success: false, message: err.message || 'Failed to create crop plan' });
   }
 });
 
@@ -106,7 +118,11 @@ router.patch('/tasks/:taskId', authMiddleware, async (req: AuthRequest, res: Res
       include: { cropPlan: true },
     });
 
-    if (!task || task.cropPlan.userId !== req.user!.id) {
+    if (!task) {
+      return res.status(404).json({ success: false, message: 'Crop task not found' });
+    }
+
+    if (task.cropPlan.userId !== req.user!.id) {
       return res.status(403).json({ success: false, message: 'Unauthorized task modification' });
     }
 

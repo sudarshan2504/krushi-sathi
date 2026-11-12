@@ -15,9 +15,14 @@
     "build": "npm --workspace=server run build && npm --workspace=client run build",
     "prisma:seed": "npm --workspace=server run prisma:seed",
     "fetch:crop-images": "npm --workspace=server run fetch:crop-images",
-    "check:crop-images": "npm --workspace=server run check:crop-images"
+    "check:crop-images": "npm --workspace=server run check:crop-images",
+    "test:server": "npm --workspace=server test",
+    "test:client": "npm --workspace=client test",
+    "test:e2e": "npx playwright test",
+    "test:all": "node scripts/run-all-tests.mjs"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.14.0",
     "@playwright/test": "^1.65.0",
     "concurrently": "^9.1.2",
     "puppeteer-core": "^25.16.0"

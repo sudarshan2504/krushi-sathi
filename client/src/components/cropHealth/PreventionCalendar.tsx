@@ -233,10 +233,10 @@ export const PreventionCalendar: React.FC<PreventionCalendarProps> = ({
             <Calendar className="w-5 h-5" />
           </div>
           <div>
-            <h2 className="text-sm sm:text-base font-extrabold text-dark-text">
+            <h2 className="text-sm sm:text-base font-extrabold text-gray-900 dark:text-gray-100">
               {t('preventionCalendar') || 'Crop Health Prevention Calendar'}: <span className="text-forest">{cropName}</span>
             </h2>
-            <p className="text-xs text-dark-muted mt-0.5 leading-relaxed">
+            <p className="text-xs text-gray-600 dark:text-gray-400 mt-0.5 leading-relaxed">
               Timely proactive cultural & biological steps aligned with your crop's lifecycle stages. Preventing problems before they strike saves cost and protects yields.
             </p>
           </div>
@@ -248,10 +248,10 @@ export const PreventionCalendar: React.FC<PreventionCalendarProps> = ({
         <button
           type="button"
           onClick={() => setActiveStage('all')}
-          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[40px] cursor-pointer ${
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[44px] cursor-pointer ${
             activeStage === 'all'
               ? 'bg-forest text-white shadow-sm'
-              : 'bg-white text-dark-text border border-gray-200 hover:bg-gray-50'
+              : 'bg-white text-gray-900 dark:text-gray-100 border border-gray-200 hover:bg-gray-50'
           }`}
         >
           All Stages ({steps.length})
@@ -261,10 +261,10 @@ export const PreventionCalendar: React.FC<PreventionCalendarProps> = ({
             key={st.stageId}
             type="button"
             onClick={() => setActiveStage(st.stageId)}
-            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[40px] cursor-pointer ${
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap min-h-[44px] cursor-pointer ${
               activeStage === st.stageId
                 ? 'bg-forest text-white shadow-sm'
-                : 'bg-white text-dark-text border border-gray-200 hover:bg-gray-50'
+                : 'bg-white text-gray-900 dark:text-gray-100 border border-gray-200 hover:bg-gray-50'
             }`}
           >
             {getStageTitle(st).split('.')[1]?.trim() || st.stageNameEn}
@@ -290,7 +290,7 @@ export const PreventionCalendar: React.FC<PreventionCalendarProps> = ({
                     <StepIcon className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-extrabold text-dark-text">
+                    <h3 className="text-sm font-extrabold text-gray-900 dark:text-gray-100">
                       {getStageTitle(step)}
                     </h3>
                     <span className="text-[11px] font-bold text-forest block">
@@ -299,20 +299,20 @@ export const PreventionCalendar: React.FC<PreventionCalendarProps> = ({
                   </div>
                 </div>
 
-                <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
+                <span className="text-[11px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full">
                   Step {idx + 1}
                 </span>
               </div>
 
               {/* Action Details */}
-              <div className="text-xs sm:text-sm text-dark-text/90 leading-relaxed font-medium">
+              <div className="text-xs sm:text-sm text-gray-800 dark:text-gray-100 leading-relaxed font-medium">
                 {getStageAction(step)}
               </div>
 
               {/* Specific Problems Prevented */}
               {step.targetProblems.length > 0 && (
                 <div className="bg-cream-light/50 rounded-2xl p-3 border border-cream-dark/20 text-xs">
-                  <span className="font-bold text-dark-text block mb-1.5 text-[11px] uppercase tracking-wider text-forest">
+                  <span className="font-bold text-gray-900 dark:text-gray-100 block mb-1.5 text-[11px] uppercase tracking-wider text-forest">
                     {t('prevention') || 'Problems Prevented at this Stage'}:
                   </span>
                   <div className="flex flex-wrap gap-1.5">
@@ -322,11 +322,12 @@ export const PreventionCalendar: React.FC<PreventionCalendarProps> = ({
                         <button
                           key={pIdx}
                           type="button"
+                          disabled={!matched}
                           onClick={() => matched && onSelectProblem?.(matched)}
-                          className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition ${
+                          className={`min-h-[44px] inline-flex items-center px-3 py-1.5 rounded-lg text-[11px] font-semibold transition ${
                             matched
                               ? 'bg-white border border-forest/20 text-forest hover:bg-forest hover:text-white cursor-pointer shadow-2xs'
-                              : 'bg-gray-100 text-gray-700'
+                              : 'bg-gray-100 text-gray-700 cursor-default'
                           }`}
                         >
                           {probName}

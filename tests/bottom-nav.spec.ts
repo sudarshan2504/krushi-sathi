@@ -16,7 +16,7 @@ test.describe('BottomNav Redesign Verification', () => {
       await page.goto('/login');
       await page.evaluate(async (lCode) => {
         try {
-          const res = await fetch('http://localhost:5000/api/auth/demo-login', { method: 'POST' });
+          const res = await fetch('/api/auth/demo-login', { method: 'POST' });
           const json = await res.json();
           if (json.data?.token) {
             localStorage.setItem('krishi_sathi_token', json.data.token);
@@ -103,7 +103,7 @@ test.describe('BottomNav Redesign Verification', () => {
   test('Tab switching causes zero layout shift and active pill moves cleanly', async ({ page }) => {
     await page.goto('/login');
     await page.evaluate(async () => {
-      const res = await fetch('http://localhost:5000/api/auth/demo-login', { method: 'POST' });
+      const res = await fetch('/api/auth/demo-login', { method: 'POST' });
       const json = await res.json();
       if (json.data?.token) {
         localStorage.setItem('krishi_sathi_token', json.data.token);

@@ -86,8 +86,10 @@ export const CropCompareView: React.FC<CropCompareViewProps> = ({
               </div>
             </div>
             <button
+              type="button"
               onClick={onClose}
-              className="w-9 h-9 rounded-full bg-earth-100 hover:bg-earth-200 text-earth-600 flex items-center justify-center transition-all"
+              aria-label="Close comparison"
+              className="w-11 h-11 rounded-full bg-earth-100 hover:bg-earth-200 text-earth-700 flex items-center justify-center transition-all cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -124,7 +126,7 @@ export const CropCompareView: React.FC<CropCompareViewProps> = ({
                       </h3>
                       <p className="text-[11px] text-earth-500 italic truncate">{crop.name}</p>
                       {crop.suitabilityScore !== undefined && (
-                        <span className="inline-block mt-1 text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-forest-600 text-white">
+                        <span className="inline-block mt-1 text-[11px] font-extrabold px-2 py-0.5 rounded-full bg-forest-600 text-white">
                           {crop.suitabilityScore}% Match
                         </span>
                       )}
@@ -133,11 +135,12 @@ export const CropCompareView: React.FC<CropCompareViewProps> = ({
 
                   {onSelectCrop && (
                     <button
+                      type="button"
                       onClick={() => {
                         onClose();
                         onSelectCrop(crop.cropId || crop.id);
                       }}
-                      className="w-full mt-3 py-1.5 px-3 rounded-xl bg-forest-600 hover:bg-forest-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-xs"
+                      className="w-full min-h-[44px] mt-3 py-1.5 px-3 rounded-xl bg-forest-600 hover:bg-forest-700 text-white text-xs font-bold transition-all flex items-center justify-center gap-1 shadow-xs cursor-pointer"
                     >
                       <span>Choose Crop</span>
                       <ArrowRight className="w-3.5 h-3.5" />
@@ -169,7 +172,7 @@ export const CropCompareView: React.FC<CropCompareViewProps> = ({
                         </p>
                       )}
                       {crop.durationType && (
-                        <span className="inline-block mt-1 text-[10px] uppercase font-bold px-1.5 py-0.2 rounded bg-earth-100 text-earth-700">
+                        <span className="inline-block mt-1 text-[11px] uppercase font-bold px-1.5 py-0.2 rounded bg-earth-100 text-earth-700">
                           {crop.durationType}
                         </span>
                       )}
@@ -216,20 +219,20 @@ export const CropCompareView: React.FC<CropCompareViewProps> = ({
                   {crops.map((crop) => (
                     <div key={crop.cropId || crop.id} className="text-xs space-y-1">
                       <div>
-                        <span className="text-[10px] text-earth-400 block">Est. Cost / Acre</span>
+                        <span className="text-[11px] text-earth-600 block">Est. Cost / Acre</span>
                         <span className="font-bold text-earth-800">
                           {crop.estimatedCost || crop.estimatedCostPerAcre}
                         </span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-earth-400 block">Potential Yield</span>
+                        <span className="text-[11px] text-earth-600 block">Potential Yield</span>
                         <span className="font-bold text-earth-800">
                           {crop.potentialYield || crop.potentialYieldPerAcre}
                         </span>
                       </div>
                       {(crop.roiEstimate || crop.marketDemand) && (
                         <div className="pt-1">
-                          <span className="text-[10px] text-earth-400 block">Market Demand / ROI</span>
+                          <span className="text-[11px] text-earth-600 block">Market Demand / ROI</span>
                           <span className="font-bold text-forest-700">
                             {crop.roiEstimate || crop.marketDemand}
                           </span>
@@ -277,7 +280,7 @@ export const CropCompareView: React.FC<CropCompareViewProps> = ({
                     <div key={crop.cropId || crop.id} className="text-xs space-y-1.5">
                       {crop.intercroppingOptions && crop.intercroppingOptions.length > 0 && (
                         <div>
-                          <span className="text-[10px] font-bold text-forest-700 block">Intercropping:</span>
+                          <span className="text-[11px] font-bold text-forest-700 block">Intercropping:</span>
                           <p className="text-[11px] text-earth-600">
                             {crop.intercroppingOptions.join(', ')}
                           </p>
@@ -321,7 +324,7 @@ export const CropCompareView: React.FC<CropCompareViewProps> = ({
                           ))}
                         </ul>
                       ) : (
-                        <p className="text-[11px] text-earth-400">Standard agricultural risks apply.</p>
+                        <p className="text-[11px] text-earth-600">Standard agricultural risks apply.</p>
                       )}
                     </div>
                   ))}
@@ -333,8 +336,9 @@ export const CropCompareView: React.FC<CropCompareViewProps> = ({
           {/* Footer */}
           <div className="p-4 border-t border-earth-100 bg-earth-50/50 flex justify-end">
             <button
+              type="button"
               onClick={onClose}
-              className="px-5 py-2 rounded-xl bg-earth-200 hover:bg-earth-300 text-earth-800 text-xs font-bold transition-all"
+              className="min-h-[44px] px-5 py-2 rounded-xl bg-earth-200 hover:bg-earth-300 text-earth-800 text-xs font-bold transition-all cursor-pointer"
             >
               Close Comparison
             </button>

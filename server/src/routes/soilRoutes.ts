@@ -41,9 +41,41 @@ router.post('/assessments', authMiddleware, async (req: AuthRequest, res: Respon
       agroZone,
     } = req.body;
 
-    if (!soilType || !waterSource) {
-      return res.status(400).json({ success: false, message: 'Soil type and water source are required' });
+    if (typeof soilType !== 'string' || !soilType.trim() || typeof waterSource !== 'string' || !waterSource.trim()) {
+      return res.status(400).json({ success: false, message: 'Valid soil type and water source are required' });
     }
+
+    let parsedPh: number | null = null;
+    if (ph !== undefined && ph !== null && ph !== '') {
+      parsedPh = Number(ph);
+      if (!Number.isFinite(parsedPh) || parsedPh < 0 || parsedPh > 14) {
+        return res.status(400).json({ success: false, message: 'Soil pH must be a number between 0 and 14' });
+      }
+    }
+
+    let parsedFarmSize = user.farmSize || 2.5;
+    if (farmSize !== undefined && farmSize !== null && farmSize !== '') {
+      parsedFarmSize = Number(farmSize);
+      if (!Number.isFinite(parsedFarmSize) || parsedFarmSize <= 0 || parsedFarmSize > 100000) {
+        return res.status(400).json({ success: false, message: 'farmSize must be a positive number' });
+      }
+    }
+
+    const parseOptionalNonNegative = (val: unknown, field: string): number | null => {
+      if (val === undefined || val === null || val === '') return null;
+      const n = Number(val);
+      if (!Number.isFinite(n) || n < 0) {
+        const err: any = new Error(`${field} must be a non-negative number`);
+        err.status = 400;
+        throw err;
+      }
+      return n;
+    };
+
+    const parsedN = parseOptionalNonNegative(nitrogen, 'nitrogen');
+    const parsedP = parseOptionalNonNegative(phosphorus, 'phosphorus');
+    const parsedK = parseOptionalNonNegative(potassium, 'potassium');
+    const parsedGuntas = parseOptionalNonNegative(landSizeGuntas, 'landSizeGuntas');
 
     // Save assessment to database
     const assessment = await prisma.soilAssessment.create({
@@ -53,29 +85,29 @@ router.post('/assessments', authMiddleware, async (req: AuthRequest, res: Respon
         district: district || user.district || '',
         village: village || user.village || '',
         taluk: taluk || user.taluk || null,
-        farmSize: farmSize ? parseFloat(farmSize) : user.farmSize || 2.5,
+        farmSize: parsedFarmSize,
         farmUnit: farmUnit || user.farmUnit || 'Acres',
-        landSizeGuntas: landSizeGuntas ? parseFloat(landSizeGuntas) : null,
-        soilType: soilType.toLowerCase(),
+        landSizeGuntas: parsedGuntas,
+        soilType: soilType.trim().toLowerCase(),
         soilColour: soilColour || null,
         soilTexture: soilTexture || null,
         moistureLevel: moistureLevel || null,
         organicMatter: organicMatter || null,
         category: category || null,
-        ph: ph ? parseFloat(ph) : null,
-        nitrogen: nitrogen ? parseFloat(nitrogen) : null,
-        phosphorus: phosphorus ? parseFloat(phosphorus) : null,
-        potassium: potassium ? parseFloat(potassium) : null,
+        ph: parsedPh,
+        nitrogen: parsedN,
+        phosphorus: parsedP,
+        potassium: parsedK,
         npkNitrogen: npkNitrogen || null,
         npkPhosphorus: npkPhosphorus || null,
         npkPotassium: npkPotassium || null,
-        waterSource: waterSource.toLowerCase(),
-        irrigationType: irrigationType ? irrigationType.toLowerCase() : null,
+        waterSource: waterSource.trim().toLowerCase(),
+        irrigationType: irrigationType ? String(irrigationType).toLowerCase() : null,
         season: season || 'Kharif',
         sowingMonth: sowingMonth || null,
         previousCrop: previousCrop || null,
-        budget: budget ? budget.toLowerCase() : 'medium',
-        drainage: drainage ? drainage.toLowerCase() : 'good',
+        budget: budget ? String(budget).toLowerCase() : 'medium',
+        drainage: drainage ? String(drainage).toLowerCase() : 'good',
         soilIssues: soilIssues || null,
       },
     });
@@ -128,7 +160,7 @@ router.post('/assessments', authMiddleware, async (req: AuthRequest, res: Respon
       message: 'Soil assessment completed and recommendations generated successfully!',
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: err.message || 'Failed to process soil assessment' });
+    res.status(err.status || 500).json({ success: false, message: err.message || 'Failed to process soil assessment' });
   }
 });
 

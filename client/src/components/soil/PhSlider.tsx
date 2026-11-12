@@ -72,13 +72,13 @@ export const PhSlider: React.FC<PhSliderProps> = ({
     <div className="bg-white rounded-2xl p-4 border border-gray-200 shadow-sm space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <label className="text-xs font-bold text-dark-text flex items-center gap-1.5">
+          <label htmlFor="soil-ph-slider" className="text-xs font-bold text-gray-900 dark:text-gray-100 flex items-center gap-1.5">
             <span>{language === 'kn' ? 'ಮಣ್ಣಿನ pH ಮೌಲ್ಯ' : 'Soil pH Value (Acidity / Alkalinity)'}</span>
-            <span className="text-[10px] text-dark-muted font-normal">
+            <span className="text-[11px] text-gray-600 dark:text-gray-400 font-normal">
               ({language === 'kn' ? 'ಐಚ್ಛಿಕ' : 'Optional'})
             </span>
           </label>
-          <p className="text-[11px] text-dark-muted">
+          <p className="text-[11px] text-gray-600 dark:text-gray-400">
             {language === 'kn'
               ? 'ಪ್ರಯೋಗಾಲಯ ಅಥವಾ pH ಪೇಪರ್ ಪರೀಕ್ಷೆಯ ಫಲಿತಾಂಶ'
               : 'From lab soil health card or indicator paper'}
@@ -89,10 +89,10 @@ export const PhSlider: React.FC<PhSliderProps> = ({
         <button
           type="button"
           onClick={handleToggleDontKnow}
-          className={`text-xs px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 ${
+          className={`min-h-[44px] text-xs px-3 py-1.5 rounded-xl font-bold transition flex items-center gap-1.5 ${
             dontKnow
               ? 'bg-forest text-white shadow-sm'
-              : 'bg-gray-100 text-dark-muted hover:text-dark-text hover:bg-gray-200'
+              : 'bg-gray-100 text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 hover:bg-gray-200'
           }`}
         >
           {dontKnow && <Check className="w-3.5 h-3.5" />}
@@ -108,7 +108,7 @@ export const PhSlider: React.FC<PhSliderProps> = ({
               <span className="text-2xl font-black text-forest">
                 {numVal.toFixed(1)}
               </span>
-              <span className="text-xs font-semibold text-dark-muted">pH</span>
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-400">pH</span>
             </div>
 
             <div className={`text-xs px-3 py-1 rounded-xl font-bold border ${status.color}`}>
@@ -117,19 +117,22 @@ export const PhSlider: React.FC<PhSliderProps> = ({
           </div>
 
           {/* Slider input */}
-          <div className="relative pt-2">
+          <div className="relative pt-1">
             <input
+              id="soil-ph-slider"
               type="range"
               min="4.0"
               max="9.0"
               step="0.1"
               value={numVal}
+              aria-label={language === 'kn' ? 'ಮಣ್ಣಿನ pH ಮೌಲ್ಯ' : 'Soil pH Value'}
               onChange={(e) => onChange(parseFloat(e.target.value))}
-              className="w-full h-3 bg-gradient-to-r from-red-500 via-emerald-400 via-teal-400 to-purple-600 rounded-lg appearance-none cursor-pointer accent-forest focus:outline-none"
+              className="w-full min-h-[44px] cursor-pointer accent-forest focus:outline-none"
             />
+            <div className="h-2 rounded-full bg-gradient-to-r from-red-500 via-emerald-400 via-teal-400 to-purple-600 -mt-2 mb-1.5 pointer-events-none" aria-hidden="true" />
 
             {/* Scale markers */}
-            <div className="flex justify-between text-[10px] font-semibold text-dark-muted mt-1 px-1">
+            <div className="flex justify-between text-[11px] font-semibold text-gray-600 dark:text-gray-400 mt-1 px-1">
               <span>4.0 (Acidic)</span>
               <span>6.0</span>
               <span className="font-bold text-forest">7.0 (Neutral)</span>
@@ -139,7 +142,7 @@ export const PhSlider: React.FC<PhSliderProps> = ({
           </div>
         </div>
       ) : (
-        <div className="bg-cream/40 rounded-xl p-3 text-xs text-dark-muted flex items-start gap-2 border border-earth/20">
+        <div className="bg-cream/40 rounded-xl p-3 text-xs text-gray-600 dark:text-gray-400 flex items-start gap-2 border border-earth/20">
           <Info className="w-4 h-4 text-forest shrink-0 mt-0.5" />
           <span>
             {language === 'kn'

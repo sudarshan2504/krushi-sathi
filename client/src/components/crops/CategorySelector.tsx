@@ -176,11 +176,12 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
           return (
             <button
               key={cat.id}
+              type="button"
               onClick={() => onSelectCategory(cat.id === 'all' ? '' : cat.id)}
-              className={`flex-shrink-0 relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-1 cursor-pointer ${
+              className={`min-h-[44px] flex-shrink-0 relative flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-1 cursor-pointer ${
                 isSelected
                   ? 'bg-forest text-white border border-forest shadow-sm'
-                  : 'bg-white text-dark-text border border-gray-200 hover:border-forest/40'
+                  : 'bg-white text-gray-900 dark:text-gray-100 border border-gray-200 hover:border-forest/40'
               }`}
             >
               <span className="relative z-10 flex items-center gap-2">
@@ -188,8 +189,8 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                 <span>{getLabel(cat)}</span>
                 {count !== undefined && count > 0 && (
                   <span
-                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                      isSelected ? 'bg-forest-dark text-white' : 'bg-gray-100 text-dark-text'
+                    className={`text-[11px] px-1.5 py-0.2 rounded-full font-bold ${
+                      isSelected ? 'bg-forest-dark text-white' : 'bg-gray-100 text-gray-900 dark:text-gray-100'
                     }`}
                   >
                     {count}
@@ -216,7 +217,7 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
               ? 'పంట వర్గాలు'
               : 'Crop Categories'}
           </h3>
-          <p className="text-xs text-earth-500">
+          <p className="text-xs text-earth-600">
             {language === 'kn'
               ? 'ನಿಮ್ಮ ಆಸಕ್ತಿಯ ಬೆಳೆ ಪ್ರಕಾರವನ್ನು ಆರಿಸಿ'
               : language === 'ta'
@@ -240,17 +241,18 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
           return (
             <motion.button
               key={cat.id}
+              type="button"
               whileTap={{ scale: 0.97 }}
               onClick={() => onSelectCategory(cat.id === 'all' ? '' : cat.id)}
-              className={`relative flex flex-col items-start p-3 rounded-2xl text-left transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-1 cursor-pointer ${
+              className={`min-h-[44px] relative flex flex-col items-start p-3 rounded-2xl text-left transition-all border focus:outline-none focus-visible:ring-2 focus-visible:ring-forest focus-visible:ring-offset-1 cursor-pointer ${
                 isSelected
                   ? 'bg-forest text-white border-forest shadow-md'
-                  : 'bg-white hover:bg-forest-50/40 text-dark-text border-gray-200 hover:border-forest/40 shadow-xs'
+                  : 'bg-white hover:bg-forest-50/40 text-gray-900 dark:text-gray-100 border-gray-200 hover:border-forest/40 shadow-xs'
               }`}
             >
               {cat.badge && (
                 <span
-                  className={`absolute top-2 right-2 text-[9px] font-bold px-1.5 py-0.5 rounded-full z-10 ${
+                  className={`absolute top-2 right-2 text-[11px] font-bold px-1.5 py-0.5 rounded-full z-10 ${
                     isSelected
                       ? 'bg-white/20 text-white border border-white/30'
                       : 'bg-amber-100 text-amber-800'
@@ -273,8 +275,8 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                   <span className="text-xs font-bold leading-snug line-clamp-1">{getLabel(cat)}</span>
                   {count !== undefined && count > 0 && (
                     <span
-                      className={`text-[10px] font-semibold px-1.5 py-0.2 rounded-full ${
-                        isSelected ? 'bg-forest-dark text-white' : 'bg-gray-100 text-dark-text'
+                      className={`text-[11px] font-semibold px-1.5 py-0.2 rounded-full ${
+                        isSelected ? 'bg-forest-dark text-white' : 'bg-gray-100 text-gray-900 dark:text-gray-100'
                       }`}
                     >
                       {count}
@@ -282,8 +284,8 @@ export const CategorySelector: React.FC<CategorySelectorProps> = ({
                   )}
                 </div>
                 <p
-                  className={`text-[10px] mt-0.5 line-clamp-1 ${
-                    isSelected ? 'text-white/80' : 'text-dark-muted'
+                  className={`text-[11px] mt-0.5 line-clamp-1 ${
+                    isSelected ? 'text-white/95' : 'text-gray-600 dark:text-gray-400'
                   }`}
                 >
                   {cat.description}

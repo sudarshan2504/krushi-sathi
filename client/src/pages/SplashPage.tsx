@@ -127,12 +127,12 @@ export const SplashPage: React.FC = () => {
             <BrandLogo size="lg" variant="emblem" />
           </motion.div>
 
-          <h2 className="text-xl font-bold tracking-tight text-forest-dark -mt-1 mb-2">
+          <p className="text-xl font-bold tracking-tight text-forest-dark -mt-1 mb-2">
             Krushi Sathi
-          </h2>
+          </p>
 
           {/* AI Farming Companion Badge (24.5-27.6%) */}
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F8EE] border border-[#BBF7D0] text-[#144D29] text-[10px] font-extrabold uppercase tracking-widest shadow-xs mb-3">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#E8F8EE] border border-[#BBF7D0] text-[#144D29] text-[11px] font-extrabold uppercase tracking-widest shadow-xs mb-3">
             <Cpu className="w-3 h-3 text-[#228B22] shrink-0" />
             <span>{t('aiCompanionBadge')}</span>
           </div>
@@ -189,7 +189,7 @@ export const SplashPage: React.FC = () => {
                   <div className="w-7 h-7 rounded-lg bg-emerald-50 text-forest flex items-center justify-center mb-1">
                     <Icon className="w-4 h-4 text-[#228B22] stroke-[2.2]" />
                   </div>
-                  <span className="text-[10px] font-bold text-[#0D2B18] leading-tight line-clamp-2">
+                  <span className="text-[11px] font-bold text-[#0D2B18] leading-tight line-clamp-2">
                     {card.label}
                   </span>
                 </div>

@@ -98,26 +98,56 @@ router.put('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       longitude,
       locationAccuracy,
       locationSource,
-    } = req.body;
+    } = req.body || {};
 
-    const latVal = latitude !== undefined && latitude !== null ? parseFloat(latitude) : undefined;
-    const lonVal = longitude !== undefined && longitude !== null ? parseFloat(longitude) : undefined;
+    const VALID_LANGS = ['en', 'kn', 'ta', 'te'];
+
+    if (name !== undefined && (typeof name !== 'string' || !name.trim())) {
+      return res.status(400).json({ success: false, message: 'Name must be a non-empty string' });
+    }
+    if (language !== undefined && (typeof language !== 'string' || !VALID_LANGS.includes(language.trim()))) {
+      return res.status(400).json({ success: false, message: 'Invalid language selection. Allowed: en, kn, ta, te' });
+    }
+
+    let parsedFarmSize = user.farmSize;
+    if (farmSize !== undefined && farmSize !== null && farmSize !== '') {
+      parsedFarmSize = Number(farmSize);
+      if (!Number.isFinite(parsedFarmSize) || parsedFarmSize <= 0 || parsedFarmSize > 100000) {
+        return res.status(400).json({ success: false, message: 'farmSize must be a positive number' });
+      }
+    }
+
+    let latVal: number | undefined;
+    if (latitude !== undefined && latitude !== null && latitude !== '') {
+      latVal = Number(latitude);
+      if (!Number.isFinite(latVal) || latVal < -90 || latVal > 90) {
+        return res.status(400).json({ success: false, message: 'latitude must be between -90 and 90' });
+      }
+    }
+
+    let lonVal: number | undefined;
+    if (longitude !== undefined && longitude !== null && longitude !== '') {
+      lonVal = Number(longitude);
+      if (!Number.isFinite(lonVal) || lonVal < -180 || lonVal > 180) {
+        return res.status(400).json({ success: false, message: 'longitude must be between -180 and 180' });
+      }
+    }
 
     const updated = await prisma.user.update({
       where: { id: user.id },
       data: {
         name: name !== undefined ? name.trim() : user.name,
-        state: state || user.state,
-        district: district || user.district,
+        state: typeof state === 'string' && state.trim() ? state.trim() : user.state,
+        district: typeof district === 'string' && district.trim() ? district.trim() : user.district,
         village: village !== undefined ? village : user.village,
         taluk: taluk !== undefined ? taluk : user.taluk,
-        farmSize: farmSize ? parseFloat(farmSize) : user.farmSize,
-        farmUnit: farmUnit || user.farmUnit,
-        language: language || user.language,
+        farmSize: parsedFarmSize,
+        farmUnit: typeof farmUnit === 'string' && farmUnit.trim() ? farmUnit.trim() : user.farmUnit,
+        language: language !== undefined ? language.trim() : user.language,
         avatar: avatar !== undefined ? avatar : user.avatar,
-        latitude: latVal !== undefined && !isNaN(latVal) && latVal >= -90 && latVal <= 90 ? latVal : undefined,
-        longitude: lonVal !== undefined && !isNaN(lonVal) && lonVal >= -180 && lonVal <= 180 ? lonVal : undefined,
-        locationAccuracy: locationAccuracy !== undefined ? parseFloat(locationAccuracy) || null : undefined,
+        latitude: latVal,
+        longitude: lonVal,
+        locationAccuracy: locationAccuracy !== undefined && locationAccuracy !== null ? parseFloat(locationAccuracy) || null : undefined,
         locationSource: locationSource !== undefined ? String(locationSource) : undefined,
       },
     });
@@ -128,7 +158,7 @@ router.put('/', authMiddleware, async (req: AuthRequest, res: Response) => {
       message: 'Profile updated successfully',
     });
   } catch (err: any) {
-    res.status(500).json({ success: false, message: 'Failed to update profile' });
+    res.status(err.status || 500).json({ success: false, message: err.message || 'Failed to update profile' });
   }
 });
 
