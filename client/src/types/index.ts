@@ -351,6 +351,56 @@ export interface ProblemItem {
 
 export type Disease = ProblemItem;
 
+export interface FindingItem {
+  name: string;
+  localNames?: { en?: string; kn?: string; ta?: string; te?: string };
+  type: 'disease' | 'pest' | 'nutrient_deficiency' | 'environmental_stress' | 'healthy' | 'unclear';
+  confidence: number;
+  severity: 'low' | 'medium' | 'high';
+  spreadRisk?: string;
+  observedSymptoms: string[];
+  likelyCauses: string[];
+}
+
+export interface ChemicalItem {
+  activeIngredient: string;
+  class: string;
+  purpose: string;
+  applicationNotes: string;
+}
+
+export interface TreatmentData {
+  immediateSteps: string[];
+  culturalAndOrganic: string[];
+  chemical: ChemicalItem[];
+  safetyPrecautions: string[];
+  preventionTips: string[];
+  recheckInDays: number;
+  whenToSeeExpert: string;
+}
+
+export interface CropHealthReport {
+  id?: string;
+  cropId?: string;
+  imageQuality: 'good' | 'fair' | 'poor';
+  retakeTip?: string;
+  crop: {
+    name: string;
+    scientificName?: string;
+    confidence: number;
+  };
+  status: 'healthy' | 'disease' | 'pest' | 'nutrient_deficiency' | 'environmental_stress' | 'unclear';
+  topFindings: FindingItem[];
+  treatment: TreatmentData;
+  disclaimer: string;
+  generatedAt: string;
+  model: string;
+  isSample?: boolean;
+  verifiedSource?: 'verified entry' | 'AI-generated, verify with an expert';
+  helpline?: string;
+  thumbnailPath?: string;
+}
+
 export interface ChatMessage {
   id?: string;
   role: 'user' | 'assistant' | 'system';

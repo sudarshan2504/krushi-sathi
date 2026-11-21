@@ -47,7 +47,7 @@ const CropRecommendationsPage = lazyWithRetry(() => import('./pages/CropRecommen
 const CropDetailsPage = lazyWithRetry(() => import('./pages/CropDetailsPage').then(m => ({ default: m.CropDetailsPage })));
 const CropLifecyclePage = lazyWithRetry(() => import('./pages/CropLifecyclePage').then(m => ({ default: m.CropLifecyclePage })));
 const StageDetailPage = lazyWithRetry(() => import('./pages/StageDetailPage').then(m => ({ default: m.StageDetailPage })));
-const DiseasePreventionPage = lazyWithRetry(() => import('./pages/DiseasePreventionPage').then(m => ({ default: m.DiseasePreventionPage })));
+const DiseasesPage = lazyWithRetry(() => import('./pages/DiseasesPage').then(m => ({ default: m.DiseasesPage || m.default })));
 const ChatPage = lazyWithRetry(() => import('./pages/ChatPage').then(m => ({ default: m.ChatPage })));
 const ProfilePage = lazyWithRetry(() => import('./pages/ProfilePage').then(m => ({ default: m.ProfilePage })));
 const CropLibraryPage = lazyWithRetry(() => import('./pages/CropLibraryPage').then(m => ({ default: m.CropLibraryPage })));
@@ -188,7 +188,8 @@ const AppRoutes: React.FC = () => {
           <Route path="/crops/:cropId/stages/:stageId" element={<PageTransition><StageDetailPage /></PageTransition>} />
           <Route path="/crops/:cropId" element={<PageTransition><CropDetailsPage /></PageTransition>} />
 
-          <Route path="/diseases" element={<PageTransition><DiseasePreventionPage /></PageTransition>} />
+          <Route path="/diseases" element={<PageTransition><DiseasesPage /></PageTransition>} />
+          <Route path="/crop-health" element={<Navigate to="/diseases" replace />} />
           <Route path="/market-prices" element={<PageTransition><MarketPricesPage /></PageTransition>} />
           <Route path="/chat" element={<PageTransition><ChatPage /></PageTransition>} />
           <Route path="/profile" element={<PageTransition><ProfilePage /></PageTransition>} />

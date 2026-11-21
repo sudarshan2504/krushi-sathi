@@ -867,6 +867,73 @@ export const api = {
       });
       return handleResponse<any>(res);
     },
+
+    async diagnoseImage(formData: FormData): Promise<any> {
+      if (!navigator.onLine) {
+        throw new Error('You are currently offline. Photo diagnosis requires an internet connection.');
+      }
+      const res = await fetch(`${API_BASE}/diseases/diagnose-image`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(),
+        },
+        body: formData,
+      });
+      return handleResponse<any>(res);
+    },
+
+    async getReports(): Promise<any[]> {
+      const cacheKey = 'user_disease_reports';
+      const cached = getCachedData<any[]>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const res = await fetch(`${API_BASE}/diseases/reports`, {
+          headers: { ...getAuthHeader() },
+        });
+        const data = await handleResponse<any[]>(res);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
+    },
+
+    async getReportById(id: string): Promise<any> {
+      const cacheKey = `user_disease_report_${id}`;
+      const cached = getCachedData<any>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const res = await fetch(`${API_BASE}/diseases/reports/${id}`, {
+          headers: { ...getAuthHeader() },
+        });
+        const data = await handleResponse<any>(res);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
+    },
+
+    async deleteReport(id: string): Promise<any> {
+      const res = await fetch(`${API_BASE}/diseases/reports/${id}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse<any>(res);
+    },
+
+    async downloadReportPdf(id: string): Promise<Blob> {
+      const res = await fetch(`${API_BASE}/diseases/reports/${id}/pdf`, {
+        headers: { ...getAuthHeader() },
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to download report PDF');
+      }
+      return res.blob();
+    },
   },
 
   chat: {
