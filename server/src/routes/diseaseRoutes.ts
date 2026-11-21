@@ -47,7 +47,7 @@ function handlePhotoUpload(req: Request, res: Response, next: any) {
 const photoDiagnoseRateLimiter = createRateLimiter({
   keyPrefix: 'photo-diagnose',
   windowMs: 60 * 60 * 1000, // 1 hour
-  maxRequests: 10,
+  maxRequests: () => parsePositiveInt(process.env.PHOTO_DIAGNOSE_RATE_LIMIT_MAX, 10),
   message: 'Rate limit exceeded. You can submit up to 10 crop photo diagnoses per hour.',
 });
 

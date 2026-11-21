@@ -55,7 +55,7 @@ export const DiseasesPage: React.FC = () => {
   const [activeReport, setActiveReport] = useState<CropHealthReport | null>(null);
   const [isDownloadingPdf, setIsDownloadingPdf] = useState<boolean>(false);
   const [expandedFindingIndex, setExpandedFindingIndex] = useState<number>(0);
-  const [showRetakeAdvice, setShowRetakeAdvice] = useState<boolean>(false);
+  const [showRetakeAdvice, setShowRetakeAdvice] = useState<boolean>(true);
 
   // Past reports list
   const [pastReports, setPastReports] = useState<any[]>([]);
@@ -343,45 +343,43 @@ export const DiseasesPage: React.FC = () => {
           </div>
         )}
 
-        {/* Tab Switcher (Visible when not actively viewing a full report) */}
-        {!activeReport && (
-          <div className="grid grid-cols-2 p-1 rounded-2xl bg-zinc-200/70 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700">
-            <button
-              type="button"
-              onClick={() => setActiveTab('diagnose')}
-              className={`min-h-[44px] flex items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'diagnose'
-                  ? 'bg-white dark:bg-zinc-900 text-[#144D29] dark:text-emerald-400 shadow-xs'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
-              }`}
-            >
-              <Camera className="w-4 h-4" />
-              <span>{t('tabDiagnoseNow')}</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab('reports')}
-              className={`min-h-[44px] flex items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                activeTab === 'reports'
-                  ? 'bg-white dark:bg-zinc-900 text-[#144D29] dark:text-emerald-400 shadow-xs'
-                  : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
-              }`}
-            >
-              <Clock className="w-4 h-4" />
-              <span>{t('tabMyReports')}</span>
-              {pastReports.length > 0 && (
-                <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-black">
-                  {pastReports.length}
-                </span>
-              )}
-            </button>
-          </div>
-        )}
+        {/* Tab Switcher */}
+        <div className="grid grid-cols-2 p-1 rounded-2xl bg-zinc-200/70 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700">
+          <button
+            type="button"
+            onClick={() => setActiveTab('diagnose')}
+            className={`min-h-[44px] flex items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'diagnose'
+                ? 'bg-white dark:bg-zinc-900 text-[#144D29] dark:text-emerald-400 shadow-xs'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
+            }`}
+          >
+            <Camera className="w-4 h-4" />
+            <span>{t('tabDiagnoseNow')}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab('reports')}
+            className={`min-h-[44px] flex items-center justify-center gap-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+              activeTab === 'reports'
+                ? 'bg-white dark:bg-zinc-900 text-[#144D29] dark:text-emerald-400 shadow-xs'
+                : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900'
+            }`}
+          >
+            <Clock className="w-4 h-4" />
+            <span>{t('tabMyReports')}</span>
+            {pastReports.length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/80 text-emerald-800 dark:text-emerald-300 text-[10px] font-black">
+                {pastReports.length}
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* ==================================================================== */}
         {/* VIEW 1: ACTIVE REPORT PRESENTATION VIEW                               */}
         {/* ==================================================================== */}
-        {activeReport ? (
+        {activeReport && activeTab === 'diagnose' ? (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
