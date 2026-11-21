@@ -22,13 +22,14 @@ import { OTPInput } from '../components/ui/OTPInput';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from '../context/LanguageContext';
 import { LanguageCode } from '../i18n';
-import { api } from '../services/api';
+import { api, API_BASE, setApiBaseUrl } from '../services/api';
 import {
   INDIAN_STATES,
   IndianState,
   matchState,
   matchDistrict,
 } from '../data/indianLocations';
+import { GoogleMapPicker } from '../components/location/GoogleMapPicker';
 
 export const RegisterPage: React.FC = () => {
   const navigate = useNavigate();
@@ -63,6 +64,7 @@ export const RegisterPage: React.FC = () => {
   const [locationMessage, setLocationMessage] = useState<string | null>(null);
   const [detectedChip, setDetectedChip] = useState<string | null>(null);
   const [districtWarning, setDistrictWarning] = useState<string | null>(null);
+  const [showMapPicker, setShowMapPicker] = useState(false);
 
   // Language Suggestion State
   const [languageSuggestion, setLanguageSuggestion] = useState<{
@@ -470,27 +472,75 @@ export const RegisterPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Detect my location button */}
-            <button
-              type="button"
-              onClick={detectLocation}
-              disabled={isDetecting}
-              className="shrink-0 px-3 py-1.5 rounded-xl bg-forest/10 hover:bg-forest hover:text-white text-forest text-xs font-bold transition-all flex items-center gap-1.5 min-h-[44px] active:scale-95 disabled:opacity-50 cursor-pointer"
-              title={t('detectMyLocation')}
-            >
-              {isDetecting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span className="hidden sm:inline">{t('detectingLocation')}</span>
-                </>
-              ) : (
-                <>
-                  <Navigation className="w-3.5 h-3.5" />
-                  <span>{t('detectMyLocation')}</span>
-                </>
-              )}
-            </button>
+            {/* Actions: Map Pin & GPS Detect */}
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <button
+                type="button"
+                onClick={() => setShowMapPicker(!showMapPicker)}
+                className={`shrink-0 px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 min-h-[44px] active:scale-95 cursor-pointer border ${
+                  showMapPicker
+                    ? 'bg-forest text-white border-forest shadow-xs'
+                    : 'bg-emerald-50 hover:bg-forest/10 text-forest border-emerald-200'
+                }`}
+                title={t('pinOnMap')}
+              >
+                <MapPin className="w-3.5 h-3.5" />
+                <span>{showMapPicker ? t('closeAlert') : t('pinOnMap')}</span>
+              </button>
+
+              {/* Detect my location button */}
+              <button
+                type="button"
+                onClick={detectLocation}
+                disabled={isDetecting}
+                className="shrink-0 px-3 py-1.5 rounded-xl bg-forest/10 hover:bg-forest hover:text-white text-forest text-xs font-bold transition-all flex items-center gap-1.5 min-h-[44px] active:scale-95 disabled:opacity-50 cursor-pointer"
+                title={t('detectMyLocation')}
+              >
+                {isDetecting ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span className="hidden sm:inline">{t('detectingLocation')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Navigation className="w-3.5 h-3.5" />
+                    <span>{t('detectMyLocation')}</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
+
+          {/* Interactive Google Map Picker (when toggled) */}
+          {showMapPicker && (
+            <div className="pt-2">
+              <GoogleMapPicker
+                initialLat={formData.latitude || 12.5244}
+                initialLon={formData.longitude || 76.8969}
+                initialDistrict={formData.district || 'Mandya'}
+                onLocationSelected={(loc) => {
+                  setFormData((prev) => ({
+                    ...prev,
+                    state: loc.state,
+                    district: loc.district,
+                    taluk: loc.taluk || prev.taluk,
+                    village: loc.village || prev.village,
+                    latitude: loc.latitude,
+                    longitude: loc.longitude,
+                    locationSource: 'gps',
+                  }));
+                  setDetectedChip(
+                    loc.village
+                      ? `${loc.village}, ${loc.district}`
+                      : `${loc.district}, ${loc.state}`
+                  );
+                  setLocationStatus('gps_success');
+                  setDistrictWarning(null);
+                }}
+                heightClass="h-60 sm:h-72"
+              />
+            </div>
+          )}
 
           {/* Detecting Progress Indicator */}
           {isDetecting && (
@@ -708,9 +758,27 @@ export const RegisterPage: React.FC = () => {
               )}
 
               {otpError && (
-                <div role="alert" className="p-2 rounded-xl bg-red-50 text-red-700 text-xs flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>{otpError}</span>
+                <div role="alert" className="p-2.5 rounded-xl bg-red-50 text-red-700 text-xs flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {otpError.toLowerCase().includes('fetch')
+                        ? `Cannot connect to server at ${API_BASE}. Ensure device is on the same Wi-Fi network.`
+                        : otpError}
+                    </span>
+                  </div>
+                  {otpError.toLowerCase().includes('fetch') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const custom = window.prompt('Change Krushi Sathi backend API URL:', API_BASE);
+                        if (custom) setApiBaseUrl(custom);
+                      }}
+                      className="self-start text-[11px] underline font-bold text-forest hover:opacity-80"
+                    >
+                      Change Server Address
+                    </button>
+                  )}
                 </div>
               )}
             </div>

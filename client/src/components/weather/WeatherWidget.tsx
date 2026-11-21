@@ -18,6 +18,8 @@ import { WeatherData } from '../../types';
 import { useTranslation } from '../../context/LanguageContext';
 import { AnimatedCounter } from '../ui/AnimatedCounter';
 import { LoadingState } from '../ui/LoadingState';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
 
 export interface ManualWeatherLocation {
   state?: string;
@@ -291,12 +293,46 @@ export const WeatherWidget: React.FC<WeatherWidgetProps> = ({
     [loadWeatherByCoords, loadWeatherByDistrict]
   );
 
-  // Request user location via navigator.geolocation
+  // Request user location via Capacitor Geolocation on native or navigator.geolocation on web
   const requestLocation = useCallback(
     (isRetry = false) => {
       setIsLoading(true);
       setError(null);
       setNeedsLocationSetup(false);
+
+      if (Capacitor.isNativePlatform()) {
+        (async () => {
+          try {
+            const status = await Geolocation.checkPermissions();
+            if (status.location !== 'granted' && status.coarseLocation !== 'granted') {
+              const req = await Geolocation.requestPermissions();
+              if (req.location !== 'granted' && req.coarseLocation !== 'granted') {
+                fallbackToRegistered('Location permission denied on device');
+                return;
+              }
+            }
+            const position = await Geolocation.getCurrentPosition({
+              enableHighAccuracy: false,
+              timeout: 8000,
+              maximumAge: 60000,
+            });
+            const lat = position.coords.latitude;
+            const lon = position.coords.longitude;
+            hasLiveGpsRef.current = true;
+            setCurrentCoords({ lat, lon });
+            setFallbackHint(null);
+            setNeedsLocationSetup(false);
+            setActiveMode('gps');
+            persistCoords(lat, lon);
+            loadWeatherByCoords(lat, lon, isRetry, true).catch(() => {});
+          } catch (err: any) {
+            console.warn('[WeatherWidget] Capacitor Geolocation error, falling back:', err);
+            hasLiveGpsRef.current = false;
+            fallbackToRegistered(err?.message || 'Capacitor Geolocation error');
+          }
+        })();
+        return;
+      }
 
       const isLocalhost =
         window.location.hostname === 'localhost' ||

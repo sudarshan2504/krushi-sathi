@@ -40,6 +40,13 @@ export const config = {
   openRouterModel: process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3.5-lightning:free',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   allowedOrigins: process.env.ALLOWED_ORIGINS || '',
+  smsGatewayUrl: process.env.SMS_GATEWAY_URL || '',
+  smsGatewayApiKey: process.env.SMS_GATEWAY_API_KEY || '',
+  dataGovInApiKey: process.env.DATA_GOV_IN_API_KEY || '',
+  mandiApiBaseUrl:
+    process.env.MANDI_API_BASE_URL ||
+    'https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070',
+  mandiSyncIntervalHours: parseInt(process.env.MANDI_SYNC_INTERVAL_HOURS || '6', 10),
 };
 
 

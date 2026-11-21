@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, Navigation, Loader2, Check, AlertCircle } from 'lucide-react';
+import { X, MapPin, Navigation, Loader2, Check, AlertCircle, ListFilter, Compass, Globe } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useTranslation } from '../../context/LanguageContext';
 import { useToast } from '../../context/ToastContext';
@@ -12,6 +12,7 @@ import {
   matchState,
   matchDistrict,
 } from '../../data/indianLocations';
+import { GoogleMapPicker, LocationSelectPayload } from './GoogleMapPicker';
 
 interface LocationEditModalProps {
   isOpen: boolean;
@@ -28,6 +29,7 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
   const { t } = useTranslation();
   const { showToast } = useToast();
 
+  const [activeTab, setActiveTab] = useState<'map' | 'manual'>('map');
   const [state, setState] = useState(user?.state || 'Karnataka');
   const [district, setDistrict] = useState(user?.district || '');
   const [village, setVillage] = useState(user?.village || '');
@@ -53,6 +55,18 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
   const selectedStateObj: IndianState =
     INDIAN_STATES.find((s) => s.name === state) || INDIAN_STATES[0];
+
+  const handleMapLocationSelected = (loc: LocationSelectPayload) => {
+    setState(loc.state);
+    setDistrict(loc.district);
+    if (loc.village || loc.taluk) {
+      setVillage(loc.village || loc.taluk || '');
+    }
+    setLatitude(loc.latitude);
+    setLongitude(loc.longitude);
+    setLocationSource('map');
+    setError(null);
+  };
 
   const handleDetectGPS = () => {
     if (!window.isSecureContext && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
@@ -151,18 +165,18 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
 
   const modalContent = (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[9990] flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-xs">
+      <div className="fixed inset-0 z-[9990] flex items-center justify-center p-3 sm:p-4 bg-gray-900/50 backdrop-blur-xs overflow-y-auto">
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 10 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.95, y: 10 }}
-          className="w-full max-w-md bg-white rounded-3xl p-6 shadow-xl border border-forest/20 space-y-4 relative"
+          className="w-full max-w-lg bg-white rounded-3xl p-5 sm:p-6 shadow-2xl border border-forest/20 space-y-3.5 relative my-auto max-h-[92vh] overflow-y-auto scrollbar-thin"
         >
           {/* Header */}
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-2xl bg-mint-light text-forest flex items-center justify-center shadow-xs">
-                <MapPin className="w-5 h-5" />
+                <MapPin className="w-5 h-5 text-forest" />
               </div>
               <div>
                 <h3 className="font-extrabold text-base text-gray-900">
@@ -191,100 +205,160 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
             </div>
           )}
 
-          {/* GPS Quick Action */}
-          <button
-            type="button"
-            onClick={handleDetectGPS}
-            disabled={isDetecting}
-            className="w-full py-2.5 px-3.5 rounded-2xl bg-mint-light hover:bg-forest hover:text-white text-forest text-xs font-bold transition flex items-center justify-center gap-2 border border-forest/20 min-h-[44px] cursor-pointer disabled:opacity-60"
-          >
-            {isDetecting ? (
-              <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>{t('detectingLocation')}</span>
-              </>
-            ) : (
-              <>
-                <Navigation className="w-4 h-4" />
-                <span>{t('detectMyLocation')}</span>
-              </>
-            )}
-          </button>
+          {/* Tab Selector: Pin on Google Map vs Select from List */}
+          <div className="flex rounded-2xl bg-gray-100 p-1 border border-gray-200/80">
+            <button
+              type="button"
+              onClick={() => setActiveTab('map')}
+              className={`flex-1 py-2 px-3 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] ${
+                activeTab === 'map'
+                  ? 'bg-forest text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Globe className="w-3.5 h-3.5" />
+              <span>{t('pinOnMapTab')}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('manual')}
+              className={`flex-1 py-2 px-3 text-xs font-extrabold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer min-h-[38px] ${
+                activeTab === 'manual'
+                  ? 'bg-forest text-white shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <ListFilter className="w-3.5 h-3.5" />
+              <span>{t('selectFromListTab')}</span>
+            </button>
+          </div>
 
-          {/* Form */}
-          <form onSubmit={handleSave} className="space-y-3 pt-1">
-            {/* State Select */}
-            <div>
-              <label htmlFor="location-edit-state" className="block text-xs font-bold text-gray-800 mb-1">
-                {t('state')} *
-              </label>
-              <select
-                id="location-edit-state"
-                value={state}
-                onChange={(e) => {
-                  const newSt = e.target.value;
-                  setState(newSt);
-                  const stObj = INDIAN_STATES.find((s) => s.name === newSt);
-                  if (stObj && !stObj.districts.includes(district)) {
-                    setDistrict(stObj.districts[0] || '');
-                  }
-                  setLatitude(null);
-                  setLongitude(null);
-                  setLocationSource('manual');
-                }}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-900 focus:border-forest outline-none bg-white min-h-[46px]"
-              >
-                {INDIAN_STATES.map((s) => (
-                  <option key={s.name} value={s.name}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* District Select */}
-            <div>
-              <label htmlFor="location-edit-district" className="block text-xs font-bold text-gray-800 mb-1">
-                {t('district')} *
-              </label>
-              <select
-                id="location-edit-district"
-                required
-                value={district}
-                onChange={(e) => {
-                  setDistrict(e.target.value);
-                  setLatitude(null);
-                  setLongitude(null);
-                  setLocationSource('manual');
-                }}
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-900 focus:border-forest outline-none bg-white min-h-[46px]"
-              >
-                <option value="">{t('selectDistrictPlaceholder')}</option>
-                {selectedStateObj.districts.map((d) => (
-                  <option key={d} value={d}>
-                    {d}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Village (Optional) */}
-            <div>
-              <label htmlFor="location-edit-village" className="block text-xs font-bold text-gray-800 mb-1">
-                {t('village')} (Optional)
-              </label>
-              <input
-                id="location-edit-village"
-                type="text"
-                value={village}
-                onChange={(e) => setVillage(e.target.value)}
-                placeholder="e.g. Koppa"
-                className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-900 focus:border-forest outline-none bg-white min-h-[46px]"
+          {/* TAB 1: GOOGLE MAP WITH MAP MODES & PINPOINT */}
+          {activeTab === 'map' && (
+            <div className="space-y-3">
+              <GoogleMapPicker
+                initialLat={latitude || 12.5244}
+                initialLon={longitude || 76.8969}
+                initialDistrict={district || 'Mandya'}
+                onLocationSelected={handleMapLocationSelected}
+                heightClass="h-60 sm:h-72"
               />
-            </div>
 
-            {/* Actions */}
-            <div className="flex items-center gap-2 pt-2">
+              {/* Selected coordinates confirmation badge */}
+              <div className="p-2.5 rounded-xl bg-emerald-50/70 border border-emerald-200 text-xs flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Check className="w-4 h-4 text-forest shrink-0" />
+                  <span className="font-bold text-forest">
+                    {t('mapPinPlaced')}: {village ? `${village}, ` : ''}{district || 'Mandya'}, {state}
+                  </span>
+                </div>
+                {latitude && longitude && (
+                  <span className="font-mono text-[11px] text-emerald-800">
+                    {latitude.toFixed(4)}°, {longitude.toFixed(4)}°
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: MANUAL DROPDOWNS & GPS DETECT */}
+          {activeTab === 'manual' && (
+            <div className="space-y-3">
+              {/* GPS Quick Action */}
+              <button
+                type="button"
+                onClick={handleDetectGPS}
+                disabled={isDetecting}
+                className="w-full py-2.5 px-3.5 rounded-2xl bg-mint-light hover:bg-forest hover:text-white text-forest text-xs font-bold transition flex items-center justify-center gap-2 border border-forest/20 min-h-[44px] cursor-pointer disabled:opacity-60"
+              >
+                {isDetecting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{t('detectingLocation')}</span>
+                  </>
+                ) : (
+                  <>
+                    <Navigation className="w-4 h-4" />
+                    <span>{t('detectMyLocation')}</span>
+                  </>
+                )}
+              </button>
+
+              {/* State Select */}
+              <div>
+                <label htmlFor="location-edit-state" className="block text-xs font-bold text-gray-800 mb-1">
+                  {t('state')} *
+                </label>
+                <select
+                  id="location-edit-state"
+                  value={state}
+                  onChange={(e) => {
+                    const newSt = e.target.value;
+                    setState(newSt);
+                    const stObj = INDIAN_STATES.find((s) => s.name === newSt);
+                    if (stObj && !stObj.districts.includes(district)) {
+                      setDistrict(stObj.districts[0] || '');
+                    }
+                    setLatitude(null);
+                    setLongitude(null);
+                    setLocationSource('manual');
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-900 focus:border-forest outline-none bg-white min-h-[46px]"
+                >
+                  {INDIAN_STATES.map((s) => (
+                    <option key={s.name} value={s.name}>
+                      {s.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* District Select */}
+              <div>
+                <label htmlFor="location-edit-district" className="block text-xs font-bold text-gray-800 mb-1">
+                  {t('district')} *
+                </label>
+                <select
+                  id="location-edit-district"
+                  required
+                  value={district}
+                  onChange={(e) => {
+                    setDistrict(e.target.value);
+                    setLatitude(null);
+                    setLongitude(null);
+                    setLocationSource('manual');
+                  }}
+                  className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-900 focus:border-forest outline-none bg-white min-h-[46px]"
+                >
+                  <option value="">{t('selectDistrictPlaceholder')}</option>
+                  {selectedStateObj.districts.map((d) => (
+                    <option key={d} value={d}>
+                      {d}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Village (Optional) */}
+              <div>
+                <label htmlFor="location-edit-village" className="block text-xs font-bold text-gray-800 mb-1">
+                  {t('village')} (Optional)
+                </label>
+                <input
+                  id="location-edit-village"
+                  type="text"
+                  value={village}
+                  onChange={(e) => setVillage(e.target.value)}
+                  placeholder="e.g. Koppa"
+                  className="w-full px-3.5 py-2.5 rounded-2xl border border-gray-200 text-sm font-semibold text-gray-900 focus:border-forest outline-none bg-white min-h-[46px]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Form Actions */}
+          <form onSubmit={handleSave} className="pt-2">
+            <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={onClose}
@@ -294,8 +368,8 @@ export const LocationEditModal: React.FC<LocationEditModalProps> = ({
               </button>
               <button
                 type="submit"
-                disabled={isSaving}
-                className="flex-1 py-3 px-4 rounded-2xl bg-forest hover:bg-forest-dark text-white font-bold text-xs transition shadow-md shadow-forest/20 flex items-center justify-center gap-1.5 min-h-[48px] cursor-pointer disabled:opacity-60"
+                disabled={isSaving || !district}
+                className="flex-1 py-3 px-4 rounded-2xl bg-forest hover:bg-forest-dark text-white font-bold text-xs transition shadow-md shadow-forest/20 flex items-center justify-center gap-1.5 min-h-[48px] cursor-pointer disabled:opacity-50"
               >
                 {isSaving ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

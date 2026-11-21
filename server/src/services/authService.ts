@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import prisma from '../utils/prisma';
 import admin, { verifyFirebaseIdToken } from '../utils/firebaseAdmin';
+import { isSmsGatewayConfigured, sendOtpSms } from './smsService';
 
 interface OtpChallenge {
   phone: string;
@@ -36,6 +37,11 @@ export function isDemoOtpActive(): boolean {
     return process.env.DEMO_OTP_ENABLED === 'true';
   }
   return config.demoOtpEnabled;
+}
+
+export function isOtpServiceActive(): boolean {
+  if (isSmsGatewayConfigured()) return true;
+  return isDemoOtpActive();
 }
 
 export function isDemoModeActive(): boolean {
@@ -154,8 +160,8 @@ export async function verifyFirebaseLogin(idToken: string) {
 }
 
 export async function createOtpChallenge(rawPhone: string, purpose: 'login' | 'register' = 'login') {
-  if (!isDemoOtpActive()) {
-    const err: any = new Error('Demo OTP is disabled. Please use real Firebase Phone Authentication.');
+  if (!isOtpServiceActive()) {
+    const err: any = new Error('OTP service is disabled. Please configure the SMS Gateway or use Firebase Phone Authentication.');
     err.status = 404;
     throw err;
   }
@@ -176,22 +182,29 @@ export async function createOtpChallenge(rawPhone: string, purpose: 'login' | 'r
     throw err;
   }
 
-  // Development/Demo mode fixed OTP
+  const isGatewayLive = isSmsGatewayConfigured();
   const demoOtp = config.demoOtp || '123456';
+  // Use cryptographically secure random 6-digit OTP when SMS Gateway is connected, or fixed demo OTP in test/demo mode
+  const otp = isGatewayLive
+    ? crypto.randomInt(100000, 999999).toString()
+    : demoOtp;
 
   otpStore.set(phone, {
     phone,
-    otp: demoOtp,
+    otp,
     createdAt: Date.now(),
     attempts: 0,
     purpose,
   });
 
+  // Dispatch OTP SMS via Android SMS Gateway (or console fallback)
+  await sendOtpSms(phone, otp, purpose);
+
   return {
     phone,
     isExistingUser: !!existingUser,
     userName: existingUser?.name || null,
-    demoOtpNote: 'Demo OTP: 123456 — Local testing only',
+    demoOtpNote: isGatewayLive ? undefined : 'Demo OTP: 123456 — Local testing only',
     expiresInSeconds: 300,
   };
 }
@@ -201,8 +214,8 @@ export async function verifyOtp(
   enteredOtp: string,
   purpose: 'login' | 'register' = 'login'
 ) {
-  if (!isDemoOtpActive()) {
-    const err: any = new Error('Demo OTP is disabled. Please use real Firebase Phone Authentication.');
+  if (!isOtpServiceActive()) {
+    const err: any = new Error('OTP service is disabled.');
     err.status = 404;
     throw err;
   }
@@ -214,6 +227,7 @@ export async function verifyOtp(
 
   const challenge = otpStore.get(phone);
   const fixedDemoOtp = config.demoOtp || '123456';
+  const isDemo = isDemoOtpActive();
 
   if (challenge) {
     if (Date.now() - challenge.createdAt > 5 * 60 * 1000) {
@@ -226,18 +240,21 @@ export async function verifyOtp(
       throw new Error('Too many failed attempts. Please request a fresh OTP.');
     }
 
-    if (enteredOtp !== challenge.otp) {
+    const isMatch = enteredOtp === challenge.otp || (isDemo && enteredOtp === fixedDemoOtp);
+
+    if (!isMatch) {
       challenge.attempts += 1;
-      throw new Error(`Invalid OTP entered. Please try again. (Hint: Test OTP is ${fixedDemoOtp})`);
+      const hint = isDemo ? ` (Hint: Test OTP is ${fixedDemoOtp})` : '';
+      throw new Error(`Invalid OTP entered. Please try again.${hint}`);
     }
 
     // OTP is valid!
     otpStore.delete(phone);
-  } else if (purpose === 'register' || enteredOtp !== fixedDemoOtp) {
+  } else if (purpose === 'register' || (!isDemo || enteredOtp !== fixedDemoOtp)) {
     throw new Error(
       purpose === 'register'
         ? 'OTP expired or not requested. Please request a new OTP before verifying.'
-        : `Invalid OTP. Use Demo OTP: ${fixedDemoOtp}`
+        : `Invalid OTP.${isDemo ? ` Use Demo OTP: ${fixedDemoOtp}` : ''}`
     );
   }
 

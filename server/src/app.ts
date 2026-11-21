@@ -16,9 +16,11 @@ import marketRoutes from './routes/marketRoutes';
 import { devCropRouter } from './routes/devCropRoutes';
 
 import path from 'path';
+import fs from 'fs';
 import { config } from './config';
 
 const app = express();
+const clientDistPath = path.resolve(__dirname, '../../client/dist');
 
 // Security HTTP headers
 app.use(
@@ -59,7 +61,18 @@ app.use(
       if (!origin) return callback(null, true);
 
       const normalizedOrigin = origin.replace(/\/$/, '');
-      if (getAllowedCorsOrigins().has(normalizedOrigin)) {
+      if (
+        getAllowedCorsOrigins().has(normalizedOrigin) ||
+        normalizedOrigin.includes('ngrok-free.dev') ||
+        normalizedOrigin.includes('ngrok.app') ||
+        normalizedOrigin.includes('ngrok.io') ||
+        normalizedOrigin.includes('trycloudflare.com') ||
+        normalizedOrigin.startsWith('http://localhost') ||
+        normalizedOrigin.startsWith('https://localhost') ||
+        normalizedOrigin.startsWith('http://10.') ||
+        normalizedOrigin.startsWith('http://192.168.') ||
+        normalizedOrigin.startsWith('http://172.')
+      ) {
         return callback(null, true);
       }
 
@@ -67,7 +80,14 @@ app.use(
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'X-Requested-With',
+      'ngrok-skip-browser-warning',
+      'Accept',
+      'Origin',
+    ],
   })
 );
 
@@ -78,8 +98,17 @@ app.use(cookieParser());
 // Static uploads serving for user profile avatars
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Root Route: Automatically redirects web browsers to the frontend app, or returns API overview
+// Serve built frontend assets if dist exists
+if (fs.existsSync(clientDistPath)) {
+  app.use(express.static(clientDistPath));
+}
+
+// Root Route: Serves frontend SPA or API overview
 app.get('/', (req: Request, res: Response) => {
+  const indexPath = path.join(clientDistPath, 'index.html');
+  if (req.accepts('html') && fs.existsSync(indexPath)) {
+    return res.sendFile(indexPath);
+  }
   const targetUrl = config.clientUrl || 'http://localhost:5173';
   if (req.accepts('html')) {
     return res.redirect(targetUrl);
@@ -131,6 +160,7 @@ app.use('/api/crops', cropRoutes);
 app.use('/api/lifecycle', lifecycleRoutes);
 app.use('/api/diseases', diseaseRoutes);
 app.use('/api/market-prices', marketRoutes);
+app.use('/api/market', marketRoutes);
 app.use('/api/chat', chatRoutes);
 app.use('/api/profile', profileRoutes);
 app.use('/api/location', locationRoutes);
@@ -139,6 +169,18 @@ app.use('/api/dev/crops', devCropRouter);
 app.use('/dev', (_req: Request, res: Response, next: NextFunction) => {
   if (process.env.NODE_ENV === 'production') {
     return res.status(403).json({ success: false, message: 'Dev review routes are disabled in production' });
+  }
+  next();
+});
+
+// SPA fallback for HTML requests (serves frontend React app)
+app.get('*', (req: Request, res: Response, next: NextFunction) => {
+  if (req.path.startsWith('/api') || req.path.startsWith('/uploads')) {
+    return next();
+  }
+  const indexPath = path.join(clientDistPath, 'index.html');
+  if (fs.existsSync(indexPath) && req.accepts('html')) {
+    return res.sendFile(indexPath);
   }
   next();
 });
