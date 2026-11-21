@@ -13,6 +13,7 @@ import {
 } from '../src/schemas/diseaseReportSchema';
 import { generateReportPdf } from '../src/services/reportPdfService';
 import { resetRateLimiters } from '../src/middleware/rateLimiter';
+import { config } from '../src/config';
 
 describe('Photo-Based Crop Health Diagnosis & Detailed Report (Phase 1)', () => {
   let authToken: string;
@@ -22,6 +23,8 @@ describe('Photo-Based Crop Health Diagnosis & Detailed Report (Phase 1)', () => 
   beforeEach(async () => {
     process.env.DEMO_MODE = 'true';
     process.env.DEMO_OTP_ENABLED = 'true';
+    process.env.ALLOW_SAMPLE_REPORTS = 'true';
+    config.allowSampleReports = true;
     resetRateLimiters();
     await resetAndSeedTestDb();
 
@@ -442,5 +445,31 @@ describe('Photo-Based Crop Health Diagnosis & Detailed Report (Phase 1)', () => 
 
     expect(delRes.status).toBe(200);
     expect(delRes.body.success).toBe(true);
+  });
+
+  // 11. When ALLOW_SAMPLE_REPORTS is false and key is missing, returns clear localized error and never a fake report
+  it('11. when ALLOW_SAMPLE_REPORTS is false and key is missing, returns clear localized error and never fake report', async () => {
+    config.allowSampleReports = false;
+    process.env.ALLOW_SAMPLE_REPORTS = 'false';
+    const oldKey = config.geminiApiKey;
+    config.geminiApiKey = '';
+
+    try {
+      const res = await request(app)
+        .post('/api/diseases/diagnose-image')
+        .set('Authorization', `Bearer ${authToken}`)
+        .attach('images', validJpegBuffer, 'leaf.jpg')
+        .field('cropId', 'Tomato')
+        .field('language', 'kn');
+
+      expect(res.status).toBe(500);
+      expect(res.body.success).toBe(false);
+      expect(res.body.message).toMatch(/ಬೆಳೆ ರೋಗ ನಿರ್ಣಯ AI ಸೇವೆ/);
+      expect(res.body.data).toBeUndefined();
+    } finally {
+      config.geminiApiKey = oldKey;
+      config.allowSampleReports = true;
+      process.env.ALLOW_SAMPLE_REPORTS = 'true';
+    }
   });
 });

@@ -231,11 +231,17 @@ export async function diagnoseCropPhotos(params: DiagnoseImageParams): Promise<{
   const apiKey = (config.geminiApiKey || '').trim();
 
   if (!gemini || !apiKey) {
-    if (config.demoMode || process.env.NODE_ENV === 'test') {
+    if (config.allowSampleReports) {
       const sample = buildSampleReport(cropId && cropId !== 'unsure' ? cropId : 'Tomato', language);
       return { report: sample, thumbnailRelativePath, isSample: true };
     }
-    throw new Error('Diagnosis AI service is currently unavailable. GEMINI_API_KEY is not configured on the server.');
+    const localizedKeyErrors: Record<string, string> = {
+      en: 'Crop diagnosis AI service is currently unavailable. GEMINI_API_KEY is not configured on the server.',
+      kn: 'ಬೆಳೆ ರೋಗ ನಿರ್ಣಯ AI ಸೇವೆ ಪ್ರಸ್ತುತ ಲಭ್ಯವಿಲ್ಲ. ಸರ್ವರ್‌ನಲ್ಲಿ GEMINI_API_KEY ಕಾನ್ಫಿಗರ್ ಮಾಡಲಾಗಿಲ್ಲ.',
+      ta: 'பயிர் நோய் கண்டறிதல் AI சேவை தற்போது கிடைக்கவில்லை. சர்வரில் GEMINI_API_KEY கட்டமைக்கப்படவில்லை.',
+      te: 'పంట వ్యాధి నిర్ధారణ AI సేవ ప్రస్తుతం అందుబాటులో లేదు. సర్వర్‌లో GEMINI_API_KEY కాన్ఫిగర్ చేయబడలేదు.',
+    };
+    throw new Error(localizedKeyErrors[language] || localizedKeyErrors.en);
   }
 
   // 5. Build Multimodal Prompt with Smallholder Context & Anti-Injection Guardrails
@@ -346,17 +352,39 @@ ${schemaDescription}`;
   try {
     rawJsonText = await callGemini(preferredModel);
   } catch (err: any) {
-    console.warn(`[photoDiagnosisService] Attempt 1 with ${preferredModel} failed: ${err.message}. Retrying once...`);
+    console.warn(`[photoDiagnosisService] Attempt 1 with ${preferredModel} failed: ${err.message}. Retrying once after 2s backoff...`);
+    await new Promise(resolve => setTimeout(resolve, 2000));
     try {
       rawJsonText = await callGemini(preferredModel);
     } catch (retryErr: any) {
       console.error('[photoDiagnosisService] Both Gemini attempts failed:', retryErr.message);
-      throw new Error(`Diagnosis AI service failed: ${retryErr.message}`);
+      if (config.allowSampleReports) {
+        console.warn('[photoDiagnosisService] Falling back to sample report because ALLOW_SAMPLE_REPORTS=true');
+        const sample = buildSampleReport(cropId && cropId !== 'unsure' ? cropId : 'Tomato', language);
+        return { report: sample, thumbnailRelativePath, isSample: true };
+      }
+      const localizedCallErrors: Record<string, string> = {
+        en: `Crop diagnosis AI service failed: ${retryErr.message}`,
+        kn: `ಬೆಳೆ ರೋಗ ನಿರ್ಣಯ AI ಸೇವೆ ವಿಫಲವಾಗಿದೆ: ${retryErr.message}`,
+        ta: `பயிர் நோய் கண்டறிதல் AI சேவை தோல்வியடைந்தது: ${retryErr.message}`,
+        te: `పంట వ్యాధి నిర్ಧారణ AI సేవ విఫలమైంది: ${retryErr.message}`,
+      };
+      throw new Error(localizedCallErrors[language] || localizedCallErrors.en);
     }
   }
 
   if (!rawJsonText) {
-    throw new Error('Gemini returned an empty diagnostic response.');
+    if (config.allowSampleReports) {
+      const sample = buildSampleReport(cropId && cropId !== 'unsure' ? cropId : 'Tomato', language);
+      return { report: sample, thumbnailRelativePath, isSample: true };
+    }
+    const emptyErrors: Record<string, string> = {
+      en: 'AI model returned an empty diagnostic response. Please try again with a clearer image.',
+      kn: 'AI ಮಾದರಿಯು ಖಾಲಿ ಪ್ರತಿಕ್ರಿಯೆಯನ್ನು ನೀಡಿದೆ. ದಯವಿಟ್ಟು ಸ್ಪಷ್ಟವಾದ ಚಿತ್ರದೊಂದಿಗೆ ಮತ್ತೊಮ್ಮೆ ಪ್ರಯತ್ನಿಸಿ.',
+      ta: 'AI மாதிரி வெற்றுப் பதிலை அளித்துள்ளது. தயவுசெய்து தெளிவான படத்துடன் மீண்டும் முயற்சிக்கவும்.',
+      te: 'AI మోడల్ ఖాళీ ప్రతిస్పందనను ఇచ్చింది. దయచేసి స్పష్టమైన చిత్రంతో మళ్లీ ప్రయత్నించండి.',
+    };
+    throw new Error(emptyErrors[language] || emptyErrors.en);
   }
 
   // 7. Parse and Validate with Zod (retry once if schema validation fails)

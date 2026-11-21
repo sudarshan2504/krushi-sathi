@@ -338,6 +338,9 @@ router.post(
         language: effectiveLanguage,
       });
 
+      // Ensure isSample is explicitly captured in report data
+      result.report.isSample = Boolean(result.isSample);
+
       // Persist in Prisma DiseaseReport table
       const reportRecord = await prisma.diseaseReport.create({
         data: {
@@ -355,6 +358,7 @@ router.post(
           id: reportRecord.id,
           thumbnailPath: result.thumbnailRelativePath,
           createdAt: reportRecord.createdAt,
+          isSample: result.isSample,
           ...result.report,
         },
       });
