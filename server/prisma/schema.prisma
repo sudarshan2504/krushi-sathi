@@ -32,6 +32,7 @@ model User {
   cropPlans           CropPlan[]
   chatConversations   ChatConversation[]
   reminders           Reminder[]
+  diseaseReports      DiseaseReport[]
 }
 
 model SoilAssessment {
@@ -443,4 +444,19 @@ model SyncLog {
   status              String       @default("running") // running | success | partial | failed
   errorMessage        String?
 }
+
+model DiseaseReport {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cropId        String?
+  resultJson    String   // Full validated JSON report
+  language      String   @default("en")
+  thumbnailPath String?  // Small thumbnail only
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
 

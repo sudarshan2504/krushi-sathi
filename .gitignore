@@ -40,3 +40,7 @@ yarn-error.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Dynamic uploads & report cache
+server/uploads/
+

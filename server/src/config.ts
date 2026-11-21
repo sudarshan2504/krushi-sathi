@@ -34,7 +34,7 @@ export const config = {
   claudeModel: process.env.CLAUDE_MODEL || 'claude-haiku-5-5',
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   geminiApiKey: process.env.GEMINI_API_KEY || '',
-  geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
   groqApiKey: process.env.GROQ_API_KEY || '',
   openRouterApiKey: process.env.OPENROUTER_API_KEY || '',
   openRouterModel: process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3.5-lightning:free',
@@ -42,6 +42,7 @@ export const config = {
   allowedOrigins: process.env.ALLOWED_ORIGINS || '',
   smsGatewayUrl: process.env.SMS_GATEWAY_URL || '',
   smsGatewayApiKey: process.env.SMS_GATEWAY_API_KEY || '',
+  kisanHelpline: process.env.KISAN_HELPLINE || '1800-180-1551',
   dataGovInApiKey: process.env.DATA_GOV_IN_API_KEY || '',
   mandiApiBaseUrl:
     process.env.MANDI_API_BASE_URL ||
