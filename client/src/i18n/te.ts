@@ -500,6 +500,7 @@ export const te = {
   myPastReportsTitle:'మీ మునుపటి పంట నిర్ధారణ నివేదికలు',
   photoCountTip:'3 లో {count} ఫోటోలు ఎంపిక చేయబడ్డాయి',
   retakeHelperAdvice:'ఖచ్చితమైన ఫలితాల కోసం ఫోటో చిట్కాలు',
+  photoAiPrivacyNotice:'విశ్లేషణ కోసం ఫోటోలు AI సేవకు పంపబడతాయి.',
 };
 
 

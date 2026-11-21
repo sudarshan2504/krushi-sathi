@@ -101,7 +101,12 @@ export function applySafetyAndCrossCheck(
   userLanguage: string = 'en'
 ): DiseaseReportData {
   const result: DiseaseReportData = JSON.parse(JSON.stringify(report));
-  const bannedSet = new Set((bannedList.bannedActiveIngredients || []).map((s: string) => s.toLowerCase().trim()));
+  const bannedSet = new Set(
+    (bannedList.bannedActiveIngredients || []).map((entry: any) => {
+      const name = typeof entry === 'string' ? entry : entry?.name;
+      return (name || '').toLowerCase().trim();
+    })
+  );
   const helpline = config.kisanHelpline || '1800-180-1551';
   result.helpline = helpline;
 

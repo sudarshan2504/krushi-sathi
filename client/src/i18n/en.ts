@@ -500,5 +500,6 @@ export const en = {
   myPastReportsTitle: 'Your Diagnostic History',
   photoCountTip: '{count} of 3 photos selected',
   retakeHelperAdvice: 'Retake Advice for Accurate Results',
+  photoAiPrivacyNotice: 'Photos are sent to an AI service for analysis.',
 };
 

@@ -796,6 +796,12 @@ export const DiseasesPage: React.FC = () => {
               )}
             </div>
 
+            {/* AI Privacy Notice */}
+            <div className="flex items-center justify-center gap-1.5 py-0.5 px-3 text-[11px] text-zinc-500 dark:text-zinc-400 text-center">
+              <ShieldCheck className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+              <span>{t('photoAiPrivacyNotice')}</span>
+            </div>
+
             {/* Retake & Photography Tips Expandable Card */}
             <div className="p-3.5 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200/80 dark:border-zinc-800 text-xs shadow-xs space-y-2">
               <div className="flex items-center gap-1.5 font-bold text-[#144D29] dark:text-emerald-400">

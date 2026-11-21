@@ -500,6 +500,7 @@ export const kn = {
   myPastReportsTitle:'ನಿಮ್ಮ ಹಿಂದಿನ ತಪಾಸಣಾ ವರದಿಗಳು',
   photoCountTip:'3 ರಲ್ಲಿ {count} ಫೋಟೋಗಳನ್ನು ಆಯ್ಕೆಮಾಡಲಾಗಿದೆ',
   retakeHelperAdvice:'ನಿಖರ ಫಲಿತಾಂಶಕ್ಕಾಗಿ ಫೋಟೋ ಸಲಹೆಗಳು',
+  photoAiPrivacyNotice:'ವಿಶ್ಲೇಷಣೆಗಾಗಿ ಫೋಟೋಗಳನ್ನು AI ಸೇವೆಗೆ ಕಳುಹಿಸಲಾಗುತ್ತದೆ.',
 };
 
 

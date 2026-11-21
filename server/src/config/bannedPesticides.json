@@ -2,52 +2,236 @@
   "_NOTICE": "TO BE VERIFIED against the official CIB&RC / Government of India banned-and-restricted pesticide list: Directorate of Plant Protection, Quarantine & Storage, Ministry of Agriculture & Farmers Welfare, GoI (https://ppqs.gov.in/divisions/cibrb/banned-pesticides). Last reviewed: 2026.",
   "officialSourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides",
   "bannedActiveIngredients": [
-    "aldicarb",
-    "aldrin",
-    "benzene hexachloride",
-    "bhc",
-    "calcium cyanide",
-    "chlordane",
-    "chlorpyrifos",
-    "copper acetoarsenite",
-    "ddt",
-    "diazinon",
-    "dibromochloropropane",
-    "dbcp",
-    "dieldrin",
-    "endosulfan",
-    "endrin",
-    "ethyl mercury chloride",
-    "ethyl parathion",
-    "ethylene dibromide",
-    "edb",
-    "fenarimol",
-    "fenthion",
-    "heptachlor",
-    "lindane",
-    "maleic hydrazide",
-    "methoxy ethyl mercury chloride",
-    "methyl parathion",
-    "metoxuron",
-    "monocrotophos",
-    "nitrofen",
-    "paraquat dichloride",
-    "pentachloronitrobenzene",
-    "pcnb",
-    "pentachlorophenol",
-    "pcp",
-    "phenyl mercury acetate",
-    "pma",
-    "phorate",
-    "phosphamidon",
-    "sodium cyanide",
-    "tetradifon",
-    "thiometon",
-    "toxaphene",
-    "tridemorph",
-    "trichloroacetic acid",
-    "tca",
-    "carbofuran"
+    {
+      "name": "aldicarb",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "aldrin",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "benzene hexachloride",
+      "verifiedOn": "1997-01-18",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "bhc",
+      "verifiedOn": "1997-01-18",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "calcium cyanide",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "chlordane",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "chlorpyrifos",
+      "verifiedOn": "",
+      "sourceUrl": ""
+    },
+    {
+      "name": "copper acetoarsenite",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "ddt",
+      "verifiedOn": "1989-05-26",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "diazinon",
+      "verifiedOn": "2014-09-24",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "dibromochloropropane",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "dbcp",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "dieldrin",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "endosulfan",
+      "verifiedOn": "2011-05-13",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "endrin",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "ethyl mercury chloride",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "ethyl parathion",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "ethylene dibromide",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "edb",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "fenarimol",
+      "verifiedOn": "2014-09-24",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "fenthion",
+      "verifiedOn": "2014-09-24",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "heptachlor",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "lindane",
+      "verifiedOn": "2018-08-08",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "maleic hydrazide",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "methoxy ethyl mercury chloride",
+      "verifiedOn": "2014-09-24",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "methyl parathion",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "metoxuron",
+      "verifiedOn": "2014-09-24",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "monocrotophos",
+      "verifiedOn": "2005-10-10",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "nitrofen",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "paraquat dichloride",
+      "verifiedOn": "",
+      "sourceUrl": ""
+    },
+    {
+      "name": "pentachloronitrobenzene",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "pcnb",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "pentachlorophenol",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "pcp",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "phenyl mercury acetate",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "pma",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "phorate",
+      "verifiedOn": "2018-08-08",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "phosphamidon",
+      "verifiedOn": "2018-08-08",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "sodium cyanide",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "tetradifon",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "thiometon",
+      "verifiedOn": "2014-09-24",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "toxaphene",
+      "verifiedOn": "1989-07-25",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "tridemorph",
+      "verifiedOn": "2018-08-08",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "trichloroacetic acid",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "tca",
+      "verifiedOn": "2001-07-17",
+      "sourceUrl": "https://ppqs.gov.in/divisions/cibrb/banned-pesticides"
+    },
+    {
+      "name": "carbofuran",
+      "verifiedOn": "",
+      "sourceUrl": ""
+    }
   ],
   "disallowedPhrases": [
     "mix with",
