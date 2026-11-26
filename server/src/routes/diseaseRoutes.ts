@@ -1,4 +1,5 @@
 import { Router, Request, Response } from 'express';
+import multer from 'multer';
 import prisma from '../utils/prisma';
 import { config } from '../config';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
@@ -6,8 +7,49 @@ import { createRateLimiter } from '../middleware/rateLimiter';
 import { diagnoseCropProblem } from '../services/diagnosisService';
 import { analyzeCropPhotos } from '../services/photoAnalysisService';
 import { getCropImageMetadataMap } from '../services/cropImageService';
+import { diagnoseCropPhotos, validateImageBuffer } from '../services/photoDiagnosisService';
+import { generateReportPdf } from '../services/reportPdfService';
 
 const router = Router();
+
+const photoUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5 MB max
+    files: 3,
+  },
+});
+
+function handlePhotoUpload(req: Request, res: Response, next: any) {
+  photoUpload.array('images', 3)(req, res, (err: any) => {
+    if (err) {
+      if (err.code === 'LIMIT_FILE_SIZE') {
+        return res.status(400).json({
+          success: false,
+          message: 'File size exceeds maximum permitted limit of 5 MB',
+        });
+      }
+      if (err.code === 'LIMIT_UNEXPECTED_FILE' || err.code === 'LIMIT_FILE_COUNT') {
+        return res.status(400).json({
+          success: false,
+          message: 'Maximum 3 photos are permitted per diagnosis.',
+        });
+      }
+      return res.status(400).json({
+        success: false,
+        message: err.message || 'Image upload error',
+      });
+    }
+    next();
+  });
+}
+
+const photoDiagnoseRateLimiter = createRateLimiter({
+  keyPrefix: 'photo-diagnose',
+  windowMs: 60 * 60 * 1000, // 1 hour
+  maxRequests: () => parsePositiveInt(process.env.PHOTO_DIAGNOSE_RATE_LIMIT_MAX, 10),
+  message: 'Rate limit exceeded. You can submit up to 10 crop photo diagnoses per hour.',
+});
 
 function parsePositiveInt(val: string | undefined, fallback: number): number {
   const parsed = parseInt(val || '', 10);
@@ -258,7 +300,252 @@ router.get('/', async (req: Request, res: Response) => {
   }
 });
 
-// 4. Get single problem by slug or ID
+// 4. PHOTO-BASED CROP HEALTH DIAGNOSIS (POST /api/diseases/diagnose-image)
+router.post(
+  '/diagnose-image',
+  authMiddleware,
+  photoDiagnoseRateLimiter,
+  handlePhotoUpload,
+  async (req: AuthRequest, res: Response) => {
+    try {
+      const files = req.files as Express.Multer.File[];
+      if (!files || files.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: 'At least one plant photo is required for diagnosis.',
+        });
+      }
+
+      const { cropId, userNote, language } = req.body;
+      const effectiveLanguage = ['en', 'kn', 'ta', 'te'].includes(language) ? language : 'en';
+
+      // Validate files by magic bytes
+      for (const file of files) {
+        const val = validateImageBuffer(file.buffer);
+        if (!val.valid) {
+          return res.status(400).json({
+            success: false,
+            message: val.error || 'Invalid image file provided. Only JPEG, PNG, or WebP permitted.',
+          });
+        }
+      }
+
+      const result = await diagnoseCropPhotos({
+        userId: req.user!.id,
+        files,
+        cropId: cropId === 'unsure' ? undefined : cropId,
+        userNote,
+        language: effectiveLanguage,
+      });
+
+      // Ensure isSample is explicitly captured in report data
+      result.report.isSample = Boolean(result.isSample);
+
+      // Persist in Prisma DiseaseReport table
+      const reportRecord = await prisma.diseaseReport.create({
+        data: {
+          userId: req.user!.id,
+          cropId: cropId || null,
+          resultJson: JSON.stringify(result.report),
+          language: effectiveLanguage,
+          thumbnailPath: result.thumbnailRelativePath || null,
+        },
+      });
+
+      res.json({
+        success: true,
+        data: {
+          id: reportRecord.id,
+          thumbnailPath: result.thumbnailRelativePath,
+          createdAt: reportRecord.createdAt,
+          isSample: result.isSample,
+          ...result.report,
+        },
+      });
+    } catch (err: any) {
+      console.error('[diseaseRoutes] diagnose-image error:', err.message);
+      res.status(500).json({
+        success: false,
+        message: err.message || 'Error occurred during photo-based crop diagnosis.',
+      });
+    }
+  }
+);
+
+// 5. LIST USER'S SAVED DIAGNOSTIC REPORTS (GET /api/diseases/reports)
+router.get('/reports', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const reports = await prisma.diseaseReport.findMany({
+      where: { userId: req.user!.id },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const formatted = reports.map(r => {
+      let data: any = {};
+      try {
+        data = JSON.parse(r.resultJson);
+      } catch {}
+
+      return {
+        id: r.id,
+        cropId: r.cropId,
+        language: r.language,
+        thumbnailPath: r.thumbnailPath,
+        createdAt: r.createdAt,
+        crop: data.crop || { name: 'Crop' },
+        status: data.status || 'unclear',
+        topFindings: data.topFindings || [],
+        verifiedSource: data.verifiedSource || 'AI-generated, verify with an expert',
+        isSample: Boolean(data.isSample),
+      };
+    });
+
+    res.json({
+      success: true,
+      count: formatted.length,
+      data: formatted,
+    });
+  } catch (err: any) {
+    console.error('[diseaseRoutes] reports list error:', err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve diagnostic reports.',
+    });
+  }
+});
+
+// 6. GET SINGLE DIAGNOSTIC REPORT (GET /api/diseases/reports/:id)
+router.get('/reports/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const report = await prisma.diseaseReport.findFirst({
+      where: {
+        id: req.params.id,
+        userId: req.user!.id,
+      },
+    });
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Diagnostic report not found.',
+      });
+    }
+
+    let reportData: any = {};
+    try {
+      reportData = JSON.parse(report.resultJson);
+    } catch {
+      reportData = {};
+    }
+
+    res.json({
+      success: true,
+      data: {
+        id: report.id,
+        cropId: report.cropId,
+        language: report.language,
+        thumbnailPath: report.thumbnailPath,
+        createdAt: report.createdAt,
+        ...reportData,
+      },
+    });
+  } catch (err: any) {
+    console.error('[diseaseRoutes] single report error:', err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve diagnostic report details.',
+    });
+  }
+});
+
+// 7. DELETE DIAGNOSTIC REPORT (DELETE /api/diseases/reports/:id)
+router.delete('/reports/:id', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const report = await prisma.diseaseReport.findFirst({
+      where: {
+        id: req.params.id,
+        userId: req.user!.id,
+      },
+    });
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Diagnostic report not found.',
+      });
+    }
+
+    await prisma.diseaseReport.delete({
+      where: { id: req.params.id },
+    });
+
+    res.json({
+      success: true,
+      message: 'Diagnostic report deleted successfully.',
+    });
+  } catch (err: any) {
+    console.error('[diseaseRoutes] delete report error:', err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to delete diagnostic report.',
+    });
+  }
+});
+
+// 8. DOWNLOAD DETAILED PDF REPORT (GET /api/diseases/reports/:id/pdf)
+router.get('/reports/:id/pdf', authMiddleware, async (req: AuthRequest, res: Response) => {
+  try {
+    const report = await prisma.diseaseReport.findFirst({
+      where: {
+        id: req.params.id,
+        userId: req.user!.id,
+      },
+      include: {
+        user: {
+          select: { name: true },
+        },
+      },
+    });
+
+    if (!report) {
+      return res.status(404).json({
+        success: false,
+        message: 'Diagnostic report not found.',
+      });
+    }
+
+    let reportData: any = {};
+    try {
+      reportData = JSON.parse(report.resultJson);
+    } catch {
+      return res.status(500).json({
+        success: false,
+        message: 'Report data is corrupted and cannot be rendered to PDF.',
+      });
+    }
+
+    const pdfBuffer = await generateReportPdf({
+      reportId: report.id,
+      reportData,
+      farmerName: report.user?.name || 'Farmer',
+      language: report.language || 'en',
+      thumbnailPath: report.thumbnailPath,
+    });
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `inline; filename="krushi-sathi-report-${report.id}.pdf"`);
+    res.setHeader('Content-Length', pdfBuffer.length);
+    res.end(pdfBuffer);
+  } catch (err: any) {
+    console.error('[diseaseRoutes] PDF generation error:', err.message);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to generate PDF report.',
+    });
+  }
+});
+
+// 9. Get single problem by slug or ID
 router.get('/:id', async (req: Request, res: Response) => {
   try {
     const { id } = req.params;

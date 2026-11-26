@@ -10,6 +10,7 @@ import {
   demoLogin,
   isDemoModeActive,
   isDemoOtpActive,
+  isOtpServiceActive,
 } from '../services/authService';
 import { authMiddleware, AuthRequest } from '../middleware/auth';
 import { authRateLimiter } from '../middleware/rateLimiter';
@@ -169,12 +170,12 @@ router.post('/firebase-login', authRateLimiter, async (req: Request, res: Respon
   }
 });
 
-// Send OTP (Demo Path — Disabled in production or unless DEMO_OTP_ENABLED=true)
+// Send OTP (Supported via self-hosted Android SMS Gateway or Demo OTP)
 router.post('/send-otp', authRateLimiter, async (req: Request, res: Response) => {
-  if (!isDemoOtpActive()) {
+  if (!isOtpServiceActive()) {
     return res.status(404).json({
       success: false,
-      message: 'Demo OTP is disabled. Please use real Firebase Phone Authentication via /api/auth/firebase-login',
+      message: 'OTP service is disabled. Please configure SMS Gateway or use Firebase Phone Authentication.',
     });
   }
 
@@ -189,19 +190,19 @@ router.post('/send-otp', authRateLimiter, async (req: Request, res: Response) =>
     res.json({
       success: true,
       data: result,
-      message: 'OTP sent successfully. For local testing, use Demo OTP: 123456',
+      message: result.demoOtpNote || 'Verification code sent to your mobile via SMS',
     });
   } catch (err: any) {
     res.status(err.status || 400).json({ success: false, message: err.message || 'Failed to send OTP' });
   }
 });
 
-// Verify OTP (Demo Path — Disabled in production or unless DEMO_OTP_ENABLED=true)
+// Verify OTP (Supported via self-hosted Android SMS Gateway or Demo OTP)
 router.post('/verify-otp', authRateLimiter, async (req: Request, res: Response) => {
-  if (!isDemoOtpActive()) {
+  if (!isOtpServiceActive()) {
     return res.status(404).json({
       success: false,
-      message: 'Demo OTP is disabled. Please use real Firebase Phone Authentication via /api/auth/firebase-login',
+      message: 'OTP service is disabled. Please configure SMS Gateway or use Firebase Phone Authentication.',
     });
   }
 

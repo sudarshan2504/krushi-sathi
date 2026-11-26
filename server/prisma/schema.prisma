@@ -32,6 +32,7 @@ model User {
   cropPlans           CropPlan[]
   chatConversations   ChatConversation[]
   reminders           Reminder[]
+  diseaseReports      DiseaseReport[]
 }
 
 model SoilAssessment {
@@ -376,4 +377,86 @@ model DiagnosisFeedback {
   storedImagePath     String?   // Only populated if farmer explicitly consented to save photo
   createdAt           DateTime  @default(now())
 }
+
+// ==========================================
+// Karnataka Agricultural Mandi Market Prices
+// ==========================================
+
+model Commodity {
+  id                  String       @id @default(uuid())
+  commodityName       String       @unique
+  normalizedName      String
+  category            String       @default("Other") // Vegetable, Fruit, Grain, Pulse, Cereal, Oilseed, Spice, Commercial, Plantation, Other
+  nameKannada         String?
+  createdAt           DateTime     @default(now())
+
+  mandiPrices         MandiPrice[]
+}
+
+model Market {
+  id                  String       @id @default(uuid())
+  state               String       @default("Karnataka")
+  district            String
+  marketName          String
+  districtKannada     String?
+  marketKannada       String?
+  createdAt           DateTime     @default(now())
+
+  mandiPrices         MandiPrice[]
+
+  @@unique([state, district, marketName])
+}
+
+model MandiPrice {
+  id                  String       @id @default(uuid())
+  commodityId         String
+  commodity           Commodity    @relation(fields: [commodityId], references: [id], onDelete: Cascade)
+  marketId            String
+  market              Market       @relation(fields: [marketId], references: [id], onDelete: Cascade)
+  variety             String       @default("Local")
+  arrivalDate         String       // YYYY-MM-DD format (standardized)
+  minPrice            Float
+  maxPrice            Float
+  modalPrice          Float
+  priceUnit           String       @default("₹/Quintal")
+  arrivalQuantity     Float?
+  source              String       @default("data.gov.in (AGMARKNET)")
+  sourceRecordId      String?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+
+  @@unique([commodityId, marketId, variety, arrivalDate])
+  @@index([commodityId])
+  @@index([marketId])
+  @@index([arrivalDate])
+  @@index([commodityId, marketId])
+}
+
+model SyncLog {
+  id                  String       @id @default(uuid())
+  source              String       @default("data.gov.in (AGMARKNET)")
+  startedAt           DateTime     @default(now())
+  completedAt         DateTime?
+  recordsFetched      Int          @default(0)
+  recordsInserted     Int          @default(0)
+  recordsUpdated      Int          @default(0)
+  recordsFailed       Int          @default(0)
+  status              String       @default("running") // running | success | partial | failed
+  errorMessage        String?
+}
+
+model DiseaseReport {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cropId        String?
+  resultJson    String   // Full validated JSON report
+  language      String   @default("en")
+  thumbnailPath String?  // Small thumbnail only
+  createdAt     DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
 

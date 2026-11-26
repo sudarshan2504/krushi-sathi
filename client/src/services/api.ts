@@ -1,13 +1,49 @@
+import { Capacitor } from '@capacitor/core';
 import { User, WeatherData, RecommendationResult, CropPlan, Disease, ChatMessage } from '../types';
+
+// Ensure all fetch calls to ngrok bypass the free-tier interstitial page
+if (typeof window !== 'undefined' && !(window as any).__ngrokHeaderPatchInstalled) {
+  (window as any).__ngrokHeaderPatchInstalled = true;
+  const originalFetch = window.fetch;
+  window.fetch = async function (input: RequestInfo | URL, init?: RequestInit) {
+    const urlStr = typeof input === 'string' ? input : (input instanceof Request ? input.url : input.toString());
+    if (urlStr.includes('ngrok-free.dev') || urlStr.includes('ngrok.app') || urlStr.includes('ngrok.io')) {
+      const headers = new Headers(init?.headers || (input instanceof Request ? input.headers : {}));
+      if (!headers.has('ngrok-skip-browser-warning')) {
+        headers.set('ngrok-skip-browser-warning', 'true');
+      }
+      return originalFetch.call(this, input, { ...init, headers });
+    }
+    return originalFetch.call(this, input, init);
+  };
+}
 
 export function getApiBaseUrl(): string {
   if (typeof window !== 'undefined') {
     const stored = localStorage.getItem('krishi_api_base');
-    if (stored) return stored.replace(/\/$/, '');
+    // Clear ephemeral trycloudflare or local IP overrides so devices seamlessly adopt the permanent ngrok URL
+    if (stored && (stored.includes('trycloudflare.com') || stored.includes('10.26.') || stored.includes('192.168.'))) {
+      localStorage.removeItem('krishi_api_base');
+    } else if (stored) {
+      return stored.replace(/\/$/, '');
+    }
   }
   const envUrl = (import.meta as any).env?.VITE_API_BASE_URL;
   if (envUrl) return envUrl.replace(/\/$/, '');
+
+  if (typeof window !== 'undefined' && Capacitor.isNativePlatform()) {
+    // Permanent static Ngrok tunnel endpoint (accessible from any phone on 4G/5G mobile data or Wi-Fi):
+    return 'https://halt-aware-ability.ngrok-free.dev/api';
+  }
+
   return '/api';
+}
+
+export function setApiBaseUrl(url: string): void {
+  if (typeof window !== 'undefined') {
+    localStorage.setItem('krishi_api_base', url.trim());
+    window.location.reload();
+  }
 }
 
 export const API_BASE = getApiBaseUrl();
@@ -831,6 +867,73 @@ export const api = {
       });
       return handleResponse<any>(res);
     },
+
+    async diagnoseImage(formData: FormData): Promise<any> {
+      if (!navigator.onLine) {
+        throw new Error('You are currently offline. Photo diagnosis requires an internet connection.');
+      }
+      const res = await fetch(`${API_BASE}/diseases/diagnose-image`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeader(),
+        },
+        body: formData,
+      });
+      return handleResponse<any>(res);
+    },
+
+    async getReports(): Promise<any[]> {
+      const cacheKey = 'user_disease_reports';
+      const cached = getCachedData<any[]>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const res = await fetch(`${API_BASE}/diseases/reports`, {
+          headers: { ...getAuthHeader() },
+        });
+        const data = await handleResponse<any[]>(res);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
+    },
+
+    async getReportById(id: string): Promise<any> {
+      const cacheKey = `user_disease_report_${id}`;
+      const cached = getCachedData<any>(cacheKey, 7 * 24 * 60 * 60 * 1000);
+      if (!navigator.onLine && cached) return cached;
+      try {
+        const res = await fetch(`${API_BASE}/diseases/reports/${id}`, {
+          headers: { ...getAuthHeader() },
+        });
+        const data = await handleResponse<any>(res);
+        setCachedData(cacheKey, data);
+        return data;
+      } catch (err) {
+        if (cached) return cached;
+        throw err;
+      }
+    },
+
+    async deleteReport(id: string): Promise<any> {
+      const res = await fetch(`${API_BASE}/diseases/reports/${id}`, {
+        method: 'DELETE',
+        headers: { ...getAuthHeader() },
+      });
+      return handleResponse<any>(res);
+    },
+
+    async downloadReportPdf(id: string): Promise<Blob> {
+      const res = await fetch(`${API_BASE}/diseases/reports/${id}/pdf`, {
+        headers: { ...getAuthHeader() },
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.message || 'Failed to download report PDF');
+      }
+      return res.blob();
+    },
   },
 
   chat: {
@@ -1071,6 +1174,71 @@ export const api = {
         source: 'ip';
         isApproximate: boolean;
       }>(res);
+    },
+  },
+
+  market: {
+    async getSummary() {
+      const res = await fetch(`${API_BASE}/market-prices/summary`);
+      return handleResponse<import('../types').MarketSummaryData>(res);
+    },
+
+    async getFilters() {
+      const res = await fetch(`${API_BASE}/market-prices/filters`);
+      return handleResponse<import('../types').MarketFilterOptions>(res);
+    },
+
+    async getPrices(params: Record<string, any> = {}) {
+      const q = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== null && v !== '' && v !== 'All') {
+          q.set(k, String(v));
+        }
+      }
+      const res = await fetch(`${API_BASE}/market-prices?${q.toString()}`);
+      const json = await res.json();
+      if (!res.ok) {
+        throw new Error(json.message || `Failed to fetch mandi prices (${res.status})`);
+      }
+      return json as {
+        success: boolean;
+        data: import('../types').MandiPriceItem[];
+        pagination: { page: number; limit: number; total: number; totalPages: number };
+      };
+    },
+
+    async getCropDetails(commodityName: string) {
+      const res = await fetch(`${API_BASE}/market-prices/crop/${encodeURIComponent(commodityName)}`);
+      return handleResponse<import('../types').CropPriceDetailsData>(res);
+    },
+
+    async getPriceHistory(commodity: string, timeframe = '30d') {
+      const q = new URLSearchParams({ commodity, timeframe });
+      const res = await fetch(`${API_BASE}/market-prices/history?${q.toString()}`);
+      return handleResponse<import('../types').CropPriceHistoryData>(res);
+    },
+
+    async triggerSync() {
+      const res = await fetch(`${API_BASE}/market-prices/sync`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+      });
+      return handleResponse<any>(res);
+    },
+
+    async getSyncLogs() {
+      const res = await fetch(`${API_BASE}/market-prices/sync-logs`);
+      return handleResponse<import('../types').SyncLogEntry[]>(res);
+    },
+
+    getExportUrl(params: Record<string, any> = {}) {
+      const q = new URLSearchParams();
+      for (const [k, v] of Object.entries(params)) {
+        if (v !== undefined && v !== null && v !== '' && v !== 'All') {
+          q.set(k, String(v));
+        }
+      }
+      return `${API_BASE}/market-prices/export?${q.toString()}`;
     },
   },
 };

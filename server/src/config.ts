@@ -26,6 +26,7 @@ export const config = {
   nodeEnv: process.env.NODE_ENV || 'development',
   jwtSecret: rawJwtSecret,
   demoMode: process.env.DEMO_MODE === 'true',
+  allowSampleReports: process.env.ALLOW_SAMPLE_REPORTS === 'true',
   demoOtp: process.env.DEMO_OTP || '123456',
   demoOtpEnabled: process.env.DEMO_OTP_ENABLED === 'true',
   firebaseProjectId: process.env.FIREBASE_PROJECT_ID || '',
@@ -34,12 +35,20 @@ export const config = {
   claudeModel: process.env.CLAUDE_MODEL || 'claude-haiku-5-5',
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   geminiApiKey: process.env.GEMINI_API_KEY || '',
-  geminiModel: process.env.GEMINI_MODEL || 'gemini-3.5-flash',
+  geminiModel: process.env.GEMINI_MODEL || 'gemini-3.1-flash-lite',
   groqApiKey: process.env.GROQ_API_KEY || '',
   openRouterApiKey: process.env.OPENROUTER_API_KEY || '',
   openRouterModel: process.env.OPENROUTER_MODEL || 'nvidia/nemotron-3.5-lightning:free',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:5173',
   allowedOrigins: process.env.ALLOWED_ORIGINS || '',
+  smsGatewayUrl: process.env.SMS_GATEWAY_URL || '',
+  smsGatewayApiKey: process.env.SMS_GATEWAY_API_KEY || '',
+  kisanHelpline: process.env.KISAN_HELPLINE || '1800-180-1551',
+  dataGovInApiKey: process.env.DATA_GOV_IN_API_KEY || '',
+  mandiApiBaseUrl:
+    process.env.MANDI_API_BASE_URL ||
+    'https://api.data.gov.in/resource/9ef84268-d588-465a-a308-a864a43d0070',
+  mandiSyncIntervalHours: parseInt(process.env.MANDI_SYNC_INTERVAL_HOURS || '6', 10),
 };
 
 

@@ -17,7 +17,7 @@ import { PwaInstallPrompt } from '../ui/PwaInstallPrompt';
 const FULLSCREEN_ROUTES = ['/', '/language', '/login', '/register'];
 
 // Routes that manage their own mockup-exact integrated top bar
-const HIDE_HEADER_ROUTES = ['/home', '/profile', '/market-prices'];
+const HIDE_HEADER_ROUTES = ['/home', '/profile', '/market-prices', '/diseases', '/crop-health'];
 
 // Routes that use full width (chat and home page manage their own edge-to-edge layout)
 const FULL_WIDTH_ROUTES = ['/chat', '/home'];

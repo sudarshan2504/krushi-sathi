@@ -20,6 +20,7 @@ node_modules/
 # Build outputs
 dist/
 build/
+*.apk
 *.tsbuildinfo
 test-results/
 playwright-report/
@@ -39,3 +40,7 @@ yarn-error.log*
 .idea/
 .DS_Store
 Thumbs.db
+
+# Dynamic uploads & report cache
+server/uploads/
+

@@ -11,6 +11,7 @@ export async function resetAndSeedTestDb() {
 
   await prisma.chatMessage.deleteMany();
   await prisma.chatConversation.deleteMany();
+  await prisma.diseaseReport.deleteMany();
   await prisma.cropTask.deleteMany();
   await prisma.cropPlan.deleteMany();
   await prisma.cropRecommendation.deleteMany();

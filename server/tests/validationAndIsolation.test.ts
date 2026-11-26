@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import app from '../src/app';
+import prisma from '../src/utils/prisma';
 import { resetAndSeedTestDb } from './testHelpers';
 
 async function registerSecondUser() {
@@ -157,6 +158,35 @@ describe('Input Validation & Per-User Ownership Isolation', () => {
       .delete(`/api/chat/conversations/${convId}`)
       .set('Authorization', `Bearer ${tokenB}`);
     expect(crossChatDel.status).toBe(404);
+
+    // User A creates a Disease Report
+    const demoUser = await prisma.user.findFirst({ where: { phone: '9876543210' } });
+    const diseaseReport = await prisma.diseaseReport.create({
+      data: {
+        userId: demoUser!.id,
+        cropId: 'crop-tomato',
+        resultJson: JSON.stringify({ crop: { name: 'Tomato' }, status: 'disease' }),
+        language: 'en',
+      },
+    });
+
+    // User B cannot view User A's disease report
+    const crossReportGet = await request(app)
+      .get(`/api/diseases/reports/${diseaseReport.id}`)
+      .set('Authorization', `Bearer ${tokenB}`);
+    expect(crossReportGet.status).toBe(404);
+
+    // User B cannot delete User A's disease report
+    const crossReportDel = await request(app)
+      .delete(`/api/diseases/reports/${diseaseReport.id}`)
+      .set('Authorization', `Bearer ${tokenB}`);
+    expect(crossReportDel.status).toBe(404);
+
+    // User B cannot download PDF of User A's disease report
+    const crossReportPdf = await request(app)
+      .get(`/api/diseases/reports/${diseaseReport.id}/pdf`)
+      .set('Authorization', `Bearer ${tokenB}`);
+    expect(crossReportPdf.status).toBe(404);
   });
 });
 

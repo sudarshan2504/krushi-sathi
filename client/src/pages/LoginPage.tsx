@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useTranslation } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
-import { api } from '../services/api';
+import { api, API_BASE, setApiBaseUrl } from '../services/api';
 import { BrandLogo } from '../components/ui/BrandLogo';
 import { PrimaryButton } from '../components/ui/PrimaryButton';
 import { WaveFooter } from '../components/ui/WaveFooter';
@@ -250,9 +250,27 @@ export const LoginPage: React.FC = () => {
               </div>
 
               {error && (
-                <div role="alert" className="p-2 rounded-xl bg-red-50 text-red-700 text-xs flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>{error}</span>
+                <div role="alert" className="p-2.5 rounded-xl bg-red-50 text-red-700 text-xs flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {error.toLowerCase().includes('fetch')
+                        ? `Cannot connect to server at ${API_BASE}. Ensure device is on the same Wi-Fi network.`
+                        : error}
+                    </span>
+                  </div>
+                  {error.toLowerCase().includes('fetch') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const custom = window.prompt('Change Krushi Sathi backend API URL:', API_BASE);
+                        if (custom) setApiBaseUrl(custom);
+                      }}
+                      className="self-start text-[11px] underline font-bold text-forest hover:opacity-80"
+                    >
+                      Change Server Address
+                    </button>
+                  )}
                 </div>
               )}
 
@@ -303,9 +321,27 @@ export const LoginPage: React.FC = () => {
               </div>
 
               {error && (
-                <div role="alert" className="p-2 rounded-xl bg-red-50 text-red-700 text-xs flex items-center gap-1.5">
-                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
-                  <span>{error}</span>
+                <div role="alert" className="p-2.5 rounded-xl bg-red-50 text-red-700 text-xs flex flex-col gap-1.5">
+                  <div className="flex items-center gap-1.5">
+                    <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                    <span>
+                      {error.toLowerCase().includes('fetch')
+                        ? `Cannot connect to server at ${API_BASE}. Ensure device is on the same Wi-Fi network.`
+                        : error}
+                    </span>
+                  </div>
+                  {error.toLowerCase().includes('fetch') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const custom = window.prompt('Change Krushi Sathi backend API URL:', API_BASE);
+                        if (custom) setApiBaseUrl(custom);
+                      }}
+                      className="self-start text-[11px] underline font-bold text-forest hover:opacity-80"
+                    >
+                      Change Server Address
+                    </button>
+                  )}
                 </div>
               )}
 

@@ -351,6 +351,56 @@ export interface ProblemItem {
 
 export type Disease = ProblemItem;
 
+export interface FindingItem {
+  name: string;
+  localNames?: { en?: string; kn?: string; ta?: string; te?: string };
+  type: 'disease' | 'pest' | 'nutrient_deficiency' | 'environmental_stress' | 'healthy' | 'unclear';
+  confidence: number;
+  severity: 'low' | 'medium' | 'high';
+  spreadRisk?: string;
+  observedSymptoms: string[];
+  likelyCauses: string[];
+}
+
+export interface ChemicalItem {
+  activeIngredient: string;
+  class: string;
+  purpose: string;
+  applicationNotes: string;
+}
+
+export interface TreatmentData {
+  immediateSteps: string[];
+  culturalAndOrganic: string[];
+  chemical: ChemicalItem[];
+  safetyPrecautions: string[];
+  preventionTips: string[];
+  recheckInDays: number;
+  whenToSeeExpert: string;
+}
+
+export interface CropHealthReport {
+  id?: string;
+  cropId?: string;
+  imageQuality: 'good' | 'fair' | 'poor';
+  retakeTip?: string;
+  crop: {
+    name: string;
+    scientificName?: string;
+    confidence: number;
+  };
+  status: 'healthy' | 'disease' | 'pest' | 'nutrient_deficiency' | 'environmental_stress' | 'unclear';
+  topFindings: FindingItem[];
+  treatment: TreatmentData;
+  disclaimer: string;
+  generatedAt: string;
+  model: string;
+  isSample?: boolean;
+  verifiedSource?: 'verified entry' | 'AI-generated, verify with an expert';
+  helpline?: string;
+  thumbnailPath?: string;
+}
+
 export interface ChatMessage {
   id?: string;
   role: 'user' | 'assistant' | 'system';
@@ -408,4 +458,106 @@ export interface ImageCreditItem {
   license: string;
   attributionUrl?: string;
 }
+
+export interface MandiPriceItem {
+  id: string;
+  commodity: string;
+  commodityKannada: string;
+  category: string;
+  variety: string;
+  state: string;
+  district: string;
+  districtKannada: string;
+  market: string;
+  minPrice: number;
+  maxPrice: number;
+  modalPrice: number;
+  priceUnit: string;
+  arrivalQuantity?: number;
+  arrivalDate: string;
+  source: string;
+  updatedAt: string;
+}
+
+export interface MarketSummaryData {
+  totalCommodities: number;
+  totalMarkets: number;
+  totalDistricts: number;
+  totalRecords: number;
+  latestArrivalDate: string;
+  lastSync: {
+    status: string;
+    startedAt: string;
+    completedAt: string | null;
+    recordsFetched: number;
+    recordsInserted: number;
+    source: string;
+    message?: string;
+  } | null;
+}
+
+export interface MarketFilterOptions {
+  states: string[];
+  districts: Array<{ name: string; nameKannada: string }>;
+  markets: Array<{ id: string; name: string; district: string; state: string }>;
+  categories: string[];
+  commodities: Array<{ id: string; name: string; category: string; nameKannada: string }>;
+}
+
+export interface CropPriceComparisonItem {
+  market: string;
+  district: string;
+  variety: string;
+  minPrice: number;
+  maxPrice: number;
+  modalPrice: number;
+  arrivalDate: string;
+  arrivalQuantity?: number;
+  source: string;
+}
+
+export interface CropPriceDetailsData {
+  commodity: string;
+  nameKannada: string;
+  category: string;
+  varieties: string[];
+  summary: {
+    minPrice: number;
+    maxPrice: number;
+    avgModalPrice: number;
+    totalMarketsReporting: number;
+    latestDate: string;
+  };
+  comparison: CropPriceComparisonItem[];
+}
+
+export interface PriceHistoryPoint {
+  date: string;
+  modalPrice: number;
+  minPrice: number;
+  maxPrice: number;
+  marketsReporting: number;
+  markets: Array<{ market: string; district: string; modalPrice: number }>;
+}
+
+export interface CropPriceHistoryData {
+  commodity: string;
+  timeframe: string;
+  dataPointsCount: number;
+  history: PriceHistoryPoint[];
+}
+
+export interface SyncLogEntry {
+  id: string;
+  source: string;
+  startedAt: string;
+  completedAt: string | null;
+  recordsFetched: number;
+  recordsInserted: number;
+  recordsUpdated: number;
+  recordsFailed: number;
+  status: string;
+  errorMessage?: string | null;
+}
+
 
